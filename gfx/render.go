@@ -53,7 +53,7 @@ func NewSpriteRender(shader *Shader)  *SpriteRender{
 }
 
 // 目前只支持位置变换
-func (renderer *SpriteRender)Draw(texture *Texture2D, mat4 *mgl32.Mat4)  {
+func (renderer *SpriteRender)Draw(texture *Texture2D, mat4 *mgl32.Mat4, vertices []float32)  {
 	// Prepare transformations
 	renderer.Shader.Use()
 	gl.Enable(gl.BLEND)
@@ -62,7 +62,6 @@ func (renderer *SpriteRender)Draw(texture *Texture2D, mat4 *mgl32.Mat4)  {
 	renderer.Shader.SetMatrix4("model\x00", *mat4)
 
 	//绑定纹理
-	//gl.ActiveTexture(gl.TEXTURE0)
 	texture.Bind();
 
 	// 绘制
@@ -76,29 +75,37 @@ func (renderer *SpriteRender)Draw(texture *Texture2D, mat4 *mgl32.Mat4)  {
 // 渲染组件
 type RenderComp struct{
 	ecs.Entity
-	Texture2D
+
+	// Texture
+	*Texture2D
+
+	// Vertex - [<x,y>, <u,v>]
+	Vertices []float32
+
+	// Model - Translation, Rotation, Scale
 	Model mgl32.Mat4
 }
 
-func (comp *RenderComp) SetTexture(tex Texture2D)  {
+func (comp *RenderComp) SetTexture(tex *Texture2D)  {
 	comp.Texture2D = tex
 }
 
 func (comp *RenderComp) SetSize(width, height float32)  {
 	comp.Texture2D.Width = width
 	comp.Texture2D.Height = height
+	comp.Model = mgl32.Scale3D(width, height, 1).Mul4(comp.Model)
 }
 
 func (comp *RenderComp) SetPosition(position mgl32.Vec2)  {
-	comp.Model = mgl32.Translate3D(position[0], position[1], 0)
+	comp.Model = mgl32.Translate3D(position[0], position[1], 0).Mul4(comp.Model)
 }
 
 func (comp *RenderComp) SetRotation(rotation float32)  {
-	comp.Model = mgl32.HomogRotate3DZ(rotation)
+	comp.Model = mgl32.HomogRotate3DZ(rotation).Mul4(comp.Model)
 }
 
 func (comp *RenderComp) SetScale(x, y float32)  {
-	comp.Model = mgl32.Scale3D(x, y, 1)
+	comp.Model = mgl32.Scale3D(x, y, 1).Mul4(comp.Model)
 }
 
 // 渲染系统
@@ -106,58 +113,62 @@ func (comp *RenderComp) SetScale(x, y float32)  {
 
 const STEP  = 100
 
-var (
+type RenderSystem struct {
+	renderer *SpriteRender
+
 	comps []RenderComp
-	_map []int
+	_map  []int
 	index int
-)
-
-var (
-	renderer SpriteRender
-)
-
-func init()  {
-	comps = make([]RenderComp, STEP)
 }
 
-func NewRenderComp(id uint32) *RenderComp{
-	index += 1
-	len := len(comps)
-	if index >= len {
-		comps = resize(comps, len + STEP)
+func (th *RenderSystem) NewRenderComp(id uint32) *RenderComp{
+	th.index += 1
+	len := len(th.comps)
+	if th.index >= len {
+		th.comps = resize(th.comps, len + STEP)
+		th._map = resizeInt(th._map, len + STEP)
 	}
 	comp := RenderComp{
 		Model: mgl32.Ident4(),
-		Entity: ecs.Entity(index),
+		Entity: ecs.Entity(th.index),
 	}
-	comps[index] = comp
-	_map[id] = index
-	return &comp
+	th.comps[th.index] = comp
+	th._map[id] = th.index
+	return &th.comps[th.index]
 }
 
-func Update(dt float32) {
-	for _, comp := range comps {
-		renderer.Draw(&comp.Texture2D, &comp.Model)
+func (th *RenderSystem) Size() int{
+	return th.index
+}
+
+func (th *RenderSystem) Update(dt float32) {
+	for i := 1; i <= th.index; i++ {
+		comp := &th.comps[i]
+		th.renderer.Draw(comp.Texture2D, &comp.Model, comp.Vertices)
 	}
 }
 
-func Delete(id uint32) {
-	i := _map[id]
-	if i < index {
-		comps[index], comps[i] = comps[i], comps[index]
-		_map[comps[i].Index()] = i
-		_map[index] = 0
-	} else if i == index {
-		_map[index] = 0
+func (th *RenderSystem) Delete(id uint32) {
+	i := th._map[id]
+	if i < th.index {
+		th.comps[i] = th.comps[th.index]
+		th._map[th.comps[i].Index()] = i
+		th._map[th.index] = 0
+	} else if i == th.index {
+		th._map[th.index] = 0
 	}
-	index -= 1
+	th.index -= 1
 }
 
-func GetComp(id uint32)  *RenderComp{
-	if _map[id] == 0 {
+func (th *RenderSystem) GetComp(id uint32)  *RenderComp{
+	if th._map[id] == 0 {
 		return nil
 	}
-	return &comps[_map[id]]
+	return &th.comps[th._map[id]]
+}
+
+func (th *RenderSystem) Destroy() {
+
 }
 
 func resize(slice []RenderComp, size int) []RenderComp {
@@ -166,3 +177,16 @@ func resize(slice []RenderComp, size int) []RenderComp {
 	return newSlice
 }
 
+func resizeInt(slice []int, size int) []int {
+	newSlice := make([]int, size)
+	copy(newSlice, slice)
+	return newSlice
+}
+
+func NewRenderSystem(shader *Shader) *RenderSystem {
+	th := new(RenderSystem)
+	th.renderer = NewSpriteRender(shader)
+	th.comps = make([]RenderComp, STEP)
+	th._map = make([]int, STEP)
+	return th
+}
