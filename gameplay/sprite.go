@@ -11,9 +11,7 @@ import (
 	在 korok 系统中是不需要精灵的，为了符合常见的2D引擎，加上精灵
  */
 
-type Sprite struct {
-	ecs.Entity
-}
+type Sprite ecs.Entity
 
 func (sprite *Sprite) SetPosition(x, y float32) {
 

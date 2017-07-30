@@ -6,7 +6,7 @@ package gameplay
 type Scene interface {
 	Preload()
 
-	Setup()
+	Setup(g *Game)
 
 	Update(dt float32)
 

@@ -17,7 +17,6 @@ type SkeletonRender struct {
 }
 
 func LoadSpine() {
-
 }
 
 func NewSkeletonRender(shader *gfx.Shader) *SkeletonRender {
@@ -75,15 +74,18 @@ func (sr*SkeletonRender) draw(vertex []float32, uv []float32) {
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
 
-	gl.BindVertexArray(sr.vao)
-	gl.BindBuffer(gl.ARRAY_BUFFER, sr.vbo)
-
+	// update vertex
 	for i := 0;  i < 4; i++ {
 		sr.buffer[i*4 + 0] = vertex[i*2 + 0]
 		sr.buffer[i*4 + 1] = vertex[i*2 + 1]
 		sr.buffer[i*4 + 2] = uv[i*2 + 0]
 		sr.buffer[i*4 + 3] = uv[i*2 + 1]
 	}
+
+	// draw ..
+
+	gl.BindVertexArray(sr.vao)
+	gl.BindBuffer(gl.ARRAY_BUFFER, sr.vbo)
 
 	gl.BufferSubData(gl.ARRAY_BUFFER, 0, len(sr.buffer) * 4, gl.Ptr(sr.buffer))
 

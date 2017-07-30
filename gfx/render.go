@@ -84,6 +84,8 @@ type RenderComp struct{
 
 	// Model - Translation, Rotation, Scale
 	Model mgl32.Mat4
+
+	Width, Height float32
 }
 
 func (comp *RenderComp) SetTexture(tex *Texture2D)  {
@@ -91,13 +93,14 @@ func (comp *RenderComp) SetTexture(tex *Texture2D)  {
 }
 
 func (comp *RenderComp) SetSize(width, height float32)  {
-	comp.Texture2D.Width = width
-	comp.Texture2D.Height = height
+	comp.Width = width
+	comp.Height = height
 	comp.Model = mgl32.Scale3D(width, height, 1).Mul4(comp.Model)
 }
 
 func (comp *RenderComp) SetPosition(position mgl32.Vec2)  {
 	comp.Model = mgl32.Translate3D(position[0], position[1], 0).Mul4(comp.Model)
+	//comp.Model.SetRow(3, mgl32.Vec4{position[0], position[1], 0, 1})
 }
 
 func (comp *RenderComp) SetRotation(rotation float32)  {

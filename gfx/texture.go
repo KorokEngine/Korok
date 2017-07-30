@@ -10,7 +10,6 @@ import (
 	"image/draw"
 
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"log"
 )
 
 /**
@@ -44,9 +43,6 @@ func newTexture(img image.Image) (uint32, error) {
 		return 0, fmt.Errorf("unsupported stride")
 	}
 	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
-
-	r, g, b, a := rgba.At(5, 5).RGBA()
-	log.Printf("rgba file, R:%x G:%x B:%x A:%x", r, g, b, a)
 	// 4. upload texture
 	var texture uint32
 	// 4.1 apply space

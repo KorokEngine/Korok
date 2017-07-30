@@ -6,14 +6,17 @@ import (
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 	"github.com/go-gl/gl/v3.2-core/gl"
-
-	"korok/gameplay"
 )
 
-var game = &gameplay.Game{}
+var windowCallback WindowCallback
+var Keys  [1024]int
 
 func init()  {
 	runtime.LockOSThread()
+}
+
+func RegisterWindowCallback(callback WindowCallback) {
+	windowCallback = callback
 }
 
 func CreateWindow(option *WindowOptions)  {
@@ -53,9 +56,9 @@ func CreateWindow(option *WindowOptions)  {
 
 		if key >= 0 && key < 1024 {
 			if action == glfw.Press {
-				game.Keys[key] = gl.TRUE
+				Keys[key] = gl.TRUE
 			} else if action == glfw.Release {
-				game.Keys[key] = gl.FALSE
+				Keys[key] = gl.FALSE
 			}
 		}
 	})
@@ -79,7 +82,7 @@ func CreateWindow(option *WindowOptions)  {
 	// DEBUG
 	// ========== Engine Start
 
-	game.Init()
+	windowCallback.OnCreate()
 
 	// ========== Engine End
 	// 全局配置
@@ -87,22 +90,12 @@ func CreateWindow(option *WindowOptions)  {
 	//gl.DepthFunc(gl.LESS)
 	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
 
-	previousTime := glfw.GetTime()
-
 	// 如果窗口没有关闭，那么应该持续当前的循环
 	// main loop...
 	for !window.ShouldClose() {
 		gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 
-		// update
-		time :=  glfw.GetTime()
-		elapsed := time - previousTime
-		previousTime = time
-
-		dt := float32(elapsed)
-		game.Input(dt)
-		game.Update(dt)
-		game.Draw(dt)
+		windowCallback.OnLoop()
 
 		// swap buffer
 		window.SwapBuffers()
