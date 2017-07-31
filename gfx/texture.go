@@ -10,6 +10,7 @@ import (
 	"image/draw"
 
 	"github.com/go-gl/gl/v3.2-core/gl"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 /**
@@ -35,6 +36,12 @@ func (t *Texture2D)Bind()  {
 	gl.BindTexture(gl.TEXTURE_2D, t.Id)
 }
 
+func (t *Texture2D)Sub(x, y float32, w, h float32) *SubTex {
+	subTex := &SubTex{Texture2D:t}
+	subTex.Min = mgl32.Vec2{x, y}
+	subTex.Max = mgl32.Vec2{x+w, y+h}
+	return subTex
+}
 
 func newTexture(img image.Image) (uint32, error) {
 	// 3. copy image
@@ -70,3 +77,10 @@ func newTexture(img image.Image) (uint32, error) {
 	return texture, nil
 }
 
+///// 还需要抽象 SubTexture 的概念出来
+type SubTex struct {
+	*Texture2D
+
+	// location -
+	Min, Max mgl32.Vec2
+}

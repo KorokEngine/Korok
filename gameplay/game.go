@@ -44,6 +44,8 @@ type Game struct {
 	hit  *spine.Animation
 	death *spine.Animation
 	skRender *anim.SkeletonRender
+
+	comp *gfx.RenderComp
 }
 /// window callback
 func (g *Game) OnCreate() {
@@ -204,6 +206,38 @@ func (g *Game) Init()  {
 
 		/// 4.1 init renderComp
 		g.skRender = anim.NewSkeletonRender(shader)
+
+		//// Mesh Render
+
+		assets.LoadTexture("assets/ball.png")
+
+		b := assets.GetTexture("assets/ball.png")
+
+		fmt.Println("texture", b)
+		sub := b.Sub(50, 50, 300, 300)
+
+		fmt.Println("sub texture", sub)
+
+
+		//id := ecs.Create()
+		//comp := g.RenderSystem.NewRenderComp(id.Index())
+		////comp.SetTexture(b)
+		//comp.SetSubTexture(sub)
+		//comp.SetPosition(mgl32.Vec2{100, 50})
+
+		// comp test!!
+		comp := new(gfx.RenderComp)
+		//comp.SetTexture(b)
+		comp.SetPosition(mgl32.Vec2{50, 50})
+
+		m := gfx.NewIndexedMesh(b)
+
+		comp.SetMesh(m, func() (vao, vbo, ebo uint32) {
+			m.Setup()
+			return m.Handle()
+		})
+
+		g.comp = comp
 	}
 }
 
@@ -231,7 +265,7 @@ func (g *Game) Update()  {
 	//// simulation....
 
 	/// 动画更新，骨骼数据
-	g.AnimationSystem.Update(dt)
+	///g.AnimationSystem.Update(dt)
 
 
 	// g.CollisionSystem.Update(dt)
@@ -259,14 +293,18 @@ func (g *Game) Update()  {
 	//g.tRender.RenderText(g.Label)
 
 	// 作用动画
-	g.death.Apply(g.skeleton, float32(time), true)
+	//g.death.Apply(g.skeleton, float32(time), true)
 
 	// 更新骨骼坐标
-	g.skeleton.UpdateWorldTransform()
+	//g.skeleton.UpdateWorldTransform()
 
 	//
-	g.skRender.Draw(g.skeleton)
+	//g.skRender.Draw(g.skeleton)
 
+	//g.RenderSystem.Update(dt)
+
+
+	g.Renderer.Draw(g.comp)
 }
 
 func (g *Game) Draw(dt float32)  {

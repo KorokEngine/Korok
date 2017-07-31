@@ -124,12 +124,12 @@ var vertex =
 	uniform mat4 projection;
 	uniform mat4 model;
 
-	in vec2 vert;
-	in vec2 vertTexCoord;
+	layout (location = 0) in vec4 vert; // <vec2 pos, vec2 tex>
+
 	out vec2 fragTexCoord;
 	void main() {
-	    fragTexCoord = vertTexCoord;
-	    gl_Position = projection * model * vec4(vert, 0, 1);
+	    fragTexCoord = vert.zw;
+	    gl_Position = projection * model * vec4(vert.xy, 0, 1);
 	}
 	` + "\x00"
 

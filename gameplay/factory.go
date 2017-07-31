@@ -4,7 +4,6 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 
 	"korok/ecs"
-	"korok/assets"
 	"korok/space"
 
 	"fmt"
@@ -17,9 +16,9 @@ func Create(image string) Sprite {
 	id := ecs.Create()
 
 	// Create RenderComponent
-	renderComp := G.NewRenderComp(id.Index())
-	renderComp.Texture2D = assets.GetTexture(image)
-	renderComp.Model = mgl32.Ident4()
+//	renderComp := G.NewRenderComp(id.Index())
+//	renderComp.Texture2D = assets.GetTexture(image)
+//	renderComp.Model = mgl32.Ident4()
 
 	// Create TransformComponent
 	transComp := space.NewTransform(id.Index())

@@ -10,63 +10,36 @@ import (
 	处理渲染相关问题
  */
 type SpriteRender struct {
-	quadVAO uint32
 	Shader *Shader
 }
 
 func NewSpriteRender(shader *Shader)  *SpriteRender{
 	renderer := &SpriteRender{Shader:shader}
-
-	// Configure VAO/VBO
-	var vertices = []float32{
-		// Pos      // Tex
-		0.0, 1.0, 0.0, 1.0,
-		1.0, 0.0, 1.0, 0.0,
-		0.0, 0.0, 0.0, 0.0,
-
-		0.0, 1.0, 0.0, 1.0,
-		1.0, 1.0, 1.0, 1.0,
-		1.0, 0.0, 1.0, 0.0,
-	}
-
-	var vao uint32
-	gl.GenVertexArrays(1, &vao)
-	gl.BindVertexArray(vao)
-
-	var vbo uint32
-	gl.GenBuffers(1, &vbo)
-	gl.BindBuffer(gl.ARRAY_BUFFER, vbo);
-	gl.BufferData(gl.ARRAY_BUFFER, len(vertices)*4, gl.Ptr(vertices), gl.STATIC_DRAW);
-
-	vertAttrib := uint32(gl.GetAttribLocation(shader.Program, gl.Str("vert\x00")))
-	gl.EnableVertexAttribArray(vertAttrib)
-	gl.VertexAttribPointer(vertAttrib, 2, gl.FLOAT, false, 4*4, gl.PtrOffset(0))
-
-	texCoordAttrib := uint32(gl.GetAttribLocation(shader.Program, gl.Str("vertTexCoord\x00")))
-	gl.EnableVertexAttribArray(texCoordAttrib)
-	gl.VertexAttribPointer(texCoordAttrib, 2, gl.FLOAT, false, 4*4, gl.PtrOffset(2*4))
-
-	gl.BindVertexArray(0)
-	renderer.quadVAO = vao
-
 	return renderer
 }
 
 // 目前只支持位置变换
-func (renderer *SpriteRender)Draw(texture *Texture2D, mat4 *mgl32.Mat4, vertices []float32)  {
+func (renderer *SpriteRender)Draw(comp *RenderComp)  {
 	// Prepare transformations
 	renderer.Shader.Use()
 	gl.Enable(gl.BLEND)
 	gl.BlendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA)
 
-	renderer.Shader.SetMatrix4("model\x00", *mat4)
+	ident := mgl32.Ident4()
+	//ident.Mul4(mgl32.Translate3D(50, 50, 0))
+	renderer.Shader.SetMatrix4("model\x00", *comp.SRT(&ident))
 
 	//绑定纹理
-	texture.Bind();
+	gl.BindTexture(gl.TEXTURE_2D, comp.tex)
 
 	// 绘制
-	gl.BindVertexArray(renderer.quadVAO)
-	gl.DrawArrays(gl.TRIANGLES, 0, 6)
+	gl.BindVertexArray(comp.vao)
+
+	if comp.ebo > 0 {
+		gl.DrawElements(gl.TRIANGLES, 6, gl.UNSIGNED_INT, nil)
+	} else {
+		gl.DrawArrays(gl.TRIANGLES, 0, 6)
+	}
 	gl.BindVertexArray(0)
 
 	gl.Disable(gl.BLEND)
@@ -75,40 +48,78 @@ func (renderer *SpriteRender)Draw(texture *Texture2D, mat4 *mgl32.Mat4, vertices
 // 渲染组件
 type RenderComp struct{
 	ecs.Entity
+	// Mesh - pointer to mesh data
+	mesh *Mesh
 
 	// Texture
-	*Texture2D
+	tex uint32
 
 	// Vertex - [<x,y>, <u,v>]
-	Vertices []float32
+	vao, vbo, ebo uint32
 
-	// Model - Translation, Rotation, Scale
-	Model mgl32.Mat4
+	// Position
+	position mgl32.Vec2
 
-	Width, Height float32
+	// Rotation
+	rotation float32
+
+	// Scale
+	scale mgl32.Vec2
+
+	// width & height
+	width, height float32
 }
 
 func (comp *RenderComp) SetTexture(tex *Texture2D)  {
-	comp.Texture2D = tex
+	comp.tex = tex.Id
+	comp.width = tex.Width
+	comp.height = tex.Height
+
+	m := NewQuadMesh(tex)
+	vao, vbo := m.Setup()
+	comp.vao, comp.vbo = vao, vbo
+	comp.mesh = m
+}
+
+func (comp *RenderComp) SetSubTexture(tex *SubTex) {
+	comp.tex = tex.Id
+	comp.width = tex.Max[0] - tex.Min[0]
+	comp.height = tex.Max[1] - tex.Min[1]
+
+	m := NewQuadMeshSubTex(tex)
+	vao, vbo := m.Setup()
+	comp.vao, comp.vbo = vao, vbo
+	comp.mesh = m
+}
+
+func (comp *RenderComp) SetMesh(m *Mesh, setup func() (vao, vbo, ebo uint32)) {
+	comp.tex = m.tex
+	comp.mesh = m
+	comp.vao, comp.vbo, comp.ebo = setup()
 }
 
 func (comp *RenderComp) SetSize(width, height float32)  {
-	comp.Width = width
-	comp.Height = height
-	comp.Model = mgl32.Scale3D(width, height, 1).Mul4(comp.Model)
+	comp.width = width
+	comp.height = height
 }
 
 func (comp *RenderComp) SetPosition(position mgl32.Vec2)  {
-	comp.Model = mgl32.Translate3D(position[0], position[1], 0).Mul4(comp.Model)
-	//comp.Model.SetRow(3, mgl32.Vec4{position[0], position[1], 0, 1})
+	comp.position = position
 }
 
 func (comp *RenderComp) SetRotation(rotation float32)  {
-	comp.Model = mgl32.HomogRotate3DZ(rotation).Mul4(comp.Model)
+	comp.rotation = rotation
 }
 
 func (comp *RenderComp) SetScale(x, y float32)  {
-	comp.Model = mgl32.Scale3D(x, y, 1).Mul4(comp.Model)
+	comp.scale[0] = x
+	comp.scale[1] = y
+}
+
+// return model translation
+func (comp *RenderComp) SRT(identity *mgl32.Mat4) *mgl32.Mat4{
+	id := identity.Mul4(mgl32.Translate3D(comp.position[0], comp.position[1], 0))
+	return &id
 }
 
 // 渲染系统
@@ -132,7 +143,6 @@ func (th *RenderSystem) NewRenderComp(id uint32) *RenderComp{
 		th._map = resizeInt(th._map, len + STEP)
 	}
 	comp := RenderComp{
-		Model: mgl32.Ident4(),
 		Entity: ecs.Entity(th.index),
 	}
 	th.comps[th.index] = comp
@@ -147,7 +157,7 @@ func (th *RenderSystem) Size() int{
 func (th *RenderSystem) Update(dt float32) {
 	for i := 1; i <= th.index; i++ {
 		comp := &th.comps[i]
-		th.renderer.Draw(comp.Texture2D, &comp.Model, comp.Vertices)
+		th.renderer.Draw(comp)
 	}
 }
 

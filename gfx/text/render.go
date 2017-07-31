@@ -12,7 +12,38 @@ import (
 	"io/ioutil"
 	"log"
 	"fmt"
+	"korok/ecs"
 )
+
+// Text 本质上是一个RenderComp， 它只是对构建复杂RenderComp过程的封装！！
+// 所有的渲染都可以变成对mesh的封装的过程，
+// 概念：Text 只用来构建出一个 RenderComp，不占用 XXXComp的命名空间，
+// XXXComp 是最底层的基础概念，应该把所有 XXXComp的概念封装成接口，这样可以
+// 避免暴露出 id 索引的概念，况且 id 是非常难以使用的.
+// 所以在上层使用的时候都是以面向对象的方式来进行的，到底层之后才会出现 id, xxxComp, xxxSystem
+
+// 但是 unity 中 XXComp 是暴露给用户的!! （错，unity中也没有 textComp 这个概念，而是 textmesh），另外如果不保存 textComp 的引用，便会丢点这个数据
+// unity 中给一个物体添加 text-mesh-comp 之后就可以绘制了
+// Comp 必须对应到一个 System 不然 Comp 就找不到了！！
+// 暂时再RenderComp中添加一个interface指向所有的外部上层的生成器对象，比如 text, shape, particle, skeleton!
+// 否则会造成奇怪的现象，Text 不见了，但是 text 还会被绘制！！
+
+// 重新定义 TextComp
+type Text struct {
+	// id -> renderComp
+	id ecs.Entity
+
+	// text's mesh data
+	mesh *gfx.Mesh
+
+	// text!
+	Font *Font
+	String string
+}
+
+///// 以上构建出一个合理的 Text 定义！
+///// 还需要给 RenderComp 想一个合适的名字 Sprite ？
+///// 在整个外部空间，使用 gameobject ?
 
 type LabelComp struct {
 	Font *Font
@@ -44,6 +75,7 @@ type LabelComp struct {
 	CharSpacing []float32
 }
 
+// 重点在于生成 gfx.renderComp 的 mesh ！
 func NewText(font *Font) (t *LabelComp){
 	t = new(LabelComp)
 
