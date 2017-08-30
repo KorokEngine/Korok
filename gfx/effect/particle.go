@@ -1,4 +1,4 @@
-package main
+package effect
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
@@ -28,11 +28,11 @@ type Particle struct {
 }
 
 type ParticleGenerator struct {
-	Particles []*Particle 	// 粒子数组
-	amount int 		// 粒子数量
-	shader *gfx.Shader 		// 粒子着色器
-	texture *gfx.Texture2D 	// 粒子纹理
-	vao  uint32 		// VAO对象
+	Particles []*Particle  // 粒子数组
+	amount int             // 粒子数量
+	shader *gfx.GLShader   // 粒子着色器
+	texture *gfx.Texture2D // 粒子纹理
+	vao  uint32            // VAO对象
 	lastUsedParticle int
 }
 
@@ -145,7 +145,7 @@ func (g *ParticleGenerator) respawnParticle(particle *Particle, position, offset
 	particle.Velocity = mgl32.Vec2{velocity[0]*0.1, velocity[1] * 0.1}
 }
 
-func NewParticleGenerator(shader *gfx.Shader, tex *gfx.Texture2D, amount int) (*ParticleGenerator) {
+func NewParticleGenerator(shader *gfx.GLShader, tex *gfx.Texture2D, amount int) (*ParticleGenerator) {
 	g := &ParticleGenerator{
 		shader: shader,
 		texture: tex,

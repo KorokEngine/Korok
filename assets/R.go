@@ -13,7 +13,7 @@ import (
 )
 
 var textures = make(map[string]*gfx.Texture2D)
-var shaders  = make(map[string]*gfx.Shader)
+var shaders  = make(map[string]*gfx.GLShader)
 var fonts    = make(map[string]*text.Font)
 
 func LoadShader() {
@@ -22,6 +22,12 @@ func LoadShader() {
 		log.Println(err)
 	}
 	shaders["dft"] = shader
+
+	shader, err = loadShader(bVertex, bColor)
+	if err != nil {
+		log.Println(err)
+	}
+	shaders["batch"] = shader
 
 	shader, err = loadShader(pVertex, pColor)
 	if err != nil {
@@ -36,7 +42,7 @@ func LoadShader() {
 	shaders["text"] = shader
 }
 
-func GetShader(key string) *gfx.Shader  {
+func GetShader(key string) *gfx.GLShader {
 	return shaders[key]
 }
 
@@ -86,8 +92,8 @@ func Clear()  {
 	}
 }
 
-func loadShader(vertex, fragment string) (*gfx.Shader, error){
-	shader := &gfx.Shader{}
+func loadShader(vertex, fragment string) (*gfx.GLShader, error){
+	shader := &gfx.GLShader{}
 	program, err := gfx.Compile(vertex, fragment)
 	if err != nil {
 		return nil, err
@@ -116,102 +122,4 @@ func loadTexture(file string)(*gfx.Texture2D, error)  {
 	return texture, nil
 }
 
-// 缺省的Shader写在这里
-
-var vertex =
-	`
-	#version 330
-	uniform mat4 projection;
-	uniform mat4 model;
-
-	layout (location = 0) in vec4 vert; // <vec2 pos, vec2 tex>
-
-	out vec2 fragTexCoord;
-	void main() {
-	    fragTexCoord = vert.zw;
-	    gl_Position = projection * model * vec4(vert.xy, 0, 1);
-	}
-	` + "\x00"
-
-var color =
-	`
-	#version 330
-	uniform sampler2D tex;
-	in vec2 fragTexCoord;
-	out vec4 outputColor;
-
-	void main() {
-	    outputColor = texture(tex, fragTexCoord);
-
-	    //if (outputColor.a == 0.0 && outputColor.r == 0.0 && outputColor.g == 0.0 && outputColor.b == 0.0) {
-	    //	outputColor = vec4(1, 0, 0, 1);
-	    //}
-	}
-	` + "\x00"
-
-// Shader for Particle-System
-var pVertex = `
-	#version 330 core
-	layout (location = 0) in vec4 vertex; // <vec2 position, vec2 texCoords>
-
-	out vec2 TexCoords;
-	out vec4 ParticleColor;
-
-	uniform mat4 projection;
-	uniform vec2 offset;
-	uniform vec4 color;
-
-	void main()
-	{
-	    float scale = 10.0f;
-	    TexCoords = vertex.zw;
-	    ParticleColor = color;
-	    gl_Position = projection * vec4((vertex.xy * scale) + offset, 0.0, 1.0);
-	}
-` + "\x00"
-
-var pColor = `
-	#version 330 core
-	in vec2 TexCoords;
-	in vec4 ParticleColor;
-	out vec4 color;
-
-	uniform sampler2D sprite;
-
-	void main()
-	{
-	    color = (texture(sprite, TexCoords) * ParticleColor);
-	}
-` + "\x00"
-
-// Shader for TextRender
-var tVertex = `
-	#version 330 core
-	layout (location = 0) in vec4 vertex; // <vec2 pos, vec2 tex>
-	out vec2 TexCoords;
-
-	uniform mat4 projection;
-	uniform vec3 model;					  // <x,y, scale>
-
-	void main()
-	{
-	    gl_Position = projection * vec4(vertex.x + model.x, vertex.y + model.y, 0.0, 1.0);
-	    TexCoords = vertex.zw;
-	}
-	` + "\x00"
-
-var tColor = `
-	#version 330 core
-	in vec2 TexCoords;
-	out vec4 color;
-
-	uniform sampler2D text;
-	uniform vec3 textColor;
-
-	void main()
-	{
-	    vec4 sampled = vec4(1.0, 1.0, 1.0, texture(text, TexCoords).r);
-	    color = vec4(textColor, 1.0) * sampled;
-	}
-	` + "\x00"
 

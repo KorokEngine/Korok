@@ -1,20 +1,22 @@
 package gameplay
 
 import (
+	"os"
+	"fmt"
+	timer "time"
+
+
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
+
 	"korok/gfx"
 	"korok/gfx/text"
 	"korok/assets"
 	"korok/space"
-	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/go-gl/gl/v3.2-core/gl"
-	"github.com/go-gl/mathgl/mgl32"
-	"log"
 	"korok/physics"
-	"os"
-	"fmt"
 	"korok/anim/spine"
-	timer "time"
 	"korok/anim"
+	"korok/gfx/effect"
 )
 
 // 统一管理游戏各个子系统的创建和销毁的地方
@@ -27,11 +29,10 @@ type Game struct {
 	*space.NodeSystem
 	*physics.CollisionSystem
 	*anim.AnimationSystem
-	tRender *text.Renderer
+	*effect.ParticleSystem
 
 	State int
 
-	Renderer *gfx.SpriteRender
 	Player *gfx.RenderComp
 	Ball *gfx.RenderComp
 	Label *text.LabelComp
@@ -46,6 +47,14 @@ type Game struct {
 	skRender *anim.SkeletonRender
 
 	comp *gfx.RenderComp
+
+	// type-render
+	*gfx.MeshRender
+
+	// render-context
+	*gfx.Mesh
+
+	*gfx.RenderContext
 }
 /// window callback
 func (g *Game) OnCreate() {
@@ -81,49 +90,33 @@ func (g *Game) Init()  {
 	// assets
 	assets.LoadShader()
 
-	// Shader
+	// GLShader
 	// init MVP
 	shader := assets.GetShader("dft")
-	if shader != nil {
-		shader.Use()
-		//  ---- Vertex Shader
-		// projection
-		p := mgl32.Ortho2D(0, 480, 0, 320)
-		shader.SetMatrix4("projection\x00", p)
+	//if shader != nil {
+	//	shader.Use()
+	//	//  ---- Vertex GLShader
+	//	// projection
+	//	p := mgl32.Ortho2D(0, 480, 0, 320)
+	//	shader.SetMatrix4("projection\x00", p)
+	//
+	//	// model
+	//	model := mgl32.Ident4()
+	//	shader.SetMatrix4("model\x00", model)
+	//
+	//	// ---- Fragment GLShader
+	//	shader.SetInteger("tex\x00", 0)
+	//	gl.BindFragDataLocation(shader.Program, 0, gl.Str("outputColor\x00"))
+	//
+	//	log.Println("---> init shader ok ...")
+	//}
 
-		// model
-		model := mgl32.Ident4()
-		shader.SetMatrix4("model\x00", model)
+	// mesh shader
 
-		// ---- Fragment Shader
-		shader.SetInteger("tex\x00", 0)
-		gl.BindFragDataLocation(shader.Program, 0, gl.Str("outputColor\x00"))
-
-		log.Println("---> init shader ok ...")
-	}
-
-	tShader := assets.GetShader("text")
-	if tShader != nil {
-		tShader.Use()
-
-		p := mgl32.Ortho2D(0, 480, 0, 320)
-
-		// vertex
-		tShader.SetMatrix4("projection\x00", p)
-		tShader.SetVector3f("model\x00", 50, 50, 10)
-
-		// fragment
-		tShader.SetInteger("text\x00", 0)
-		gl.BindFragDataLocation(tShader.Program, 0, gl.Str("color\x00"))
-	}
-
-	g.Renderer = gfx.NewSpriteRender(shader)
-
-	// text render
-	g.tRender = text.NewTextRenderer(tShader)
+	// register render-state
 
 	// render
-	g.RenderSystem = gfx.NewRenderSystem(assets.GetShader("dft"))
+	g.RenderSystem = gfx.NewRenderSystem()
 
 	// entity graph
 	g.NodeSystem = space.NewNodeSystem()
@@ -133,6 +126,9 @@ func (g *Game) Init()  {
 
 	// animation
 	g.AnimationSystem = anim.NewAnimationSystem()
+
+	// particle system
+	g.ParticleSystem = effect.NewParticleSystem()
 
 	/// Customized scene
 	if current != nil {
@@ -148,8 +144,8 @@ func (g *Game) Init()  {
 
 		label := text.NewText(font)
 		label.SetString("Hello, %s", "Korok!")
-		label.Scale = 10
-		label.Position = mgl32.Vec2{50, 50}
+		//label.Scale = 10
+		//label.Position = mgl32.Vec2{50, 50}
 		label.Color = mgl32.Vec3{0, 0, 0}
 		g.Label = label
 	}
@@ -230,15 +226,72 @@ func (g *Game) Init()  {
 		//comp.SetTexture(b)
 		comp.SetPosition(mgl32.Vec2{50, 50})
 
-		m := gfx.NewIndexedMesh(b)
+		text := text.NewText(assets.GetFont("assets/font/font.json"))
+		text.SetString("Hello")
 
-		comp.SetMesh(m, func() (vao, vbo, ebo uint32) {
-			m.Setup()
-			return m.Handle()
-		})
+		//m := text.Mesh()
+		//
+		//comp.SetMesh(m, func() (vao, vbo, ebo uint32) {
+		//	return m.Handle()
+		//})
+		//
+		//g.comp = comp
+		assets.LoadTexture("assets/ball.png")
+		tex := assets.GetTexture("assets/ball.png")
 
-		g.comp = comp
+		g.MeshRender = gfx.NewMeshRender(*shader)
+		g.Mesh = gfx.NewQuadMesh(tex)
+		g.Mesh.Setup()
+
+		g.RenderContext = gfx.NewRenderContext(*shader, tex.Id)
 	}
+
+	// sprite
+	sprite := newSprite(50, 50)
+	g.comp = sprite
+}
+
+func newSprite(x, y float32) *gfx.RenderComp {
+	//assets.LoadTexture("assets/ball.png")
+	//tex := assets.GetTexture("assets/ball.png")
+
+	comp := new(gfx.RenderComp)
+	comp.Type = gfx.RenderType_Mesh
+	//comp.SetTexture(tex)
+	//comp.SetPosition(mgl32.Vec2{x, y})
+	//
+	//comp.Sort.SetShader(1)
+	//comp.Sort.SetTexture(1)
+	//comp.Sort.SetBlendFunc(1)
+
+	return comp
+}
+
+func newBatchCommand() {
+
+	//assets.LoadTexture("assets/ball.png")
+	//tex := assets.GetTexture("assets/ball.png")
+	//tex.Width, tex.Height = 50, 50
+	//
+	//m0 := gfx.NewIndexedMesh(tex); m0.SRT(mgl32.Vec2{50, 50}, 0, mgl32.Vec2{0, 0})
+	//m1 := gfx.NewIndexedMesh(tex); m1.SRT(mgl32.Vec2{110, 50}, 0, mgl32.Vec2{0, 0})
+	//m2 := gfx.NewIndexedMesh(tex); m2.SRT(mgl32.Vec2{170, 50}, 0, mgl32.Vec2{0, 0})
+	//
+	//bs := gfx.NewBatchSystem()
+	//
+	//b := bs.NewBatch(tex.Id)
+	//
+	//b.AddVertex(m0.Vertex(), nil)
+	//b.AddVertex(m1.Vertex(), nil)
+	//b.AddVertex(m2.Vertex(), nil)
+	//
+	//c := b.Commit()
+	//// only shader changes..
+	//c.Key.SetShader(2)
+	//c.Key.SetBlendFunc(1)
+	//c.Key.SetTexture(1)
+	//
+	//return &c
 }
 
 func (g *Game) Input(dt float32)  {
@@ -267,8 +320,13 @@ func (g *Game) Update()  {
 	/// 动画更新，骨骼数据
 	///g.AnimationSystem.Update(dt)
 
-
 	// g.CollisionSystem.Update(dt)
+
+	// 粒子系统更新
+	//g.ParticleSystem.Update(dt)
+
+	// 渲染系统更新
+	//g.RenderSystem.Update(dt)
 
 	/// sync
 	//////// *20
@@ -303,8 +361,8 @@ func (g *Game) Update()  {
 
 	//g.RenderSystem.Update(dt)
 
-
-	g.Renderer.Draw(g.comp)
+	g.MeshRender.Draw(g.Mesh, mgl32.Vec2{100, 50}, mgl32.Vec2{1, 1}, 0)
+	// g.RenderContext.Draw()
 }
 
 func (g *Game) Draw(dt float32)  {

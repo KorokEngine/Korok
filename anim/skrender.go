@@ -10,7 +10,7 @@ import (
 )
 
 type SkeletonRender struct {
-	shader *gfx.Shader
+	shader *gfx.GLShader
 	vao, vbo, ebo uint32
 	tex uint32
 	buffer []float32
@@ -19,7 +19,7 @@ type SkeletonRender struct {
 func LoadSpine() {
 }
 
-func NewSkeletonRender(shader *gfx.Shader) *SkeletonRender {
+func NewSkeletonRender(shader *gfx.GLShader) *SkeletonRender {
 	sr := new(SkeletonRender)
 	sr.shader = shader
 	sr.tex = assets.GetTexture("assets/spine/alien.png").Id
