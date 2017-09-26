@@ -1,13 +1,14 @@
 package gfx
 
-import "log"
+import (
+	"log"
+	"korok/math"
+)
 
 type RendererType uint16
 const (
 	RENDERER_TYPE_NOOP RendererType = iota  // No rendering
-	RENDERER_TYPE_D3D11						// D3D11
 	RENDERER_TYPE_OPENGL_ES					// OpenGL ES 2.0+
-	RENDERER_TYPE_OPENGL					// OpenGL 2.1+
 	RENDERER_TYPE_VULKAN					// Vulkan
 
 	RENDERER_TYPE_COUNT						// Max Enum count
@@ -90,18 +91,13 @@ func DestroyIndexBuffer(handle IndexBufferHandle) {
 /// @param mem Vertex buffer data
 /// @param layout Vertex declaration
 /// @param Flags Buffer creation Flags, default= BGFX_BUFFER_NONE
-func CreateVertexBuffer(mem *Memory, decl *VertexLayout, flags uint16) VertexBufferHandle{
-	return s_ctx.createVertexBuffer(mem, decl, flags)
+func CreateVertexBuffer(mem *Memory, layout *VertexLayout, flags uint16) VertexBufferHandle{
+	return s_ctx.createVertexBuffer(mem, layout, flags)
 }
 
 /// Destroy static vertex buffer
 func DestroyVertexBuffer(handle VertexBufferHandle) {
 	s_ctx.destroyVertexBuffer(handle)
-}
-
-// Destroy program
-func DestroyProgram(handle ProgramHandle) {
-	s_ctx.destroyProgram(handle)
 }
 
 /// Set view rectangle. Draw primitive outsize view will be clipped
@@ -328,6 +324,247 @@ func Touch(id uint8) uint32{
 func Submit(id uint8, program ProgramHandle, depth int32, preserveState bool) uint32{
 	return s_ctx.Submit(id, program, depth, preserveState)
 }
+
+/////// Resource: Shader, Program, Uniform
+
+func CreateShader(mem *Memory) ShaderHandle{
+	return s_ctx.createShader(mem)
+}
+
+func GetShaderUniforms(handle ShaderHandle) []UniformHandle {
+	return s_ctx.getShaderUniforms(handle)
+}
+
+func DestroyShader(handle ShaderHandle) {
+	s_ctx.destroyShader(handle)
+}
+
+/// default: destroyShader=false
+func CreateProgram(vsh, fsh ShaderHandle, destroyShader bool) ProgramHandle {
+	return s_ctx.createProgram(vsh, fsh, destroyShader)
+}
+
+/// Destroy program
+func DestroyProgram(handle ProgramHandle) {
+	s_ctx.destroyProgram(handle)
+}
+
+/// Create shader uniform
+///
+/// @param name Uniform name in shader
+/// @param uType Type of uniform
+/// @param num Number of elements in array
+///
+/// default:num=1
+func CreateUniform(name string, uType UniformType, num uint16) UniformHandle {
+	return s_ctx.createUniform(name, uType, num)
+}
+
+/// Retrieve uniform info
+///
+/// @param handle Handle to uniform object
+/// @param info Return uniform info
+func GetUniformInfo(handle UniformHandle) *UniformInfo {
+	return s_ctx.getUniformInfo(handle)
+}
+
+/// Destroy shader uniform
+func DestroyUniform(handle UniformHandle) {
+	s_ctx.destroyUniform(handle)
+}
+
+/// Calculate amount of memory required for texture
+///
+/// @param info Resulting texture info structure
+/// @param width, height
+/// @param depth Depth dimension of volume texture
+/// @param cubeMap Indicates that texture contains cube-map
+/// @param hasMips Indicates that texture contains full mip-map chain
+/// @param numLayers Number of layers in texture array
+/// @param format Texture Format
+func CalcTextureSize(info *TextureInfo, width, height, depth uint16, cubeMap, hasMips bool, numLayers uint16, format TextureFormat) {
+	// TODO bimg.imageGetSize
+}
+
+/// Create texture from memory buffer
+///
+/// @param mem Texture data
+/// @param flags Texture sampling mode
+/// @param skip Skip top level mips when parsing texture
+/// @param info Return parsed texture information
+///
+/// default: flags=TEXTURE_NONE, skip=0, info=nil
+func CreateTexture(mem *Memory, flags uint32, skip uint8, info *TextureInfo) TextureHandle{
+	return s_ctx.createTexture(mem, flags, skip, info, 0)
+}
+
+/// Create 2D texture
+/// @param width, height
+/// @param format Texture format
+/// @param flags Texture sampling mode
+/// @param mem Texture data
+///
+/// default: flags=TEXTURE_NONE, mem=nil
+func CreateTexture2D(width, height uint16, format TextureFormat, flags uint32, mem *Memory) TextureHandle{
+	if width < 0 || height < 0 {
+		log.Printf("Invalid texture size (width %d, height %d).", width, height)
+	}
+	return createTexture2D(BBR_COUNT, width, height, format, flags, mem)
+}
+
+/// Create Texture with size based on back buffer ratio.
+///
+/// @param ratio Texture size in respect to back-buffer size
+/// @param format Texture format
+/// @param flags Texture sampling mode
+///
+/// default: flags=TEXTURE_NONE
+func CreateTexture2DScaled(ratio BackBufferRatio, format TextureFormat, flags uint32) TextureHandle {
+	if ratio > BBR_COUNT {
+		log.Println("Invalid back buffer ratio.")
+	}
+	return createTexture2D(ratio, 0, 0, format, flags, nil)
+}
+
+func createTexture2D(ratio BackBufferRatio, width, height uint16, format TextureFormat, flags uint32, mem *Memory) TextureHandle{
+	if ratio != BBR_COUNT {
+		width = uint16(s_ctx.resolution.width)
+		height = uint16(s_ctx.resolution.height)
+		getTextureSizeFromRatio(ratio, &width, &height)
+	}
+
+	/// 把数据写入 Memo!! 以便用来创建 Texture !!
+	mem := new(Memory)
+	return s_ctx.createTexture(mem, flags, 0, nil, ratio)
+}
+
+func getTextureSizeFromRatio(ratio BackBufferRatio, width, height *uint16) {
+	switch ratio {
+	case BBR_HALF:
+		*width, *height = *width/2, *height/2
+	case BBR_QUARTER:
+		*width, *height = *width/4, *height/4
+	case BBR_EIGHTH:
+		*width, *height = *width/8, *height/8
+	case BBR_SIXTEENTH:
+		*width, *height = *width/16, *height/16
+	case BBR_DOUBLE:
+		*width, *height = *width*2, *height*2
+	}
+	*width = math.UInt16_max(1, *width)
+	*height = math.UInt16_max(1, *height)
+}
+
+/// default: pitch=UINT16_MAX
+func UpdateTexture2D(handle TextureHandle, layer uint16, mip uint8, x, y, width, height uint16, mem *Memory, pitch uint16) {
+	if mem == nil {
+		log.Println("mem can't be nil")
+	}
+	if width != 0 && height != 0 {
+		s_ctx.updateTexture(handle, 0, mip, x, y, layer, width, height, 1, pitch, mem)
+	}
+}
+
+/// Read back texture content
+/// @param handle Texture handle
+/// @param data Destination buffer
+/// @param mip Mip level
+
+/// default: mip=0
+func ReadTexture(handle TextureHandle, data interface{}, mip uint8) (frameNum uint32) {
+	log.Fatal("ReadTexture not impl")
+	return
+}
+
+/// Destroy texture
+func DestroyTexture(handle TextureHandle) {
+	s_ctx.destroyTexture(handle)
+}
+
+/// Create frame buffer (simple)
+///
+/// @param width, height Frame buffer Size
+/// @param format Texture format
+/// @param textureFlags Texture sampling mode
+///
+/// default: textureFlags=TEXTURE_U_CLAMP|TEXTURE_V_CLAMP
+func CreateFrameBuffer(width, height uint16, format TextureFormat, textureFlags uint32) FrameBufferHandle{
+	texHandle := CreateTexture2D(width, height, format, textureFlags, nil)
+	return CreateFrameBufferFromTexture(1, []TextureHandle{texHandle}, true)
+}
+
+/// Create frame buffer with size based on back-buffer ratio. Frame buffer will maintain ratio
+/// if back buffer resolution changes.
+///
+/// @param ratio Frame buffer size in respect to back-buffer size.
+/// @param format Texture format
+/// @param textureFlags Texture sampling mode
+///
+/// default: textureFlags=TEXTURE_U_CLAMP|TEXTURE_V_CLAMP
+func CreateFrameBufferScaled(ratio BackBufferRatio, format TextureFormat, textureFlags uint32) FrameBufferHandle{
+	if ratio > BBR_COUNT {
+		log.Println("Invalid back buffer ratio")
+	}
+
+	texHandle := CreateTexture2DScaled(ratio, format, textureFlags)
+	return CreateFrameBufferFromTexture(1, []TextureHandle{texHandle}, true)
+}
+
+/// Create MRT frame buffer from texture handles (simple)
+///
+/// @param num Number of texture attachments
+/// @param handles Texture attachments
+/// @param destroyTexture If true, textures will be destroyed when frame buffer is destroyed
+///
+/// default: destroyTexture=false
+func CreateFrameBufferFromTexture(num uint8, handles []TextureHandle, destroyTexture bool) FrameBufferHandle{
+	attachment := [CONFIG_MAX_FB_ATTACHMENTS]Attachment{}
+	for i := 0; i < int(num); i++ {
+		at := attachment[i]
+		at.handle = handles[i]
+		at.mip = 0
+		at.layer = 0
+	}
+	return CreateFrameBufferFromAttachment(num, attachment[:], destroyTexture)
+}
+
+/// Create MRT frame buffer from texture handles with specific layer and mip level
+///
+/// @param num Number of texture attachments
+/// @param handles Texture attachments
+/// @param destroyTexture If true, textures will be destroyed when frame buffer is destroyed
+///
+/// default: destroyTexture=false
+func CreateFrameBufferFromAttachment(num uint8, attachment []Attachment, destroyTexture bool) FrameBufferHandle{
+	if num == 0 {
+		log.Println("Number of frame buffer attachment can't be 0.")
+	}
+	if uint32(num) > CONFIG_MAX_FB_ATTACHMENTS {
+		log.Printf("Number of frame buffer attachments is larger than allowed %d (max: %d)",
+					num,
+					CONFIG_MAX_FB_ATTACHMENTS)
+	}
+	if attachment == nil {
+		log.Println("attachement can't be nil")
+	}
+	return s_ctx.createFrameBuffer(num, attachment, destroyTexture)
+}
+
+/// Obtain texture handle of frame buffer attachment
+///
+/// @param handle Frame buffer handle
+/// @param attachment Frame buffer attachment index
+///
+/// default: attachment=0
+func GetTexture(handle FrameBufferHandle, attachment uint8) TextureHandle{
+	return s_ctx.getTexture(handle, attachment)
+}
+
+/// Destroy frame buffer
+func DestroyFrameBuffer(handle FrameBufferHandle) {
+	s_ctx.destroyFrameBuffer(handle)
+}
+
 
 /////// static & global var
 
