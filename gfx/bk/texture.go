@@ -1,4 +1,4 @@
-package gfx
+package bk
 
 
 
@@ -32,7 +32,7 @@ func Generate(width, height float32, image image.Image)  (*Texture2D, error){
 	return texture, nil
 }
 
-func (t *Texture2D)Bind()  {
+func (t *Texture2D)Bind(stage int32)  {
 	gl.BindTexture(gl.TEXTURE_2D, t.Id)
 }
 
