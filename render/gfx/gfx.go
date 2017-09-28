@@ -69,6 +69,10 @@ func GetStats() *Stats{
 	return s_ctx.getPerfStats()
 }
 
+func GetCaps() *Caps{
+	return g_caps
+}
+
 /// Set debug Flags
 func SetDebug(debug uint32) {
 	s_ctx.setDebug(debug)
@@ -153,8 +157,8 @@ func SetViewFrameBuffer(id uint8, handle FrameBufferHandle) {
 ///				 represent projection matrix for left eye
 /// @param flags View flags. default=BGFX_VIEW_STEREO
 /// @param projR Projection matrix for right eye in stereo mode. default=nil
-func SetViewTransform(id uint8, view, projL interface{}, flags uint8, projR interface{}) {
-	s_ctx.setViewTransform(id, view, projL, flags, projR)
+func SetViewTransform(id uint8, view, projL *Matrix4, flags uint8) {
+	s_ctx.setViewTransform(id, view, projL, flags)
 }
 
 /// Reset all view settings to default
@@ -564,7 +568,6 @@ func GetTexture(handle FrameBufferHandle, attachment uint8) TextureHandle{
 func DestroyFrameBuffer(handle FrameBufferHandle) {
 	s_ctx.destroyFrameBuffer(handle)
 }
-
 
 /////// static & global var
 
