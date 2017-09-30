@@ -1,6 +1,8 @@
 package bk
 
-import "log"
+import (
+	"github.com/go-gl/gl/v3.2-core/gl"
+)
 
 /// 在 2D 引擎中，GPU 资源的使用时很有限的，
 /// 大部分图元会在 Batch 环节得到优化，最终生成有限的渲染指令.
@@ -120,11 +122,7 @@ func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 	id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
 	rm.shIndex ++
 	id = id & (ID_TYPE_SHADER << 12)
-	if program, err := Compile(vsh, fsh); err == nil {
-		sh.Program = program
-	} else {
-		log.Println("Failed to alloc shader..")
-	}
+	sh.create(vsh, fsh)
 	return
 }
 
@@ -223,53 +221,121 @@ var MAX = struct {
 ////// STATE MASK AND VALUE DEFINES
 
 var ST = struct {
-	DEPTH_WRITE 	 uint64
+	RGB_WRITE 	uint64
+	ALPHA_WRITE uint64
+	DEPTH_WRITE uint64
+
 	DEPTH_TEST_MASK  uint64
 	DEPTH_TEST_SHIFT uint64
 
-	ALPHA_WRITE uint64
-	RGB_WRITE 	uint64
-
 	BLEND_MASK 	uint64
 	BLEND_SHIFT uint64
-
-	BLEND_EQUATION_MASK  uint64
-	BLEND_EQUATION_SHIFT uint64
 
 	PT_MASK	 uint64
 	PT_SHIFT uint64
 
 }{
-	DEPTH_WRITE: 0,
-	DEPTH_TEST_MASK: 0,
-	DEPTH_TEST_SHIFT: 0,
+	RGB_WRITE:		  0x0000000000000001,
+	ALPHA_WRITE:      0x0000000000000002,
+	DEPTH_WRITE:      0x0000000000000004,
 
-	ALPHA_WRITE:0,
-	RGB_WRITE:0,
+	DEPTH_TEST_MASK:  0x00000000000000F0,
+	DEPTH_TEST_SHIFT: 4,
 
-	BLEND_MASK:0,
-	BLEND_SHIFT:0,
+	BLEND_MASK:		  0x0000000000000F00,
+	BLEND_SHIFT: 	  8,
 
-	BLEND_EQUATION_MASK: 0,
-	BLEND_EQUATION_SHIFT: 0,
-
-	PT_MASK	:0,
-	PT_SHIFT:0,
+	PT_MASK	:		  0x000000000000F000,
+	PT_SHIFT:		  12,
 }
 
-
-var R_CmpFunc = []uint32 {
-
+var ST_DEPTH = struct {
+	LESS 	 uint64
+	LEQUAL   uint64
+	EQUAL    uint64
+	GEQUAL   uint64
+	GREATER  uint64
+	NOTEQUAL uint64
+	NEVER    uint64
+	ALWAYS   uint64
+}{
+	LESS: 	  0x0000000000000010,
+	LEQUAL:   0x0000000000000020,
+	EQUAL: 	  0x0000000000000030,
+	GEQUAL:   0x0000000000000040,
+	GREATER:  0x0000000000000050,
+	NOTEQUAL: 0x0000000000000060,
+	NEVER:    0x0000000000000070,
+	ALWAYS:   0x0000000000000080,
 }
 
-var R_BlendFactor = []uint32 {
-
+var g_CmpFunc = []uint32 {
+	0, // ignored
+	gl.LESS,
+	gl.LEQUAL,
+	gl.EQUAL,
+	gl.GEQUAL,
+	gl.GREATER,
+	gl.NOTEQUAL,
+	gl.NEVER,
+	gl.ALWAYS,
 }
 
-var R_BlendEquation = []uint32 {
-
+var ST_BLEND = struct {
+	DEFAULT 				uint64
+	ISABLE 				 	uint64
+	ALPHA_PREMULTIPLIED 	uint64
+	ALPHA_NON_PREMULTIPLIED uint64
+	ADDITIVE 				uint64
+}{
+	ISABLE:					0x0000000000000100,
+	ALPHA_PREMULTIPLIED:	0x0000000000000200,
+	ALPHA_NON_PREMULTIPLIED:0x0000000000000300,
+	ADDITIVE: 				0x0000000000000400,
 }
 
-var R_PrimInfo = []uint32 {
-
+var g_Blend = []struct {
+	Src, Dst uint32
+} {
+	{gl.ONE, 		gl.ZERO},
+	{gl.ONE, 		gl.ONE_MINUS_SRC_ALPHA},
+	{gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA},
+	{gl.SRC_ALPHA, gl.ONE},
 }
+
+var ST_PT = struct {
+	TRIANGLES 	   uint64
+	TRIANGLE_STRIP uint64
+	LINES 		   uint64
+	LINE_STRIP     uint64
+	POINTS         uint64
+}{
+	TRIANGLES: 		0x0000000000000000,
+	TRIANGLE_STRIP: 0x0000000000001000,
+	LINES:          0x0000000000002000,
+	LINE_STRIP:     0x0000000000003000,
+	POINTS:         0x0000000000004000,
+}
+
+var g_PrimInfo = []uint32 {
+	gl.TRIANGLES,
+	gl.TRIANGLE_STRIP,
+	gl.LINES,
+	gl.LINE_STRIP,
+	gl.POINTS,
+}
+
+/// STATE ENCODE FORMAT - bgfx
+// 64bit:
+//
+//                                0-4 func ----------+            rgb-dst
+//                                               +   |  a-dsr        |  rgb-src +--------- 1 - 8 depth-function
+//                  independent|alpha_cover --+  |   |    |    a-src |    |     |     +--- depth_write | alpha_write | rgb_write
+//                                            |  |   |    |     |    |    |     |     |
+// 000000000 000 0000 0-000 0000-0000-00 00 + 00 00-0000 0000-0000-0000-0000  0000-0 000
+//            |    |     |      |        |
+//            |    |     |      |        +---- CULL_CCW | CW
+//            |    |     |      +------------- Alpha Ref Value (255)
+//            |    |     +-------------------- Primitive Type
+//            |    +-------------------------- Point Size (16)
+//            +------------------------------- Conservative Raster | LineAA | MSAA
