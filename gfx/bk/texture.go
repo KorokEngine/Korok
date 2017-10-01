@@ -1,7 +1,5 @@
 package bk
 
-
-
 import (
 	"fmt"
 	"image"
@@ -41,6 +39,11 @@ func (t *Texture2D)Sub(x, y float32, w, h float32) *SubTex {
 	subTex.Min = mgl32.Vec2{x, y}
 	subTex.Max = mgl32.Vec2{x+w, y+h}
 	return subTex
+}
+
+
+func (t *Texture2D) Destroy() {
+	// TODO impl
 }
 
 func newTexture(img image.Image) (uint32, error) {

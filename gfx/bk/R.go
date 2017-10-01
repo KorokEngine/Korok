@@ -2,6 +2,8 @@ package bk
 
 import (
 	"github.com/go-gl/gl/v3.2-core/gl"
+	"unsafe"
+	"log"
 )
 
 /// 在 2D 引擎中，GPU 资源的使用时很有限的，
@@ -11,7 +13,7 @@ const InvalidId uint16 = 0xFFFF
 const UINT16_MAX uint16 = 0xFFFF
 
 type Memory struct {
-	Data interface {}
+	Data unsafe.Pointer
 	Size uint32
 }
 
@@ -34,8 +36,7 @@ const (
 	MAX_INDEX   = 2 << 10
 	MAX_VERTEX  = 2 << 10
 	MAX_TEXTURE = 1 << 10
-	MAX_LAYOUT  = 32
-	MAX_UNIFORM = 64
+	MAX_UNIFORM = 32 * 8
 	MAX_SHADER  = 32
 )
 
@@ -55,9 +56,7 @@ type ResManager struct {
 	vertexBuffers 	[MAX_VERTEX]VertexBuffer
 	textures 		[MAX_TEXTURE]Texture2D
 
-	vertexLayouts  	[MAX_LAYOUT]VertexLayout
 	uniforms 		[MAX_UNIFORM]Uniform
-
 	shaders 		[MAX_SHADER]Shader
 
 	ibIndex uint16
@@ -73,7 +72,7 @@ func NewResManager() *ResManager{
 }
 
 func (rm *ResManager) Init() {
-	rm.setupPredefine()
+
 }
 
 func (rm *ResManager) Destroy() {
@@ -84,44 +83,38 @@ func (rm *ResManager) Destroy() {
 func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) {
 	id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
 	rm.ibIndex ++
-	id = id & (ID_TYPE_INDEX << 12)
+	id = id | (ID_TYPE_INDEX << 12)
 	ib.create(mem.Size, mem.Data, 0)
 	return
 }
 
-func (rm *ResManager) AllocVertexBuffer(mem Memory, lytId uint16) (id uint16, vb *VertexBuffer) {
+func (rm *ResManager) AllocVertexBuffer(mem Memory, layout uint16) (id uint16, vb *VertexBuffer) {
 	id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
 	rm.vbIndex ++
-	id = id & (ID_TYPE_VERTEX << 12)
-	vb.create(mem.Size, mem.Data, lytId, 0)
+	id = id | (ID_TYPE_VERTEX << 12)
+	vb.create(mem.Size, mem.Data, layout, 0)
 	return
 }
 
-func (rm *ResManager) AllocVertexLayout(vLayout *VertexLayout) (id uint16, vl *VertexLayout) {
-	id, vl = rm.vlIndex, &rm.vertexLayouts[rm.vlIndex]
-	rm.vlIndex ++
-	id = id & (ID_TYPE_LAYOUT << 12)
-	// copy data
-	*vl = *vLayout
-	return
-}
-
-func (rm *ResManager) AllocUniform(name string, xType UniformType, num uint32) (id uint16, um *Uniform) {
+func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, num uint32) (id uint16, um *Uniform) {
 	id, um = rm.umIndex, &rm.uniforms[rm.umIndex]
 	rm.umIndex ++
-	id = id & (ID_TYPE_UNIFORM << 12)
-
-	um.Name = name
-	um.Type = xType
-	um.Count = num
-	um.Size = num * 0 // TODO num * sizeOf(UniformType)
+	id = id | (ID_TYPE_UNIFORM << 12)
+	if ok, sh := rm.Shader(shId); ok {
+		um.create(sh.Program, name, xType, num)
+	}
 	return
 }
 
 func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 	id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
 	rm.shIndex ++
-	id = id & (ID_TYPE_SHADER << 12)
+	id = id | (ID_TYPE_SHADER << 12)
+
+	if (g_debug & DEBUG_R) != 0 {
+		log.Printf("Alloc shader id:(%d, %d) ",id, id & 0x0FFF)
+	}
+
 	sh.create(vsh, fsh)
 	return
 }
@@ -168,14 +161,6 @@ func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 	return true, &rm.vertexBuffers[v]
 }
 
-func (rm *ResManager) VertexLayout(id uint16) (ok bool, vb *VertexLayout) {
-	t, v := id >> 12, id & 0x0FFF
-	if t != ID_TYPE_LAYOUT || v >= MAX_LAYOUT {
-		return false, nil
-	}
-	return true, &rm.vertexLayouts[v]
-}
-
 func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 	t, v := id >> 12, id & 0x0FFF
 	if t != ID_TYPE_UNIFORM || v >= MAX_UNIFORM {
@@ -187,29 +172,12 @@ func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 func (rm *ResManager) Shader(id uint16) (ok bool, sh *Shader) {
 	t, v := id >> 12, id & 0x0FFF
 	if t != ID_TYPE_SHADER || v >= MAX_SHADER {
+		if (g_debug & DEBUG_R) != 0 {
+			log.Printf("Invalid shader id:(%d, %d, %d)", id, t, v)
+		}
 		return false, nil
 	}
 	return true, &rm.shaders[v]
-}
-
-func (rm *ResManager) setupPredefine() {
-	// predefined vertex layout
-	rm.vlIndex = 6
-	p2_tex_color := &rm.vertexLayouts[VERTEX_POS2_TEX_COLOR & 0x0F]
-	p2_tex_color.Begin().
-				Add(2, ATTRIB_TYPE_FLOAT, false, false).
-				Add(2, ATTRIB_TYPE_FLOAT, false, false).
-				Add(4, ATTRIB_TYPE_UINT8, true, false).End()
-
-	p2_tex       := &rm.vertexLayouts[VERTEX_POS2_TEX & 0x0F]
-	p2_tex.Begin().
-				Add(2, ATTRIB_TYPE_FLOAT, false, false).
-				Add(2, ATTRIB_TYPE_FLOAT, false, false).End()
-
-	p2_color     := &rm.vertexLayouts[VERTEX_POS2_COLOR & 0x0F]
-	p2_color.Begin().
-				Add(2, ATTRIB_TYPE_FLOAT, false, false).
-				Add(4, ATTRIB_TYPE_UINT8, true, false).End()
 }
 
 ////// MAX SIZE

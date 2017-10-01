@@ -2,16 +2,13 @@ package bk
 
 import (
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"unsafe"
+	"log"
 )
 
 type RenderContext struct {
 	// data
 	R  *ResManager
 	ub *UniformBuffer
-
-	// draw list
-	drawList []RenderDraw
 
 	// draw state
 	vao uint32
@@ -23,12 +20,24 @@ type RenderContext struct {
 	backBufferFbo uint32
 }
 
-func (ctx *RenderContext) Init() {
+func NewRenderContext(r *ResManager, ub *UniformBuffer) *RenderContext {
+	return &RenderContext{
+		R: r,
+		ub: ub,
+	}
+}
 
+func (ctx *RenderContext) Init() {
+	if ctx.vaoSupport {
+		gl.GenVertexArrays(1, &ctx.vao)
+	}
 }
 
 func (ctx *RenderContext) Shutdown() {
-
+	if ctx.vao != 0 {
+		gl.BindVertexArray(0)
+		gl.DeleteVertexArrays(1, &ctx.vao)
+	}
 }
 
 func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList []RenderDraw) {
@@ -46,15 +55,9 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 
 	shaderId := InvalidId
 	key := SortKey{}
-	view := UINT16_MAX
 
 	primIndex := uint8(uint64(0) >> ST.PT_SHIFT)
-	prim := R_PrimInfo[primIndex]
-
-	var viewHasScissor bool
-	viewScissorRect := Rect{}
-	viewScissorRect.clear()
-
+	prim := g_PrimInfo[primIndex]
 
 	// 8. Render!!
 	for item := range sortKeys{
@@ -79,9 +82,14 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 			currentState.scissor = scissor
 
 			if scissor.isZero() {
+				if (g_debug & DEBUG_Q) != 0 {
+					log.Println("Renderc disable scissor")
+				}
 				gl.Disable(gl.SCISSOR_TEST)
 			} else {
-
+				if (g_debug & DEBUG_Q) != 0 {
+					log.Printf("Renderc enable scissor: %q", scissor)
+				}
 				gl.Enable(gl.SCISSOR_TEST)
 				gl.Scissor(int32(scissor.x),
 					int32(ctx.wRect.h - scissor.h - scissor.y),
@@ -93,8 +101,16 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		// 3. stencil?
 		if 0 != changedStencil {
 			if 0 != newStencil {
+				if (g_debug & DEBUG_Q) != 0 {
+					log.Println("Renderc disable stencil")
+				}
 				gl.Enable(gl.STENCIL_TEST)
 				//// stencil not supported!!!
+			} else {
+				gl.Disable(gl.STENCIL_TEST)
+				if (g_debug & DEBUG_Q) != 0 {
+					log.Println("Renderc enable stencil")
+				}
 			}
 		}
 
@@ -105,19 +121,18 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 			ST.RGB_WRITE |
 			ST.ALPHA_WRITE |
 			ST.BLEND_MASK |
-			ST.BLEND_EQUATION_MASK |
 			ST.PT_MASK ) & changedFlags {
 
 			ctx.bindState(changedFlags, newFlags)
 
 			pt := newFlags & ST.PT_MASK
 			primIndex = uint8(pt >> ST.PT_SHIFT)
-			prim = R_PrimInfo[primIndex]
+			prim = g_PrimInfo[primIndex]
 		} /// End state change
 
 		var programChanged bool
-		var bindAttribs bool
-		var constantsChanged bool
+		//var bindAttribs bool
+		//var constantsChanged bool
 
 		/// 5. update program
 		if key.Shader != shaderId {
@@ -125,8 +140,8 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 			var id uint32 = ctx.R.shaders[shaderId].GLShader.Program
 			gl.UseProgram(id)
 			programChanged = true
-			constantsChanged = true
-			bindAttribs = true
+			//constantsChanged = true
+			//bindAttribs = true
 		}
 
 		/// 6. uniform binding
@@ -148,30 +163,8 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		}
 
 		/// 8. vertex binding
-		for stream := 0; stream < 2; stream ++ {
-			vbStream := draw.vertexBuffers[stream]
-
-			vSlot   := ctx.R.shaders[shaderId].stream[stream]
-			vBuffer := ctx.R.vertexBuffers[vbStream.vertexBuffer]
-			vLayout := ctx.R.vertexLayouts[vbStream.vertexLayout]
-
-			var num uint8
-			var _type AttribType
-			var normalized, asInt bool
-
-			gl.BindBuffer(gl.ARRAY_BUFFER, vBuffer.Id)
-			for _, attr := range vLayout.attributes {
-				Vertex_decode(attr, &num, &_type, &normalized, &asInt)
-
-				gl.VertexAttribPointer( uint32(vSlot),			// Slot in Program
-										int32(num), 			// component size
-										R_AttribType[_type], 	// vertex type
-										normalized, 			// normalized
-										int32(vLayout.stride), 	// vertex stride
-										unsafe.Pointer(0), 		// vertex pointer ! TODO
-										)
-			}
-		}
+		shader := ctx.R.shaders[shaderId]
+		shader.BindAttributes(ctx.R, draw.vertexBuffers[:])
 
 		/// 9. draw
 		if draw.indexBuffer != InvalidId {
@@ -198,11 +191,11 @@ func (ctx *RenderContext) bindUniform(begin, end uint32) {
 
 		var uType, loc, size, num uint8
 		Uniform_decode(opcode, &uType, &loc, &size, &num)
+		data := ub.ReadPointer(uint32(size) * uint32(num))
 
-		data := ub.ReadPointer(uint32(size * num))
 		switch UniformType(uType) {
 		case UniformIntN:
-			gl.Uniform1iv(int32(loc), int32(num), (*uint32)(data))
+			gl.Uniform1iv(int32(loc), int32(num), (*int32)(data))
 		case UniformFloatN:
 			gl.Uniform1fv(int32(loc), int32(num), (*float32)(data))
 		case UniformMat4:
@@ -218,6 +211,15 @@ func (ctx *RenderContext) bindAttributes() {
 func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
 	if changedFlags & ST.DEPTH_WRITE != 0 {
 		gl.DepthMask(ST.DEPTH_WRITE & newFlags != 0)
+		log.Printf("depth mask state: %v", ST.DEPTH_WRITE & newFlags != 0)
+	}
+
+	if (ST.ALPHA_WRITE|ST.RGB_WRITE) & changedFlags != 0 {
+		alpha := (newFlags & ST.ALPHA_WRITE) != 0
+		rgb   := (newFlags & ST.RGB_WRITE) != 0
+		gl.ColorMask(rgb, rgb, rgb, alpha)
+
+		log.Printf("color mask state: (%d, %d)", rgb, alpha)
 	}
 
 	if changedFlags & ST.DEPTH_TEST_MASK != 0 {
@@ -225,45 +227,38 @@ func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
 
 		if _func != 0 {
 			gl.Enable(gl.DEPTH_TEST)
-			gl.DepthFunc(R_CmpFunc[_func])
+			gl.DepthFunc(g_CmpFunc[_func])
+
+			log.Printf("set depth-test func: %d", _func)
 		} else {
 			if newFlags & ST.DEPTH_WRITE != 0 {
 				gl.Enable(gl.DEPTH_TEST)
 				gl.DepthFunc(gl.ALWAYS)
+
+
+				log.Println("set depth-test always")
 			} else {
 				gl.Disable(gl.DEPTH_TEST)
+
+				log.Println("disable depth-test")
 			}
 		}
 	}
 
-	if (ST.ALPHA_WRITE|ST.RGB_WRITE) & changedFlags != 0 {
-		alpha := (newFlags & ST.ALPHA_WRITE) != 0
-		rgb   := (newFlags & ST.RGB_WRITE) != 0
-		gl.ColorMask(rgb, rgb, rgb, alpha)
-	}
-
 	/// 所谓 blend independent 可以实现顺序无关的 alpha 混合
 	/// http://www.openglsuperbible.com/2013/08/20/is-order-independent-transparency-really-necessary/
-
-	if ((ST.BLEND_MASK | ST.BLEND_EQUATION_MASK) & newFlags) != 0 || (blendFactor != draw.rgba) {
+	if ((ST.BLEND_MASK) & newFlags) != 0 {
 		enabled := (ST.BLEND_MASK & newFlags) != 0
 
-		blend := uint32(newFlags & ST.BLEND_MASK) >> ST.BLEND_SHIFT
-		srcRGB := (blend    ) & 0xFF
-		dstRGB := (blend>> 4) & 0xFF
-		srcA   := (blend>> 8) & 0xFF
-		dstA   := (blend>>12) & 0xFF
-
-		equ    := uint32(newFlags & ST.BLEND_EQUATION_MASK) >> ST.BLEND_EQUATION_SHIFT
-		equRGB := (equ    ) & 0x7
-		equA   := (equ>> 3) & 0x7
-
+		blend := uint16(newFlags & ST.BLEND_MASK) >> ST.BLEND_SHIFT
 		if enabled{
 			gl.Enable(gl.BLEND)
-			gl.BlendFuncSeparate(R_BlendFactor[srcRGB], R_BlendFactor[dstRGB], R_BlendFactor[srcA], R_BlendFactor[dstA])
-			gl.BlendEquationSeparate(R_BlendEquation[equRGB], R_BlendEquation[equA])
+			gl.BlendFunc(g_Blend[blend].Src, g_Blend[blend].Dst)
+
+			log.Printf("set blend-func: %d", blend)
 		} else {
 			gl.Disable(gl.BLEND)
+			log.Println("disable blend-func")
 		}
 	}
 }
