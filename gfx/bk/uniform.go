@@ -1,8 +1,8 @@
 package bk
 
 import (
-	"unsafe"
 	"github.com/go-gl/gl/v3.2-core/gl"
+	"unsafe"
 )
 
 type UniformType uint8
@@ -12,27 +12,27 @@ const (
 	UniformStart UniformType = iota
 	UniformMat4
 
-	UniformFloat1 	// float
-	UniformFloat2   // vec2
-	UniformFloat3   // vec3
-	UniformFloat4   // vec4
-	UniformFloatN   // float[]
+	UniformFloat1 // float
+	UniformFloat2 // vec2
+	UniformFloat3 // vec3
+	UniformFloat4 // vec4
+	UniformFloatN // float[]
 
-	UniformInt1 	// int
-	UniformInt2		// int_vec2
-	UniformInt3 	// int_vec3
-	UniformInt4 	// int_vec4
-	UniformIntN  	// int[]
+	UniformInt1 // int
+	UniformInt2 // int_vec2
+	UniformInt3 // int_vec3
+	UniformInt4 // int_vec4
+	UniformIntN // int[]
 
 	UniformEnd
 )
 
 type Uniform struct {
-	Name string 	// Uniform Name
+	Name string // Uniform Name
 
-	Slot uint8 		// slot in shader
-	Size uint8
-	Type UniformType
+	Slot  uint8 // slot in shader
+	Size  uint8
+	Type  UniformType
 	Count uint8
 }
 
@@ -102,23 +102,23 @@ func (ub *UniformBuffer) ReadPointer(size uint32) unsafe.Pointer {
 // type-+  |  |  +--- Num
 // loc  ---+  +------ size
 
-func Uniform_decode(code uint32, uType, loc, size, num *uint8 ) {
+func Uniform_decode(code uint32, uType, loc, size, num *uint8) {
 	*uType = uint8((code >> 24) & 0xFF)
-	*loc   = uint8((code >> 16) & 0xFF)
-	*size  = uint8((code >>  8) & 0xFF)
-	*num   = uint8((code >>  0) & 0xFF)
+	*loc = uint8((code >> 16) & 0xFF)
+	*size = uint8((code >> 8) & 0xFF)
+	*num = uint8((code >> 0) & 0xFF)
 }
 
-func Uniform_encode(uType UniformType, loc , size , num uint8) uint32 {
-	return uint32(uType) << 24 |
-		   uint32(loc)   << 16 |
-		   uint32(size)  <<  8 |
-		   uint32(num)   <<  0
+func Uniform_encode(uType UniformType, loc, size, num uint8) uint32 {
+	return uint32(uType)<<24 |
+		uint32(loc)<<16 |
+		uint32(size)<<8 |
+		uint32(num)<<0
 }
 
-var g_uniform_type2size = [UniformEnd]uint8 {
-	0,				// ignore
-	16, 			// mat4
-	4, 4, 4, 4, 4, 	// float32
-	4, 4, 4, 4, 4,  // int32
+var g_uniform_type2size = [UniformEnd]uint8{
+	0,             // ignore
+	16,            // mat4
+	4, 4, 4, 4, 4, // float32
+	4, 4, 4, 4, 4, // int32
 }

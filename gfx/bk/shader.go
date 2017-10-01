@@ -1,8 +1,8 @@
 package bk
 
 import (
-	"strings"
 	"fmt"
+	"strings"
 
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
@@ -14,49 +14,31 @@ import (
 type Shader struct {
 	GLShader
 
-	// attribute layout
-	// Shader 中并没有 stream 的概念，只知道 Attribute 的布局
-	// 需要外部告知 attribute 和 stream 的映射关系
-	// 从 Shader 的布局中只能取到所有的 Attribute 的布局
-	// 但是无法知道在当前的 drawCall 中，某个 Attribute 是否 enable or disable
-	// 只能从 stream 取得
-	// 算法：
-	// 遍历 Shader 中的 Attribute 布局，从 Attribute 中取得 stream 的映射，
-	// 绑定 stream，查询 stream 中和当前 Attribute 的关联的组件是否使用,
-	// 如果否则 disable，是则 enable
-	// 实现：
-	// 在 Shader 中定义一个 EnabledVertexAttribArrays
-	// 在 stream 中也定义一个 EnabledVertexAttribArrays
-
-	// 需要提前配置好，此处
-	// 所有启动的插槽 32bit:
-	EnabledVertexAttribArrays uint32
-	// 插槽到 stream 的关联： slot | stream
-	// slot + stream + Component
-	AttribBinds [32]AttribBind
-	numAttrib   uint32
+	// bind attribute
+	AttrBinds [32]AttribBind
+	numAttr   uint32
 
 	// predefined uniform
-	M,V, P Uniform
+	M, V, P Uniform
 
 	// custom uniform
 	customUniforms []uint16
 }
 
-// 如果 AttribBinds 指定了一个 Stream，但是 Stream 并没有提供相应的数据(stride < Offset)
+// 如果 AttrBinds 指定了一个 Stream，但是 Stream 并没有提供相应的数据(stride < Offset)
 // 此时应该 disable 当前 Attribute,
 func (sh *Shader) BindAttributes(R *ResManager, streams []Stream) {
 	var bindStream uint16 = UINT16_MAX
 	var bindStride uint16
-	for i := uint32(0); i < sh.numAttrib; i++ {
-		bind := sh.AttribBinds[i]
+	for i := uint32(0); i < sh.numAttr; i++ {
+		bind := sh.AttrBinds[i]
 		stream := streams[bind.stream]
 
 		if bind.stream != bindStream {
-			buffer := R.vertexBuffers[stream.vertexBuffer & 0x0FFF]
+			buffer := R.vertexBuffers[stream.vertexBuffer&0x0FFF]
 			gl.BindBuffer(gl.ARRAY_BUFFER, buffer.Id)
 			bindStream = bind.stream
-			bindStride = (buffer.layout >> 16) & 0xFF
+			bindStride = buffer.layout
 		}
 
 		slot := uint32(bind.slot)
@@ -64,16 +46,18 @@ func (sh *Shader) BindAttributes(R *ResManager, streams []Stream) {
 
 		if enable {
 			gl.EnableVertexAttribArray(slot)
-			xType := g_AttrType[bind.comp.Type]
-			size := g_AttrType2Size[xType]
-			offset := int(bind.comp.Offset)
+
+			comp := bind.comp
+			num := int32(comp.Num)
+			xType := g_AttrType[comp.Type]
+			offset := int(comp.Offset)
 
 			var norm bool
-			if (bind.comp.Normalized & 0x01) != 0 {
+			if (comp.Normalized & 0x01) != 0 {
 				norm = true
 			}
 			if offset < int(bindStride) {
-				gl.VertexAttribPointer(slot, size, xType, norm,  int32(bindStride), gl.PtrOffset(int(offset)))
+				gl.VertexAttribPointer(slot, num, xType, norm, int32(bindStride), gl.PtrOffset(int(offset)))
 			} else {
 				gl.DisableVertexAttribArray(slot)
 			}
@@ -84,8 +68,8 @@ func (sh *Shader) BindAttributes(R *ResManager, streams []Stream) {
 }
 
 type AttribBind struct {
-	slot   uint16 	// slot location
-	stream uint16 	// stream index
+	slot   uint16 // slot location
+	stream uint16 // stream index
 
 	comp VertexComp // attribute component format
 }
@@ -97,12 +81,12 @@ func (sh *Shader) AddAttributeBinding(attr string, stream uint32, comp VertexCom
 		log.Printf("Bind attr: %s => %d", attr, slot)
 	}
 
-	bind := &sh.AttribBinds[sh.numAttrib]
+	bind := &sh.AttrBinds[sh.numAttr]
 	bind.slot = uint16(slot)
 	bind.stream = uint16(stream)
 	bind.comp = comp
 
-	sh.numAttrib ++
+	sh.numAttr++
 }
 
 func (sh *Shader) AddUniformBinding(uniform string) {
@@ -113,7 +97,7 @@ type GLShader struct {
 	Program uint32
 }
 
-func (s *GLShader) Use()  {
+func (s *GLShader) Use() {
 	gl.UseProgram(s.Program)
 }
 
@@ -130,43 +114,42 @@ func (s *GLShader) Destroy() {
 
 }
 
-func (s *GLShader)SetFloat(name string, value float32)  {
+func (s *GLShader) SetFloat(name string, value float32) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.Uniform1f(location, value)
 }
 
-func (s *GLShader)SetInteger(name string, value int32)  {
+func (s *GLShader) SetInteger(name string, value int32) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.Uniform1i(location, value)
 }
 
-func (s *GLShader)SetMatrix4(name string, mat4 mgl32.Mat4)  {
+func (s *GLShader) SetMatrix4(name string, mat4 mgl32.Mat4) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.UniformMatrix4fv(location, 1, false, &mat4[0])
 }
 
-func (s *GLShader)SetVector2f(name string, x, y float32)  {
+func (s *GLShader) SetVector2f(name string, x, y float32) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.Uniform2f(location, x, y)
 }
 
-
-func (s *GLShader)SetVector3f(name string, x, y, z float32)  {
+func (s *GLShader) SetVector3f(name string, x, y, z float32) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.Uniform3f(location, x, y, z)
 }
 
-func (s *GLShader)SetVector4f(name string, x, y, z, w float32)  {
+func (s *GLShader) SetVector4f(name string, x, y, z, w float32) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.Uniform4f(location, x, y, z, w)
 }
 
-func (s *GLShader)SetVec4fArray(name string, array []float32, count int32) {
+func (s *GLShader) SetVec4fArray(name string, array []float32, count int32) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.Uniform4fv(location, count, &array[0])
 }
 
-func (s *GLShader) GetAttrLocation(attr string)  uint32{
+func (s *GLShader) GetAttrLocation(attr string) uint32 {
 	return uint32(gl.GetAttribLocation(s.Program, gl.Str(attr)))
 }
 
@@ -178,7 +161,7 @@ func GetErrors() string {
 	return ""
 }
 
-func Compile(vertex, fragment string)  (uint32, error){
+func Compile(vertex, fragment string) (uint32, error) {
 	// 1. 编译顶点着色器
 	vertexShader, err := compileShader(vertex, gl.VERTEX_SHADER)
 	if err != nil {
@@ -211,7 +194,7 @@ func Compile(vertex, fragment string)  (uint32, error){
 
 // 编译着色器小程序, 类型： gl.VertexShader or gl.fragmentShader
 // 如果错误，提取错误信息并返回
-func compileShader(src string, shaderType uint32) (uint32, error)  {
+func compileShader(src string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
 
 	cstr, free := gl.Strs(src)
@@ -237,7 +220,7 @@ func getShaderStatus(shader uint32) (bool, string) {
 	var logLength int32
 	gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
 
-	log := strings.Repeat("\x00", int(logLength + 1))
+	log := strings.Repeat("\x00", int(logLength+1))
 	gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
 	return false, log
 }
@@ -250,14 +233,13 @@ func getProgramStatus(program uint32) (bool, string) {
 		return true, ""
 	}
 
-	var logLength  int32
+	var logLength int32
 	gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
 
 	log := strings.Repeat("\x00", int(logLength+1))
 	gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
 	return false, log
 }
-
 
 // 解析 attribute 和 uniform
 //func (s *Shader) Setup() {

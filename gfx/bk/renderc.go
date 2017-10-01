@@ -11,7 +11,7 @@ type RenderContext struct {
 	ub *UniformBuffer
 
 	// draw state
-	vao uint32
+	vao        uint32
 	vaoSupport bool
 
 	// window rect
@@ -22,12 +22,13 @@ type RenderContext struct {
 
 func NewRenderContext(r *ResManager, ub *UniformBuffer) *RenderContext {
 	return &RenderContext{
-		R: r,
+		R:  r,
 		ub: ub,
 	}
 }
 
 func (ctx *RenderContext) Init() {
+	ctx.vaoSupport = true
 	if ctx.vaoSupport {
 		gl.GenVertexArrays(1, &ctx.vao)
 	}
@@ -45,24 +46,28 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 	if defaultVao := ctx.vao; 0 != defaultVao {
 		gl.BindVertexArray(defaultVao)
 	}
-	gl.BindFramebuffer(gl.FRAMEBUFFER, ctx.backBufferFbo)
+	// gl.BindFramebuffer(gl.FRAMEBUFFER, ctx.backBufferFbo)
 
 	// 2. 更新分辨率
 	// ctx.updateResolution(&render.resolution)
 
 	// 3. 初始化 per-draw state
 	currentState := RenderDraw{}
-
+	//
 	shaderId := InvalidId
 	key := SortKey{}
-
+	//
 	primIndex := uint8(uint64(0) >> ST.PT_SHIFT)
 	prim := g_PrimInfo[primIndex]
 
 	// 8. Render!!
-	for item := range sortKeys{
+
+	sortKeys = sortKeys[1:]
+	sortValues = sortValues[1:]
+
+	for item := range sortKeys {
 		encodedKey := sortKeys[item]
-		itemId 	   := sortValues[item]
+		itemId := sortValues[item]
 		key.Decode(encodedKey)
 
 		draw := drawList[itemId]
@@ -92,7 +97,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 				}
 				gl.Enable(gl.SCISSOR_TEST)
 				gl.Scissor(int32(scissor.x),
-					int32(ctx.wRect.h - scissor.h - scissor.y),
+					int32(ctx.wRect.h-scissor.h-scissor.y),
 					int32(scissor.w),
 					int32(scissor.h))
 			}
@@ -115,13 +120,13 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		}
 
 		// 4. state binding
-		if 0 != (0 |
-			ST.DEPTH_WRITE |
-			ST.DEPTH_TEST_MASK |
-			ST.RGB_WRITE |
-			ST.ALPHA_WRITE |
-			ST.BLEND_MASK |
-			ST.PT_MASK ) & changedFlags {
+		if 0 != (0|
+			ST.DEPTH_WRITE|
+			ST.DEPTH_TEST_MASK|
+			ST.RGB_WRITE|
+			ST.ALPHA_WRITE|
+			ST.BLEND_MASK|
+			ST.PT_MASK)&changedFlags {
 
 			ctx.bindState(changedFlags, newFlags)
 
@@ -150,11 +155,11 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		}
 
 		/// 7. texture binding 如果纹理的采样类型变化，也要重新绑定！！
-		for stage := 0; stage < 2; stage ++ {
+		for stage := 0; stage < 2; stage++ {
 			bind := draw.textures[stage]
 			current := currentState.textures[stage]
 
-			if  current != bind || programChanged {
+			if current != bind || programChanged {
 				texture := ctx.R.textures[bind]
 				texture.Bind(int32(stage))
 			}
@@ -168,6 +173,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 
 		/// 9. draw
 		if draw.indexBuffer != InvalidId {
+			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.R.indexBuffers[draw.indexBuffer&0x0FFF].Id)
 			gl.DrawElements(prim, int32(draw.num), gl.UNSIGNED_SHORT, nil)
 		} else {
 			gl.DrawArrays(prim, int32(draw.firstIndex), int32(draw.num))
@@ -209,20 +215,20 @@ func (ctx *RenderContext) bindAttributes() {
 }
 
 func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
-	if changedFlags & ST.DEPTH_WRITE != 0 {
-		gl.DepthMask(ST.DEPTH_WRITE & newFlags != 0)
-		log.Printf("depth mask state: %v", ST.DEPTH_WRITE & newFlags != 0)
+	if changedFlags&ST.DEPTH_WRITE != 0 {
+		gl.DepthMask(ST.DEPTH_WRITE&newFlags != 0)
+		log.Printf("depth mask state: %v", ST.DEPTH_WRITE&newFlags != 0)
 	}
 
-	if (ST.ALPHA_WRITE|ST.RGB_WRITE) & changedFlags != 0 {
+	if (ST.ALPHA_WRITE|ST.RGB_WRITE)&changedFlags != 0 {
 		alpha := (newFlags & ST.ALPHA_WRITE) != 0
-		rgb   := (newFlags & ST.RGB_WRITE) != 0
+		rgb := (newFlags & ST.RGB_WRITE) != 0
 		gl.ColorMask(rgb, rgb, rgb, alpha)
 
 		log.Printf("color mask state: (%d, %d)", rgb, alpha)
 	}
 
-	if changedFlags & ST.DEPTH_TEST_MASK != 0 {
+	if changedFlags&ST.DEPTH_TEST_MASK != 0 {
 		_func := (newFlags & ST.DEPTH_TEST_MASK) >> ST.DEPTH_TEST_SHIFT
 
 		if _func != 0 {
@@ -231,10 +237,9 @@ func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
 
 			log.Printf("set depth-test func: %d", _func)
 		} else {
-			if newFlags & ST.DEPTH_WRITE != 0 {
+			if newFlags&ST.DEPTH_WRITE != 0 {
 				gl.Enable(gl.DEPTH_TEST)
 				gl.DepthFunc(gl.ALWAYS)
-
 
 				log.Println("set depth-test always")
 			} else {
@@ -250,8 +255,8 @@ func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
 	if ((ST.BLEND_MASK) & newFlags) != 0 {
 		enabled := (ST.BLEND_MASK & newFlags) != 0
 
-		blend := uint16(newFlags & ST.BLEND_MASK) >> ST.BLEND_SHIFT
-		if enabled{
+		blend := uint16(newFlags&ST.BLEND_MASK) >> ST.BLEND_SHIFT
+		if enabled {
 			gl.Enable(gl.BLEND)
 			gl.BlendFunc(g_Blend[blend].Src, g_Blend[blend].Dst)
 

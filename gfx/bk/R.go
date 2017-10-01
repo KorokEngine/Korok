@@ -2,8 +2,8 @@ package bk
 
 import (
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"unsafe"
 	"log"
+	"unsafe"
 )
 
 /// 在 2D 引擎中，GPU 资源的使用时很有限的，
@@ -24,7 +24,7 @@ type Memory struct {
 //    +--------- id type
 
 const (
-	ID_TYPE_INDEX    uint16 = iota
+	ID_TYPE_INDEX uint16 = iota
 	ID_TYPE_VERTEX
 	ID_TYPE_TEXTURE
 	ID_TYPE_LAYOUT
@@ -52,12 +52,12 @@ const (
 )
 
 type ResManager struct {
-	indexBuffers 	[MAX_INDEX]IndexBuffer
-	vertexBuffers 	[MAX_VERTEX]VertexBuffer
-	textures 		[MAX_TEXTURE]Texture2D
+	indexBuffers  [MAX_INDEX]IndexBuffer
+	vertexBuffers [MAX_VERTEX]VertexBuffer
+	textures      [MAX_TEXTURE]Texture2D
 
-	uniforms 		[MAX_UNIFORM]Uniform
-	shaders 		[MAX_SHADER]Shader
+	uniforms [MAX_UNIFORM]Uniform
+	shaders  [MAX_SHADER]Shader
 
 	ibIndex uint16
 	vbIndex uint16
@@ -67,7 +67,7 @@ type ResManager struct {
 	shIndex uint16
 }
 
-func NewResManager() *ResManager{
+func NewResManager() *ResManager {
 	return &ResManager{}
 }
 
@@ -82,7 +82,7 @@ func (rm *ResManager) Destroy() {
 /// Create Method
 func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) {
 	id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
-	rm.ibIndex ++
+	rm.ibIndex++
 	id = id | (ID_TYPE_INDEX << 12)
 	ib.create(mem.Size, mem.Data, 0)
 	return
@@ -90,7 +90,7 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 
 func (rm *ResManager) AllocVertexBuffer(mem Memory, layout uint16) (id uint16, vb *VertexBuffer) {
 	id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
-	rm.vbIndex ++
+	rm.vbIndex++
 	id = id | (ID_TYPE_VERTEX << 12)
 	vb.create(mem.Size, mem.Data, layout, 0)
 	return
@@ -98,7 +98,7 @@ func (rm *ResManager) AllocVertexBuffer(mem Memory, layout uint16) (id uint16, v
 
 func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, num uint32) (id uint16, um *Uniform) {
 	id, um = rm.umIndex, &rm.uniforms[rm.umIndex]
-	rm.umIndex ++
+	rm.umIndex++
 	id = id | (ID_TYPE_UNIFORM << 12)
 	if ok, sh := rm.Shader(shId); ok {
 		um.create(sh.Program, name, xType, num)
@@ -108,11 +108,11 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 
 func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 	id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
-	rm.shIndex ++
+	rm.shIndex++
 	id = id | (ID_TYPE_SHADER << 12)
 
 	if (g_debug & DEBUG_R) != 0 {
-		log.Printf("Alloc shader id:(%d, %d) ",id, id & 0x0FFF)
+		log.Printf("Alloc shader id:(%d, %d) ", id, id&0x0FFF)
 	}
 
 	sh.create(vsh, fsh)
@@ -127,26 +127,26 @@ func (rm *ResManager) Free(id uint16) {
 	switch t {
 	case ID_TYPE_INDEX:
 		rm.indexBuffers[v].destroy()
-		rm.ibIndex --
+		rm.ibIndex--
 	case ID_TYPE_VERTEX:
 		rm.vertexBuffers[v].destroy()
-		rm.vbIndex --
+		rm.vbIndex--
 	case ID_TYPE_TEXTURE:
 		rm.textures[v].Destroy()
-		rm.ttIndex --
+		rm.ttIndex--
 	case ID_TYPE_LAYOUT:
-		rm.vlIndex --
+		rm.vlIndex--
 	case ID_TYPE_UNIFORM:
-		rm.umIndex --
+		rm.umIndex--
 	case ID_TYPE_SHADER:
 		rm.shaders[v].Destroy()
-		rm.shIndex --
+		rm.shIndex--
 	}
 }
 
 /// Retrieve Method
 func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
-	t, v := id >> 12, id & 0x0FFF
+	t, v := id>>12, id&0x0FFF
 	if t != ID_TYPE_INDEX || v >= MAX_INDEX {
 		return false, nil
 	}
@@ -154,7 +154,7 @@ func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
 }
 
 func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
-	t, v := id >> 12, id & 0x0FFF
+	t, v := id>>12, id&0x0FFF
 	if t != ID_TYPE_VERTEX || v >= MAX_VERTEX {
 		return false, nil
 	}
@@ -162,7 +162,7 @@ func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 }
 
 func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
-	t, v := id >> 12, id & 0x0FFF
+	t, v := id>>12, id&0x0FFF
 	if t != ID_TYPE_UNIFORM || v >= MAX_UNIFORM {
 		return false, nil
 	}
@@ -170,7 +170,7 @@ func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 }
 
 func (rm *ResManager) Shader(id uint16) (ok bool, sh *Shader) {
-	t, v := id >> 12, id & 0x0FFF
+	t, v := id>>12, id&0x0FFF
 	if t != ID_TYPE_SHADER || v >= MAX_SHADER {
 		if (g_debug & DEBUG_R) != 0 {
 			log.Printf("Invalid shader id:(%d, %d, %d)", id, t, v)
@@ -182,43 +182,40 @@ func (rm *ResManager) Shader(id uint16) (ok bool, sh *Shader) {
 
 ////// MAX SIZE
 var MAX = struct {
-
 }{}
-
 
 ////// STATE MASK AND VALUE DEFINES
 
 var ST = struct {
-	RGB_WRITE 	uint64
+	RGB_WRITE   uint64
 	ALPHA_WRITE uint64
 	DEPTH_WRITE uint64
 
 	DEPTH_TEST_MASK  uint64
 	DEPTH_TEST_SHIFT uint64
 
-	BLEND_MASK 	uint64
+	BLEND_MASK  uint64
 	BLEND_SHIFT uint64
 
-	PT_MASK	 uint64
+	PT_MASK  uint64
 	PT_SHIFT uint64
-
 }{
-	RGB_WRITE:		  0x0000000000000001,
-	ALPHA_WRITE:      0x0000000000000002,
-	DEPTH_WRITE:      0x0000000000000004,
+	RGB_WRITE:   0x0000000000000001,
+	ALPHA_WRITE: 0x0000000000000002,
+	DEPTH_WRITE: 0x0000000000000004,
 
 	DEPTH_TEST_MASK:  0x00000000000000F0,
 	DEPTH_TEST_SHIFT: 4,
 
-	BLEND_MASK:		  0x0000000000000F00,
-	BLEND_SHIFT: 	  8,
+	BLEND_MASK:  0x0000000000000F00,
+	BLEND_SHIFT: 8,
 
-	PT_MASK	:		  0x000000000000F000,
-	PT_SHIFT:		  12,
+	PT_MASK:  0x000000000000F000,
+	PT_SHIFT: 12,
 }
 
 var ST_DEPTH = struct {
-	LESS 	 uint64
+	LESS     uint64
 	LEQUAL   uint64
 	EQUAL    uint64
 	GEQUAL   uint64
@@ -227,9 +224,9 @@ var ST_DEPTH = struct {
 	NEVER    uint64
 	ALWAYS   uint64
 }{
-	LESS: 	  0x0000000000000010,
+	LESS:     0x0000000000000010,
 	LEQUAL:   0x0000000000000020,
-	EQUAL: 	  0x0000000000000030,
+	EQUAL:    0x0000000000000030,
 	GEQUAL:   0x0000000000000040,
 	GREATER:  0x0000000000000050,
 	NOTEQUAL: 0x0000000000000060,
@@ -237,7 +234,7 @@ var ST_DEPTH = struct {
 	ALWAYS:   0x0000000000000080,
 }
 
-var g_CmpFunc = []uint32 {
+var g_CmpFunc = []uint32{
 	0, // ignored
 	gl.LESS,
 	gl.LEQUAL,
@@ -250,42 +247,42 @@ var g_CmpFunc = []uint32 {
 }
 
 var ST_BLEND = struct {
-	DEFAULT 				uint64
-	ISABLE 				 	uint64
-	ALPHA_PREMULTIPLIED 	uint64
+	DEFAULT                 uint64
+	ISABLE                  uint64
+	ALPHA_PREMULTIPLIED     uint64
 	ALPHA_NON_PREMULTIPLIED uint64
-	ADDITIVE 				uint64
+	ADDITIVE                uint64
 }{
-	ISABLE:					0x0000000000000100,
-	ALPHA_PREMULTIPLIED:	0x0000000000000200,
-	ALPHA_NON_PREMULTIPLIED:0x0000000000000300,
-	ADDITIVE: 				0x0000000000000400,
+	ISABLE:                  0x0000000000000100,
+	ALPHA_PREMULTIPLIED:     0x0000000000000200,
+	ALPHA_NON_PREMULTIPLIED: 0x0000000000000300,
+	ADDITIVE:                0x0000000000000400,
 }
 
 var g_Blend = []struct {
 	Src, Dst uint32
-} {
-	{gl.ONE, 		gl.ZERO},
-	{gl.ONE, 		gl.ONE_MINUS_SRC_ALPHA},
+}{
+	{gl.ONE, gl.ZERO},
+	{gl.ONE, gl.ONE_MINUS_SRC_ALPHA},
 	{gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA},
 	{gl.SRC_ALPHA, gl.ONE},
 }
 
 var ST_PT = struct {
-	TRIANGLES 	   uint64
+	TRIANGLES      uint64
 	TRIANGLE_STRIP uint64
-	LINES 		   uint64
+	LINES          uint64
 	LINE_STRIP     uint64
 	POINTS         uint64
 }{
-	TRIANGLES: 		0x0000000000000000,
+	TRIANGLES:      0x0000000000000000,
 	TRIANGLE_STRIP: 0x0000000000001000,
 	LINES:          0x0000000000002000,
 	LINE_STRIP:     0x0000000000003000,
 	POINTS:         0x0000000000004000,
 }
 
-var g_PrimInfo = []uint32 {
+var g_PrimInfo = []uint32{
 	gl.TRIANGLES,
 	gl.TRIANGLE_STRIP,
 	gl.LINES,

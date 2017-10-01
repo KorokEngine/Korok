@@ -3,26 +3,26 @@ package bk
 import (
 	"fmt"
 	"image"
-	_ "image/png"
-	_ "image/jpeg"
 	"image/draw"
+	_ "image/jpeg"
+	_ "image/png"
 
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 )
 
 /**
-	处理纹理相关问题
- */
+处理纹理相关问题
+*/
 
-type Texture2D struct{
+type Texture2D struct {
 	Width, Height float32
-	Id uint32
+	Id            uint32
 }
 
-func Generate(width, height float32, image image.Image)  (*Texture2D, error){
-	texture := &Texture2D{Width:width, Height:height}
-	id, err:= newTexture(image)
+func Generate(width, height float32, image image.Image) (*Texture2D, error) {
+	texture := &Texture2D{Width: width, Height: height}
+	id, err := newTexture(image)
 	if err != nil {
 		return nil, err
 	}
@@ -30,17 +30,16 @@ func Generate(width, height float32, image image.Image)  (*Texture2D, error){
 	return texture, nil
 }
 
-func (t *Texture2D)Bind(stage int32)  {
+func (t *Texture2D) Bind(stage int32) {
 	gl.BindTexture(gl.TEXTURE_2D, t.Id)
 }
 
-func (t *Texture2D)Sub(x, y float32, w, h float32) *SubTex {
-	subTex := &SubTex{Texture2D:t}
+func (t *Texture2D) Sub(x, y float32, w, h float32) *SubTex {
+	subTex := &SubTex{Texture2D: t}
 	subTex.Min = mgl32.Vec2{x, y}
-	subTex.Max = mgl32.Vec2{x+w, y+h}
+	subTex.Max = mgl32.Vec2{x + w, y + h}
 	return subTex
 }
-
 
 func (t *Texture2D) Destroy() {
 	// TODO impl

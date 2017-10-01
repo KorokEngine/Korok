@@ -44,7 +44,6 @@ func SetIndexBuffer(id uint16, firstIndex, num uint32) {
 	g_renderQ.SetIndexBuffer(id, uint16(firstIndex), uint16(num))
 }
 
-
 /// Set vertex buffer for drawCall primitive
 ///
 /// @param stream Vertex stream
@@ -138,7 +137,7 @@ func SetViewTransform(id uint8, view, proj *mgl32.Mat4, flags uint8) {
 /// These empty drawCall calls will sort before ordinary drawCall calls.
 /// @param id View id
 /// @param Number of drawCall calls
-func Touch(id uint8) uint32{
+func Touch(id uint8) uint32 {
 	return Submit(id, 0, 0)
 }
 
@@ -148,7 +147,7 @@ func Touch(id uint8) uint32{
 /// @param program Program
 /// @param depth Depth for sorting, default=0
 /// @return Number of drawCall calls
-func Submit(id uint8, program uint16, depth int32) uint32{
+func Submit(id uint8, program uint16, depth int32) uint32 {
 	return g_renderQ.Submit(id, program, depth)
 }
 
@@ -160,7 +159,7 @@ func Flush() uint32 {
 /// Global Resources Manager!
 var R *ResManager
 
-const(
+const (
 	DEBUG_R uint32 = 0x000000001
 	DEBUG_Q uint32 = 0x000000002
 )
@@ -174,5 +173,3 @@ func init() {
 	// after res-manager!
 	g_renderQ = NewRenderQueue(R)
 }
-
-

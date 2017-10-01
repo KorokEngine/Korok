@@ -1,19 +1,18 @@
 package bk
 
-import(
+import (
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"unsafe"
 	"log"
+	"unsafe"
 )
 
 // TODO 设计 format 方便导出成 attribute -layout
 type Format struct {
-
 }
 
 var Format_POS_COLOR_UV = Format{}
-var Format_POS_COLOR    = Format{}
-var Format_POS_UV  		= Format{}
+var Format_POS_COLOR = Format{}
+var Format_POS_UV = Format{}
 
 type Buffer struct {
 	Id uint32
@@ -21,7 +20,7 @@ type Buffer struct {
 	F Format
 	T uint32
 
-	Type uint32
+	Type  uint32
 	Count int32
 }
 
@@ -52,9 +51,9 @@ func NewIndexBuffer() Buffer {
 }
 
 type IndexBuffer struct {
-	Id 		uint32
-	size 	uint32
-	flags 	uint16
+	Id    uint32
+	size  uint32
+	flags uint16
 }
 
 func (ib *IndexBuffer) create(size uint32, data unsafe.Pointer, flags uint16) {
@@ -102,7 +101,7 @@ type VertexBuffer struct {
 	Id     uint32
 	target uint32
 	size   uint32
-	layout uint16 	// Stride | Offset
+	layout uint16 // Stride | Offset
 }
 
 /// draw indirect >= es 3.0 or gl 4.0
@@ -141,8 +140,6 @@ func (vb *VertexBuffer) update(offset uint32, size uint32, data unsafe.Pointer, 
 }
 
 func (vb *VertexBuffer) destroy() {
-	gl.BindBuffer(gl.ARRAY_BUFFER, 0 )
+	gl.BindBuffer(gl.ARRAY_BUFFER, 0)
 	gl.DeleteBuffers(1, &vb.Id)
 }
-
-
