@@ -1,24 +1,24 @@
 package gfx
 
 import (
-	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
-	"fmt"
+
 	"korok/gfx/bk"
+
+	"fmt"
+	"unsafe"
 )
 
 //
 type Mesh struct {
-	// render handle
-	vao uint32
-	vbo, ebo bk.Buffer
-
-	// vertex <x,y,u,v>
+	// vertex data <x,y,u,v>
 	vertex []float32
-	index  []int32
+	index  []uint16
 
-	//
-	tex uint32
+	// res handle
+	TextureId uint16
+	IndexId   uint16
+	VertexId  uint16
 }
 
 func (*Mesh) Type() int32{
@@ -26,23 +26,15 @@ func (*Mesh) Type() int32{
 }
 
 func (m *Mesh) Setup() {
-	m.vbo = bk.NewArrayBuffer(bk.Format_POS_COLOR_UV)
-	m.vbo.Update(gl.Ptr(m.vertex), len(m.vertex) * 4)
+	mem_v := bk.Memory{unsafe.Pointer(&m.vertex[0]), uint32(len(m.vertex)) * 4 }
+	if id, _:= bk.R.AllocVertexBuffer(mem_v, 16); id != bk.InvalidId {
+		m.VertexId = id
+	}
 
-	//// ebo optional
-	//if m.index != nil {
-	//	m.ebo = NewIndexBuffer()
-	//	m.ebo.Update(gl.Ptr(m.index), len(m.index) * 4)
-	//}
-
-	gl.GenVertexArrays(1, &m.vao)
-	gl.BindVertexArray(m.vao)
-
-	gl.EnableVertexAttribArray(0)
-	gl.VertexAttribPointer(0, 4, gl.FLOAT, false, 4*4, gl.PtrOffset(0))
-
-	gl.BindVertexArray(0)
-	return
+	mem_i := bk.Memory{unsafe.Pointer(&m.index[0]), uint32(len(m.index)) * 2}
+	if id, _:= bk.R.AllocIndexBuffer(mem_i); id != bk.InvalidId {
+		m.IndexId = id
+	}
 }
 
 func (m*Mesh) SRT(pos mgl32.Vec2, rot float32, scale mgl32.Vec2) {
@@ -52,45 +44,40 @@ func (m*Mesh) SRT(pos mgl32.Vec2, rot float32, scale mgl32.Vec2) {
 	}
 }
 
-func (m*Mesh) VertexBuffer() bk.Buffer {
-	return m.vbo
-}
-
-func (m*Mesh) IndexBuffer() bk.Buffer {
-	return m.ebo
-}
-
-func (m*Mesh) VAO() uint32 {
-	return m.vao
-}
-
 func (m*Mesh) SetVertex(v []float32) {
 	m.vertex = v
 }
 
-func (m*Mesh) SetIndex(v []int32) {
+func (m*Mesh) SetIndex(v []uint16) {
 	m.index = v
 }
 
-func (m*Mesh) SetRawTexture(tex uint32) {
-	m.tex = tex
-}
 
 func (m *Mesh) Update() {
-	m.vbo.Update(gl.Ptr(m.vertex), len(m.vertex) * 4)
-	m.ebo.Update(gl.Ptr(m.index), len(m.vertex) * 4)
+	if ok, ib := bk.R.IndexBuffer(m.IndexId); ok {
+		ib.Update(0, uint32(len(m.index)) * 4, unsafe.Pointer(&m.index[0]), false)
+	}
+
+	if ok, vb := bk.R.VertexBuffer(m.VertexId); ok {
+		vb.Update(0, uint32(len(m.vertex)) * 4, unsafe.Pointer(&m.vertex[0]), false)
+	}
 }
 
 func (m*Mesh) Delete() {
-	m.vbo.Delete()
-	m.ebo.Delete()
-	gl.DeleteVertexArrays(1, &m.vao)
+	if ok, ib := bk.R.IndexBuffer(m.IndexId); ok {
+		ib.Destroy()
+	}
+	if ok, vb := bk.R.VertexBuffer(m.VertexId); ok {
+		vb.Destroy()
+	}
 }
 
 // new mesh from Texture
-func NewQuadMesh(tex *bk.Texture2D) *Mesh{
+func NewQuadMesh(texId uint16) *Mesh{
 	m := new(Mesh)
-	m.tex = tex.Id
+
+	m.TextureId = texId
+	_, tex := bk.R.Texture(texId)
 
 	fmt.Println("w:", tex.Width, " h:", tex.Height)
 
@@ -111,9 +98,13 @@ func NewQuadMesh(tex *bk.Texture2D) *Mesh{
 }
 
 // new mesh from SubTexture
-func NewQuadMeshSubTex(tex *bk.SubTex) *Mesh {
+func NewQuadMeshSubTex(texId uint16, tex *bk.SubTex) *Mesh {
 	m := new(Mesh)
-	m.tex = tex.Id
+
+	m.TextureId = texId
+	if tex.Texture2D == nil {
+		_, tex.Texture2D = bk.R.Texture(texId)
+	}
 
 	h, w := tex.Height, tex.Width
 	m.vertex = []float32{
@@ -129,9 +120,13 @@ func NewQuadMeshSubTex(tex *bk.SubTex) *Mesh {
 	return m
 }
 
-func NewIndexedMesh(tex *bk.Texture2D) *Mesh {
+func NewIndexedMesh(texId uint16, tex *bk.Texture2D) *Mesh {
 	m := new(Mesh)
-	m.tex = tex.Id
+
+	m.TextureId = texId
+	if tex == nil {
+		_, tex = bk.R.Texture(texId)
+	}
 
 	h, w := tex.Height, tex.Width
 	m.vertex = []float32{
@@ -140,7 +135,7 @@ func NewIndexedMesh(tex *bk.Texture2D) *Mesh {
 		0,  0,  0.0, 0.0,
 		w,  h,  1.0, 1.0,
 	}
-	m.index = []int32{
+	m.index = []uint16{
 		0, 1, 2,
 		0, 3, 1,
 	}

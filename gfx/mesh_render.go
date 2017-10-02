@@ -5,74 +5,79 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 
 	"korok/gfx/bk"
+	"unsafe"
 )
 
 /// Simple Mesh TypeRender
-type MeshRender struct {
-	pipeline PipelineState
-	C RenderContext
+/// For simple mesh, not 3D model
+
+// <x,y,u,v rgba>
+var P4C4 = []bk.VertexComp{
+	{4, bk.ATTR_TYPE_FLOAT, 0, 0},
+	{4, bk.ATTR_TYPE_UINT8, 16, 1},
 }
 
-func NewMeshRender(shader bk.GLShader) *MeshRender {
+type MeshRender struct {
+	stateFlags uint64
+	rgba       uint32
+
+	// shader program
+	program uint16
+
+	// uniform handle
+	umh_P  uint16 // Projection
+	umh_M  uint16 // Model
+	umh_S0 uint16 // Sampler0
+}
+
+func NewMeshRender(vsh, fsh string) *MeshRender {
 	mr := new(MeshRender)
 	// blend func
-	mr.pipeline.BlendFunc = BF_Add
-	//
-	//// setup shader
-	mr.pipeline.GLShader = shader
-	shader.Use()
-	//
-	//// ---- Fragment GLShader
-	shader.SetInteger("tex\x00", 0)
-	gl.BindFragDataLocation(shader.Program, 0, gl.Str("outputColor\x00"))
-	//
-	//// vertex layout
-	pos := VertexAttr {
-		Data: 0,
-		Slot: 0,
+	mr.stateFlags |= bk.ST_BLEND.ADDITIVE
 
-		Size: 4,
-		Type: gl.FLOAT,
-		Normalized: false,
-		Stride: 16,
-		Offset: 0,
-		Pointer: 0,
-	}
-	mr.pipeline.VertexLayout = append(mr.pipeline.VertexLayout, pos)
+	// setup shader
+	if id, sh := bk.R.AllocShader(vsh, fsh); id != bk.InvalidId {
+		mr.program = id
 
-	// uniform layout
-	p := bk.Uniform{
-		Data: 0, 		// index of uniform data
-		Slot: shader.GetUniformLocation("projection\x00"), 		// slot in shader
-		Type: bk.UniformMat4,
-		Count: 1,
-	}
+		// setup attribute
+		sh.AddAttributeBinding("xyuv", 0, P4C4[0])
+		sh.AddAttributeBinding("rgba", 0, P4C4[1])
 
-	m := bk.Uniform{
-		Data: 1, 		// index of uniform data
-		Slot: shader.GetUniformLocation("model\x00"), 			// slot in shader
-		Type: bk.UniformMat4,
-		Count: 1,
+		// setup uniform
+		mr.umh_P, _ = bk.R.AllocUniform(id, "proj\x00", bk.UniformMat4, 1)
+		mr.umh_M, _ = bk.R.AllocUniform(id, "model\x00", bk.UniformMat4, 1)
+
+		// TODO
+		sh.SetInteger("tex\x00", 0)
+		gl.BindFragDataLocation(sh.Program, 0, gl.Str("outputColor\x00"))
+
 	}
-	mr.pipeline.UniformLayout = append(mr.pipeline.UniformLayout, p, m)
 	return mr
 }
 
+// extract render object
+func (mr *MeshRender) Extract() {
+
+}
+
+// draw
 func (mr *MeshRender) Draw(d RenderData, pos, scale mgl32.Vec2, rot float32) {
 	m := d.(*Mesh)
-	//
-	mr.pipeline.tex = m.tex
-	//
-	mr.C.SetPipelineState(mr.pipeline)
-	mr.C.SetVertexBuffer(m.VertexBuffer())
-	mr.C.VAO = m.VAO()
-	mr.C.SetIndexBuffer(m.IndexBuffer())
-	//
 
+	// state
+	bk.SetState(mr.stateFlags, mr.rgba)
+	bk.SetTexture(0, mr.umh_S0, uint16(m.TextureId), 0)
+
+	// set uniform - mvp
 	proj := mgl32.Ortho2D(0, 480, 0, 320)
-	mr.C.UniformData.AddUniform(0, &proj[0])
 	model := mgl32.Translate3D(pos[0], pos[1], 0)
-	mr.C.UniformData.AddUniform(1, &model[0])
 
-	mr.C.Draw()
+	bk.SetUniform(mr.umh_P, unsafe.Pointer(&proj[0]), 16)
+	bk.SetUniform(mr.umh_M, unsafe.Pointer(&model[0]), 16)
+
+	// set vertex
+	bk.SetVertexBuffer(0, m.VertexId, 0, 0)
+	bk.SetIndexBuffer(m.IndexId, 0, 0)
+
+	bk.Submit(0, mr.program, 0)
 }

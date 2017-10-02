@@ -30,6 +30,8 @@ const (
 
 // TypeRender 负责把各种各样的 RenderData 从 RenderComp 里面取出来
 type TypeRender interface {
+	Extract()
+
 	Draw(d RenderData, pos, scale mgl32.Vec2, rot float32)
 }
 

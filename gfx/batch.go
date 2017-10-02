@@ -2,8 +2,6 @@ package gfx
 
 import (
 	"github.com/go-gl/gl/v3.2-core/gl"
-
-	"korok/gfx/bk"
 )
 
 /**
@@ -31,21 +29,18 @@ Batch 系统设计
 const MaxBatch  = 2000
 const QuadSize  = 32
 
+
+
 // 使用临时内存即可
 type Batch struct {
 	vertex []QuadVertex
 	index  []int32
 
 	count int32
-
-	vao uint32
-	vbo, ebo bk.Buffer
 }
 
 func NewBatch() *Batch {
 	b := new(Batch)
-	b.vbo = bk.NewArrayBuffer(Format_POS_COLOR_UV)
-	b.ebo = bk.NewIndexBuffer()
 	return b
 }
 
@@ -64,21 +59,7 @@ func (b *Batch) Add(qv [4]QuadVertex) bool{
 ///////////////
 ///// update batch Data
 func (b *Batch) Commit() {
-	b.count = 3
 
-	gl.BindVertexArray(b.vao)
-
-	b.vbo.Update(gl.Ptr(b.vertex), int(b.count * 4 * 20))
-	b.ebo.Update(gl.Ptr(b.index), int(b.count * 6 * 4))
-
-	gl.EnableVertexAttribArray(0)
-	gl.VertexAttribPointer(0, 2, gl.FLOAT, false, 20, gl.Ptr(0))
-	gl.EnableVertexAttribArray(1)
-	gl.VertexAttribPointer(1, 2, gl.FLOAT, false, 20, gl.Ptr(8))
-	gl.EnableVertexAttribArray(2)
-	gl.VertexAttribPointer(2, 4, gl.UNSIGNED_BYTE, true, 20, gl.Ptr(16))
-
-	gl.BindVertexArray(0)
 }
 
 //func NewBatchCommandTest(tex uint32) {

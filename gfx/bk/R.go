@@ -84,7 +84,7 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 	id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
 	rm.ibIndex++
 	id = id | (ID_TYPE_INDEX << 12)
-	ib.create(mem.Size, mem.Data, 0)
+	ib.Create(mem.Size, mem.Data, 0)
 	return
 }
 
@@ -92,7 +92,7 @@ func (rm *ResManager) AllocVertexBuffer(mem Memory, layout uint16) (id uint16, v
 	id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
 	rm.vbIndex++
 	id = id | (ID_TYPE_VERTEX << 12)
-	vb.create(mem.Size, mem.Data, layout, 0)
+	vb.Create(mem.Size, mem.Data, layout, 0)
 	return
 }
 
@@ -126,10 +126,10 @@ func (rm *ResManager) Free(id uint16) {
 
 	switch t {
 	case ID_TYPE_INDEX:
-		rm.indexBuffers[v].destroy()
+		rm.indexBuffers[v].Destroy()
 		rm.ibIndex--
 	case ID_TYPE_VERTEX:
-		rm.vertexBuffers[v].destroy()
+		rm.vertexBuffers[v].Destroy()
 		rm.vbIndex--
 	case ID_TYPE_TEXTURE:
 		rm.textures[v].Destroy()
@@ -159,6 +159,14 @@ func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 		return false, nil
 	}
 	return true, &rm.vertexBuffers[v]
+}
+
+func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
+	t, v := id >>12, id&0x0FF
+	if t != ID_TYPE_TEXTURE || v >= MAX_TEXTURE {
+		return false, nil
+	}
+	return true, &rm.textures[v]
 }
 
 func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
