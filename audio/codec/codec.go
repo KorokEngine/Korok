@@ -35,7 +35,7 @@ type Format struct {
 	Endianness binary.ByteOrder
 }
 
-// Data Stream
+// Data stream
 type Stream interface {
 	io.Reader
 	io.Seeker
@@ -47,7 +47,7 @@ type Audio interface {
 	// return audio file format
 	Format() *Format
 
-	// return Data Stream
+	// return Data stream
 	Stream() Stream
 }
 

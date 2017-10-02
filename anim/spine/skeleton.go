@@ -193,7 +193,7 @@ func (s *Skeleton) SetAttachment(slotName, attachmentName string) {
 			return
 		}
 	}
-	panic("Slot not found: " + slotName)
+	panic("slot not found: " + slotName)
 }
 
 func (s *Skeleton) FindAnimation(name string) *Animation {
