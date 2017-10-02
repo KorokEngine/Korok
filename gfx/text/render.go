@@ -16,7 +16,7 @@ import (
 
 // 但是 unity 中 XXComp 是暴露给用户的!! （错，unity中也没有 textComp 这个概念，而是 textmesh），另外如果不保存 textComp 的引用，便会丢点这个数据
 // unity 中给一个物体添加 text-mesh-comp 之后就可以绘制了
-// Comp 必须对应到一个 System 不然 Comp 就找不到了！！
+// comp 必须对应到一个 System 不然 comp 就找不到了！！
 // 暂时再RenderComp中添加一个interface指向所有的外部上层的生成器对象，比如 text, shape, particle, skeleton!
 // 否则会造成奇怪的现象，Text 不见了，但是 text 还会被绘制！！
 

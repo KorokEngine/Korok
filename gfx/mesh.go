@@ -4,13 +4,14 @@ import (
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"fmt"
+	"korok/gfx/bk"
 )
 
 //
 type Mesh struct {
 	// render handle
 	vao uint32
-	vbo, ebo Buffer
+	vbo, ebo bk.Buffer
 
 	// vertex <x,y,u,v>
 	vertex []float32
@@ -25,7 +26,7 @@ func (*Mesh) Type() int32{
 }
 
 func (m *Mesh) Setup() {
-	m.vbo = NewArrayBuffer(Format_POS_COLOR_UV)
+	m.vbo = bk.NewArrayBuffer(bk.Format_POS_COLOR_UV)
 	m.vbo.Update(gl.Ptr(m.vertex), len(m.vertex) * 4)
 
 	//// ebo optional
@@ -51,11 +52,11 @@ func (m*Mesh) SRT(pos mgl32.Vec2, rot float32, scale mgl32.Vec2) {
 	}
 }
 
-func (m*Mesh) VertexBuffer() Buffer {
+func (m*Mesh) VertexBuffer() bk.Buffer {
 	return m.vbo
 }
 
-func (m*Mesh) IndexBuffer() Buffer {
+func (m*Mesh) IndexBuffer() bk.Buffer {
 	return m.ebo
 }
 
@@ -87,7 +88,7 @@ func (m*Mesh) Delete() {
 }
 
 // new mesh from Texture
-func NewQuadMesh(tex *Texture2D) *Mesh{
+func NewQuadMesh(tex *bk.Texture2D) *Mesh{
 	m := new(Mesh)
 	m.tex = tex.Id
 
@@ -110,7 +111,7 @@ func NewQuadMesh(tex *Texture2D) *Mesh{
 }
 
 // new mesh from SubTexture
-func NewQuadMeshSubTex(tex *SubTex) *Mesh {
+func NewQuadMeshSubTex(tex *bk.SubTex) *Mesh {
 	m := new(Mesh)
 	m.tex = tex.Id
 
@@ -128,7 +129,7 @@ func NewQuadMeshSubTex(tex *SubTex) *Mesh {
 	return m
 }
 
-func NewIndexedMesh(tex *Texture2D) *Mesh {
+func NewIndexedMesh(tex *bk.Texture2D) *Mesh {
 	m := new(Mesh)
 	m.tex = tex.Id
 

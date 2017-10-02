@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 	"korok/ecs"
+	"korok/gfx/bk"
 )
 
 // 可以在划分出几个子系统：
@@ -27,217 +28,11 @@ const (
 	RenderType_Ptl
 )
 
-const (
-	LayerMask    uint32 = 0xF0000000
-	ShaderMask   uint32 = 0x0F000000
-	BlendMask    uint32 = 0x00F00000
-	TextureMask  uint32 = 0x000FF000
-)
-
-// 32bit:
-// 0000    0000   00000000 - 0000      0000 0000 0000
-// Z-Order GLShader Texture    Blend-func
-// 这样排序变会变得很简单！
-type SortKey uint32
-
-func (sk *SortKey) SetLayer(z uint32) {
-	v := uint32(*sk)
-	v = (v & ^LayerMask) | (z << 28 & LayerMask)
-	*sk = SortKey(v)
-}
-
-func (sk *SortKey) SetShader(s uint32) {
-	v := uint32(*sk)
-	v = (v & ^ShaderMask) | (s << 24 & ShaderMask)
-	*sk = SortKey(v)
-}
-
-func (sk *SortKey) SetBlendFunc(bf uint32) {
-	v := uint32(*sk)
-	v = (v & ^BlendMask) | (bf << 20 & BlendMask)
-	*sk = SortKey(v)
-}
-
-func (sk *SortKey) SetTexture(t uint32) {
-	v := uint32(*sk)
-	v = (v & ^TextureMask) | (t << 12 & TextureMask)
-	*sk = SortKey(v)
-}
-
 // TypeRender 负责把各种各样的 RenderData 从 RenderComp 里面取出来
 type TypeRender interface {
 	Draw(d RenderData, pos, scale mgl32.Vec2, rot float32)
 }
 
-type MeshRender struct {
-	pipeline PipelineState
-	C RenderContext
-}
-
-func NewMeshRender(shader GLShader) *MeshRender {
-	mr := new(MeshRender)
-	// blend func
-	mr.pipeline.BlendFunc = BF_Add
-	//
-	//// setup shader
-	mr.pipeline.GLShader = shader
-	shader.Use()
-	//
-	//// ---- Fragment GLShader
-	shader.SetInteger("tex\x00", 0)
-	gl.BindFragDataLocation(shader.Program, 0, gl.Str("outputColor\x00"))
-	//
-	//// vertex layout
-	pos := VertexAttr {
-		Data: 0,
-		Slot: 0,
-
-		Size: 4,
-		Type: gl.FLOAT,
-		Normalized: false,
-		Stride: 16,
-		Offset: 0,
-		Pointer: 0,
-	}
-	mr.pipeline.VertexLayout = append(mr.pipeline.VertexLayout, pos)
-
-	// uniform layout
-	p := Uniform{
-		Data: 0, 		// index of uniform data
-		Slot: shader.GetUniformLocation("projection\x00"), 		// slot in shader
-		Type: UniformMat4,
-		Count: 1,
-	}
-
-	m := Uniform{
-		Data: 1, 		// index of uniform data
-		Slot: shader.GetUniformLocation("model\x00"), 			// slot in shader
-		Type: UniformMat4,
-		Count: 1,
-	}
-	mr.pipeline.UniformLayout = append(mr.pipeline.UniformLayout, p, m)
-	return mr
-}
-
-func (mr *MeshRender) Draw(d RenderData, pos, scale mgl32.Vec2, rot float32) {
-	m := d.(*Mesh)
-	//
-	mr.pipeline.tex = m.tex
-	//
-	mr.C.SetPipelineState(mr.pipeline)
-	mr.C.SetVertexBuffer(m.VertexBuffer())
-	mr.C.VAO = m.VAO()
-	mr.C.SetIndexBuffer(m.IndexBuffer())
-	//
-
-	proj := mgl32.Ortho2D(0, 480, 0, 320)
-	mr.C.UniformData.AddUniform(0, &proj[0])
-	model := mgl32.Translate3D(pos[0], pos[1], 0)
-	mr.C.UniformData.AddUniform(1, &model[0])
-
-	mr.C.Draw()
-}
-
-type BatchRender struct {
-	pipeline PipelineState
-	BatchContext
-	RenderContext
-}
-
-func NewBatchRender(shader GLShader) *BatchRender {
-	br := new(BatchRender)
-
-	br.pipeline.BlendFunc = BF_Add
-	br.pipeline.GLShader = shader
-	shader.Use()
-
-	shader.SetInteger("tex\x00", 0)
-	gl.BindFragDataLocation(shader.Program, 0, gl.Str("outputColor\x00"))
-
-	// vertex layout
-	pos := VertexAttr {
-		Size: 2,
-		Type: gl.FLOAT,
-		Normalized: false,
-		Stride: 20,
-		Offset: 0,
-	}
-	uv := VertexAttr {
-		Size: 2,
-		Type: gl.FLOAT,
-		Normalized: false,
-		Stride: 20,
-		Offset: 8,
-	}
-	color := VertexAttr {
-		Size: 4,
-		Type: gl.UNSIGNED_BYTE,
-		Normalized: false,
-		Stride: 20,
-		Offset: 16,
-	}
-	br.pipeline.VertexLayout = append(br.pipeline.VertexLayout, pos, uv, color)
-
-	// uniform layout
-	p := Uniform{
-		Data: 0, 		// index of uniform data
-		Slot: shader.GetUniformLocation("projection\x00"), 		// slot in shader
-		Type: UniformMat4,
-		Count: 1,
-	}
-	br.pipeline.UniformLayout = append(br.pipeline.UniformLayout, p)
-
-	return br
-}
-
-/**
-if batch.ready && batch.compatible {
-
-}
-
-对于 Batch Render 来说，是无法知道外面的 RenderComp 的排序状况的，
-那么也无法知道目前传入的 RenderData 是应该同上一批 Batch 合并，还是
-应该提交batch还是应该建立一个新的batch
-
- */
-func (br *BatchRender) Draw(d RenderData, pos, scale mgl32.Vec2, rot float32) {
-	quad := d.(Quad)
-	// 计算顶点, scale, rot TODO
-	vertex := quad.buf
-	for i := range vertex {
-		vertex[i].XY[0] += pos[0]
-		vertex[i].XY[1] += pos[1]
-	}
-
-	if br.BatchContext.Ready() && br.BatchContext.Compatible() {
-		// br.BatchContext.
-	}
-
-}
-
-type BatchContext struct {
-	B Batch
-
-}
-
-func (*BatchContext) Ready() bool {
-	return false
-}
-
-func (*BatchContext) Compatible() bool {
-	return false
-}
-
-func (*BatchContext) Begin() {
-}
-
-func (*BatchContext) Draw() {
-
-}
-
-func (*BatchContext) End() {
-
-}
 
 /**
 	处理渲染相关问题
@@ -261,8 +56,6 @@ type RenderComp struct{
 
 	// type
 	Type RenderType
-	// sort
-	Sort SortKey
 
 	// 渲染数据
 	Data RenderData
@@ -485,7 +278,7 @@ func NewRenderSystem() *RenderSystem {
 //	}
 //}
 
-func NewTextShader(ts GLShader) GLShader{
+func NewTextShader(ts bk.GLShader) bk.GLShader{
 	ts.Use()
 
 	p := mgl32.Ortho2D(0, 480, 0, 320)

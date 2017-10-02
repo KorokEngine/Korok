@@ -1,6 +1,9 @@
 package gfx
 
-import "github.com/go-gl/mathgl/mgl32"
+import (
+	"github.com/go-gl/mathgl/mgl32"
+	"korok/gfx/bk"
+)
 
 // USED to model sprite
 // <x,y, r,g,b,a, u,v> compress Data TODO
@@ -8,7 +11,7 @@ import "github.com/go-gl/mathgl/mgl32"
 type QuadVertex struct {
 	XY [2]float32
 	UV [2]float32
-	Color int32
+	Color uint32
 }
 
 type Quad struct {
@@ -29,7 +32,7 @@ func (q *Quad) SetXY(xy mgl32.Vec2) {
 	}
 }
 
-func (q *Quad) SetTexture(tex *SubTex) {
+func (q *Quad) SetTexture(tex *bk.SubTex) {
 	q.tex = tex.Id
 
 }

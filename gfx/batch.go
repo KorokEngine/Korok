@@ -2,6 +2,8 @@ package gfx
 
 import (
 	"github.com/go-gl/gl/v3.2-core/gl"
+
+	"korok/gfx/bk"
 )
 
 /**
@@ -37,13 +39,13 @@ type Batch struct {
 	count int32
 
 	vao uint32
-	vbo, ebo Buffer
+	vbo, ebo bk.Buffer
 }
 
 func NewBatch() *Batch {
 	b := new(Batch)
-	b.vbo = NewArrayBuffer(Format_POS_COLOR_UV)
-	b.ebo = NewIndexBuffer()
+	b.vbo = bk.NewArrayBuffer(Format_POS_COLOR_UV)
+	b.ebo = bk.NewIndexBuffer()
 	return b
 }
 
