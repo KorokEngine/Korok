@@ -11,8 +11,8 @@ import (
 
 //
 type Mesh struct {
-	// vertex data <x,y,u,v>
-	vertex []float32
+	// vertex data <X,y,u,v>
+	vertex []PosTexColorVertex
 	index  []uint16
 
 	// res handle
@@ -26,8 +26,8 @@ func (*Mesh) Type() int32{
 }
 
 func (m *Mesh) Setup() {
-	mem_v := bk.Memory{unsafe.Pointer(&m.vertex[0]), uint32(len(m.vertex)) * 4 }
-	if id, _:= bk.R.AllocVertexBuffer(mem_v, 16); id != bk.InvalidId {
+	mem_v := bk.Memory{unsafe.Pointer(&m.vertex[0]), uint32(len(m.vertex)) * 20 }
+	if id, _:= bk.R.AllocVertexBuffer(mem_v, 20); id != bk.InvalidId {
 		m.VertexId = id
 	}
 
@@ -39,12 +39,13 @@ func (m *Mesh) Setup() {
 
 func (m*Mesh) SRT(pos mgl32.Vec2, rot float32, scale mgl32.Vec2) {
 	for i := 0; i < 4; i++ {
-		m.vertex[i*4 + 0] += pos[0]
-		m.vertex[i*4 + 1] += pos[1]
+		v := &m.vertex[i]
+		v.X += pos[0]
+		v.Y += pos[1]
 	}
 }
 
-func (m*Mesh) SetVertex(v []float32) {
+func (m*Mesh) SetVertex(v []PosTexColorVertex) {
 	m.vertex = v
 }
 
@@ -70,6 +71,9 @@ func (m*Mesh) Delete() {
 	if ok, vb := bk.R.VertexBuffer(m.VertexId); ok {
 		vb.Destroy()
 	}
+	if ok, tex := bk.R.Texture(m.TextureId); ok {
+		tex.Destroy()
+	}
 }
 
 // new mesh from Texture
@@ -84,15 +88,15 @@ func NewQuadMesh(texId uint16) *Mesh{
 	tex.Width = 50
 	tex.Height = 50
 
-	m.vertex = []float32{
+	m.vertex = []PosTexColorVertex{
 		// Pos      	 // Tex
-		0.0, tex.Height, 0.0, 1.0,
-		tex.Width, 0.0 , 1.0, 0.0,
-		0.0, 0.0  	   , 0.0, 0.0,
+		{0.0, tex.Height, 0.0, 1.0, 0},
+		{tex.Width, 0.0 , 1.0, 0.0, 0},
+		{0.0, 0.0  	   , 0.0, 0.0, 0},
 
-		0.0, tex.Height, 0.0, 1.0,
-		tex.Width, tex.Height, 1.0, 1.0,
-		tex.Width, 0.0 , 1.0, 0.0,
+		{0.0, tex.Height, 0.0, 1.0, 0},
+		{tex.Width, tex.Height, 1.0, 1.0, 0},
+		{tex.Width, 0.0 , 1.0, 0.0, 0},
 	}
 	return m
 }
@@ -107,15 +111,15 @@ func NewQuadMeshSubTex(texId uint16, tex *bk.SubTex) *Mesh {
 	}
 
 	h, w := tex.Height, tex.Width
-	m.vertex = []float32{
+	m.vertex = []PosTexColorVertex{
 		// pos 			 // tex
-		0, h, tex.Min[0]/tex.Width, tex.Max[1]/tex.Height,
-		w, 0, tex.Max[0]/tex.Width, tex.Min[1]/tex.Height,
-		0, 0, tex.Min[0]/tex.Width, tex.Min[1]/tex.Height,
+		{0, h, tex.Min[0]/tex.Width, tex.Max[1]/tex.Height, 0},
+		{w, 0, tex.Max[0]/tex.Width, tex.Min[1]/tex.Height, 0},
+		{0, 0, tex.Min[0]/tex.Width, tex.Min[1]/tex.Height, 0},
 
-		0, h, tex.Min[0]/tex.Width, tex.Max[1]/tex.Height,
-		w, h, tex.Max[0]/tex.Width, tex.Max[1]/tex.Height,
-		w, 0, tex.Max[0]/tex.Width, tex.Min[1]/tex.Height,
+		{0, h, tex.Min[0]/tex.Width, tex.Max[1]/tex.Height, 0},
+		{w, h, tex.Max[0]/tex.Width, tex.Max[1]/tex.Height, 0},
+		{w, 0, tex.Max[0]/tex.Width, tex.Min[1]/tex.Height, 0},
 	}
 	return m
 }
@@ -129,11 +133,11 @@ func NewIndexedMesh(texId uint16, tex *bk.Texture2D) *Mesh {
 	}
 
 	h, w := tex.Height, tex.Width
-	m.vertex = []float32{
-		0,  h,  0.0, 1.0,
-		w,  0,  1.0, 0.0,
-		0,  0,  0.0, 0.0,
-		w,  h,  1.0, 1.0,
+	m.vertex = []PosTexColorVertex{
+		{0,  h,  0.0, 1.0, 0},
+		{w,  0,  1.0, 0.0, 0},
+		{0,  0,  0.0, 0.0, 0},
+		{w,  h,  1.0, 1.0, 0},
 	}
 	m.index = []uint16{
 		0, 1, 2,

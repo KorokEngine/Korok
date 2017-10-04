@@ -1,7 +1,6 @@
 package gfx
 
 import (
-	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
 
 	"korok/gfx/bk"
@@ -10,12 +9,6 @@ import (
 
 /// Simple Mesh TypeRender
 /// For simple mesh, not 3D model
-
-// <x,y,u,v rgba>
-var P4C4 = []bk.VertexComp{
-	{4, bk.ATTR_TYPE_FLOAT, 0, 0},
-	{4, bk.ATTR_TYPE_UINT8, 16, 1},
-}
 
 type MeshRender struct {
 	stateFlags uint64
@@ -33,24 +26,39 @@ type MeshRender struct {
 func NewMeshRender(vsh, fsh string) *MeshRender {
 	mr := new(MeshRender)
 	// blend func
-	mr.stateFlags |= bk.ST_BLEND.ADDITIVE
+	// mr.stateFlags |= bk.ST_BLEND.ADDITIVE
 
 	// setup shader
 	if id, sh := bk.R.AllocShader(vsh, fsh); id != bk.InvalidId {
 		mr.program = id
+		sh.Use()
 
 		// setup attribute
-		sh.AddAttributeBinding("xyuv", 0, P4C4[0])
-		sh.AddAttributeBinding("rgba", 0, P4C4[1])
+		sh.AddAttributeBinding("xyuv\x00", 0, P4C4[0])
+		sh.AddAttributeBinding("rgba\x00", 0, P4C4[1])
+
+		p := mgl32.Ortho2D(0, 480, 0, 320)
+		m := mgl32.Translate3D(240, 160, 0)
+		s0 := int32(0)
 
 		// setup uniform
-		mr.umh_P, _ = bk.R.AllocUniform(id, "proj\x00", bk.UniformMat4, 1)
-		mr.umh_M, _ = bk.R.AllocUniform(id, "model\x00", bk.UniformMat4, 1)
+		if pid, _ := bk.R.AllocUniform(id, "proj\x00", bk.UniformMat4, 1); pid != bk.InvalidId {
+			mr.umh_P = pid
+			bk.SetUniform(pid, unsafe.Pointer(&p[0]))
+		}
 
-		// TODO
-		sh.SetInteger("tex\x00", 0)
-		gl.BindFragDataLocation(sh.Program, 0, gl.Str("outputColor\x00"))
+		if mid, _ := bk.R.AllocUniform(id, "model\x00", bk.UniformMat4, 1); mid != bk.InvalidId {
+			mr.umh_M = mid
+			bk.SetUniform(mid, unsafe.Pointer(&m[0]))
+		}
 
+		if sid,_ := bk.R.AllocUniform(id, "tex\x00", bk.UniformSampler, 1); sid != bk.InvalidId {
+			mr.umh_S0 = sid
+			bk.SetUniform(sid, unsafe.Pointer(&s0))
+		}
+
+		// submit render state
+		bk.Touch(0)
 	}
 	return mr
 }
@@ -67,17 +75,14 @@ func (mr *MeshRender) Draw(d RenderData, pos, scale mgl32.Vec2, rot float32) {
 	// state
 	bk.SetState(mr.stateFlags, mr.rgba)
 	bk.SetTexture(0, mr.umh_S0, uint16(m.TextureId), 0)
-
+	//
 	// set uniform - mvp
-	proj := mgl32.Ortho2D(0, 480, 0, 320)
-	model := mgl32.Translate3D(pos[0], pos[1], 0)
-
-	bk.SetUniform(mr.umh_P, unsafe.Pointer(&proj[0]), 16)
-	bk.SetUniform(mr.umh_M, unsafe.Pointer(&model[0]), 16)
+	mm := mgl32.Translate3D(pos[0], pos[1], 0)
+	bk.SetUniform(mr.umh_M, unsafe.Pointer(&mm[0]))
 
 	// set vertex
-	bk.SetVertexBuffer(0, m.VertexId, 0, 0)
-	bk.SetIndexBuffer(m.IndexId, 0, 0)
-
+	bk.SetVertexBuffer(0, m.VertexId, 0, 4)
+	bk.SetIndexBuffer(m.IndexId, 0, 6)
+	//
 	bk.Submit(0, mr.program, 0)
 }
