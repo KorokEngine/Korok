@@ -46,16 +46,6 @@ const (
 	MAX_SHADER  = 32
 )
 
-// predefined vertex format
-const (
-	VERTEX_POS2_TEX_COLOR uint16 = (ID_TYPE_LAYOUT << 12) & 0
-	VERTEX_POS2_TEX       uint16 = (ID_TYPE_LAYOUT << 12) & 1
-	VERTEX_POS2_COLOR     uint16 = (ID_TYPE_LAYOUT << 12) & 2
-
-	//VERTEX_POS3_TEX_COLOR uint16 = (ID_TYPE_LAYOUT << 12) & 3
-	//VERTEX_POS3_TEX       uint16 = (ID_TYPE_LAYOUT << 12) & 4
-	//VERTEX_POS3_COLOR     uint16 = (ID_TYPE_LAYOUT << 12) & 5
-)
 
 type ResManager struct {
 	indexBuffers  [MAX_INDEX]IndexBuffer
@@ -90,15 +80,28 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 	id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
 	rm.ibIndex++
 	id = id | (ID_TYPE_INDEX << ID_TYPE_SHIFT)
-	ib.Create(mem.Size, mem.Data, 0)
+
+	if err := ib.Create(mem.Size, mem.Data, 0); err != nil {
+		log.Println("fail to alloc index-buffer, ", err)
+	} else {
+		if g_debug&DEBUG_R != 0 {
+			log.Printf("alloc index-buffer: (%d, %d)", id&ID_TYPE_MASK, ib.Id)
+		}
+	}
 	return
 }
 
-func (rm *ResManager) AllocVertexBuffer(mem Memory, layout uint16) (id uint16, vb *VertexBuffer) {
+func (rm *ResManager) AllocVertexBuffer(mem Memory, stride uint16) (id uint16, vb *VertexBuffer) {
 	id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
 	rm.vbIndex++
 	id = id | (ID_TYPE_VERTEX << ID_TYPE_SHIFT)
-	vb.Create(mem.Size, mem.Data, layout, 0)
+	if err := vb.Create(mem.Size, mem.Data, stride, 0); err != nil {
+		log.Println("fail to alloc vertex-buffer, ", err)
+	} else {
+		if  g_debug&DEBUG_R != 0 {
+			log.Printf("alloc vertex-buffer: (%d, %d)", id&ID_TYPE_MASK, vb.Id)
+		}
+	}
 	return
 }
 
@@ -107,8 +110,12 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 	rm.umIndex++
 	id = id | (ID_TYPE_UNIFORM << ID_TYPE_SHIFT)
 	if ok, sh := rm.Shader(shId); ok {
-		if um.create(sh.Program, name, xType, num) < 0 && (g_debug & DEBUG_R) != 0{
-			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId >> ID_TYPE_MASK)
+		if um.create(sh.Program, name, xType, num) < 0 {
+			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId&ID_TYPE_MASK)
+		} else {
+			if (g_debug & DEBUG_R) != 0 {
+				log.Printf("alloc uniform: %s(%d, %d)", name, id&ID_TYPE_MASK, um.Slot)
+			}
 		}
 	}
 	return
@@ -122,7 +129,7 @@ func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) 
 		log.Printf("fail to alloc texture, %s", err)
 	} else {
 		if (g_debug & DEBUG_R) != 0 {
-			log.Printf("Alloc texture id: (%d, %d)", id&ID_TYPE_MASK, tex.Id)
+			log.Printf("alloc texture id: (%d, %d)", id&ID_TYPE_MASK, tex.Id)
 		}
 	}
 	return
@@ -137,7 +144,7 @@ func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 		log.Println("fail to alloc shader, ", err)
 	} else {
 		if (g_debug & DEBUG_R) != 0 {
-			log.Printf("Alloc shader id:(%d, %d) ", id, id&ID_TYPE_MASK)
+			log.Printf("alloc shader id:(%d, %d) ", id&ID_TYPE_MASK, sh.Program)
 		}
 	}
 	return
@@ -246,6 +253,7 @@ var ST = struct {
 	PT_SHIFT: 12,
 }
 
+// zero means no depth-test
 var ST_DEPTH = struct {
 	LESS     uint64
 	LEQUAL   uint64
@@ -278,6 +286,7 @@ var g_CmpFunc = []uint32{
 	gl.ALWAYS,
 }
 
+// zero means no blend
 var ST_BLEND = struct {
 	DEFAULT                 uint64
 	ISABLE                  uint64
@@ -294,6 +303,7 @@ var ST_BLEND = struct {
 var g_Blend = []struct {
 	Src, Dst uint32
 }{
+	{0, 0},
 	{gl.ONE, gl.ZERO},
 	{gl.ONE, gl.ONE_MINUS_SRC_ALPHA},
 	{gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA},
