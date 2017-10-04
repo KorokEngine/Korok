@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"log"
 	"unsafe"
+	"errors"
 )
 
 type IndexBuffer struct {
@@ -12,14 +13,14 @@ type IndexBuffer struct {
 	flags uint16
 }
 
-func (ib *IndexBuffer) Create(size uint32, data unsafe.Pointer, flags uint16) {
+func (ib *IndexBuffer) Create(size uint32, data unsafe.Pointer, flags uint16) error{
 	ib.size = size
 	ib.flags = flags
 
 	gl.GenBuffers(1, &ib.Id)
 
 	if 0 == ib.Id {
-		log.Println("Failed to generate buffer id.")
+		return errors.New("failed to generate buffer id")
 	}
 
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib.Id)
@@ -29,12 +30,14 @@ func (ib *IndexBuffer) Create(size uint32, data unsafe.Pointer, flags uint16) {
 		gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, int(size), data, gl.STATIC_DRAW)
 	}
 	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, 0)
+
+	return nil
 }
 
 /// discard=false
 func (ib *IndexBuffer) Update(offset uint32, size uint32, data unsafe.Pointer, discard bool) {
 	if 0 == ib.Id {
-		log.Println("Updating invalid index buffer.")
+		log.Println("updating invalid index buffer")
 	}
 
 	if discard {
@@ -61,14 +64,14 @@ type VertexBuffer struct {
 }
 
 /// draw indirect >= es 3.0 or gl 4.0
-func (vb *VertexBuffer) Create(size uint32, data unsafe.Pointer, layout uint16, flags uint16) {
+func (vb *VertexBuffer) Create(size uint32, data unsafe.Pointer, layout uint16, flags uint16) error{
 	vb.size = size
 	vb.layout = layout
 	vb.target = gl.ARRAY_BUFFER
 
 	gl.GenBuffers(1, &vb.Id)
 	if vb.Id == 0 {
-		log.Println("Failed to generate buffer id")
+		return errors.New("failed to generate buffer id")
 	}
 	gl.BindBuffer(vb.target, vb.Id)
 	if data == nil {
@@ -77,6 +80,7 @@ func (vb *VertexBuffer) Create(size uint32, data unsafe.Pointer, layout uint16, 
 		gl.BufferData(vb.target, int(size), data, gl.STATIC_DRAW)
 	}
 	gl.BindBuffer(vb.target, 0)
+	return nil
 }
 
 /// discard = false

@@ -149,8 +149,6 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		/// 6. uniform binding
 		if draw.uniformBegin < draw.uniformEnd {
 			ctx.bindUniform(uint32(draw.uniformBegin), uint32(draw.uniformEnd))
-
-			log.Printf("write uniform: %d - %d", draw.uniformBegin, draw.uniformEnd)
 		}
 
 		/// 7. texture binding 如果纹理的采样类型变化，也要重新绑定！！
@@ -199,8 +197,6 @@ func (ctx *RenderContext) bindUniform(begin, end uint32) {
 		Uniform_decode(opcode, &uType, &loc, &size, &num)
 		data := ub.ReadPointer(uint32(size) * uint32(num))
 
-		log.Printf("bind uniform: type %d loc %d num %d", uType, loc, num)
-
 		switch UniformType(uType) {
 		case UniformInt1:
 			gl.Uniform1iv(int32(loc), int32(num), (*int32)(data))
@@ -224,11 +220,11 @@ func (ctx *RenderContext) bindAttributes() {
 
 func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
 	if changedFlags&ST.DEPTH_WRITE != 0 {
-		gl.DepthMask(ST.DEPTH_WRITE&newFlags != 0)
+		gl.DepthMask(newFlags&ST.DEPTH_WRITE != 0)
 		log.Printf("depth mask state: %v", ST.DEPTH_WRITE&newFlags != 0)
 	}
 
-	if (ST.ALPHA_WRITE|ST.RGB_WRITE)&changedFlags != 0 {
+	if changedFlags&(ST.ALPHA_WRITE|ST.RGB_WRITE) != 0 {
 		alpha := (newFlags & ST.ALPHA_WRITE) != 0
 		rgb := (newFlags & ST.RGB_WRITE) != 0
 		gl.ColorMask(rgb, rgb, rgb, alpha)
@@ -260,18 +256,13 @@ func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
 
 	/// 所谓 blend independent 可以实现顺序无关的 alpha 混合
 	/// http://www.openglsuperbible.com/2013/08/20/is-order-independent-transparency-really-necessary/
-	if ((ST.BLEND_MASK) & newFlags) != 0 {
-		enabled := (ST.BLEND_MASK & newFlags) != 0
-
+	if changedFlags&ST.BLEND_MASK != 0 {
 		blend := uint16(newFlags&ST.BLEND_MASK) >> ST.BLEND_SHIFT
-		if enabled {
+		if blend != 0 {
 			gl.Enable(gl.BLEND)
 			gl.BlendFunc(g_Blend[blend].Src, g_Blend[blend].Dst)
-
-			log.Printf("set blend-func: %d", blend)
 		} else {
 			gl.Disable(gl.BLEND)
-			log.Println("disable blend-func")
 		}
 	}
 }
