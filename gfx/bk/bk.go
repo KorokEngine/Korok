@@ -73,10 +73,8 @@ func SetTransform(mtx *mgl32.Mat4) {
 ///
 /// @param handle Uniform
 /// @param value Pointer to uniform data
-/// @param Num Number of elements. Passing `uint16_max` will
-///        use the Num passed on uniform creation, default=1
-func SetUniform(id uint16, ptr unsafe.Pointer, num uint16) {
-	g_renderQ.SetUniform(id, ptr, num)
+func SetUniform(id uint16, ptr unsafe.Pointer) {
+	g_renderQ.SetUniform(id, ptr)
 }
 
 /// Set stencil test state

@@ -20,17 +20,20 @@ type Texture2D struct {
 	Id            uint32
 }
 
-func Generate(width, height float32, image image.Image) (*Texture2D, error) {
-	texture := &Texture2D{Width: width, Height: height}
-	id, err := newTexture(image)
-	if err != nil {
-		return nil, err
+func (t *Texture2D) Create(image image.Image) (error) {
+	t.Width  = float32(image.Bounds().Dx())
+	t.Height = float32(image.Bounds().Dy())
+
+	if id, err := newTexture(image); err != nil {
+		return err
+	} else {
+		t.Id = id
 	}
-	texture.Id = id
-	return texture, nil
+	return nil
 }
 
 func (t *Texture2D) Bind(stage int32) {
+	gl.ActiveTexture(gl.TEXTURE0 + uint32(stage))
 	gl.BindTexture(gl.TEXTURE_2D, t.Id)
 }
 
@@ -42,7 +45,7 @@ func (t *Texture2D) Sub(x, y float32, w, h float32) *SubTex {
 }
 
 func (t *Texture2D) Destroy() {
-	// TODO impl
+	gl.DeleteTextures(1, &t.Id)
 }
 
 func newTexture(img image.Image) (uint32, error) {

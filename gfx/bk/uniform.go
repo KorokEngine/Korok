@@ -4,25 +4,24 @@ import (
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"unsafe"
 )
+const (
+	UNIFORM_BUFFER_SIZE = 16 << 10
+)
 
 type UniformType uint8
 
 /// 支持哪些类型呢?
+/// https://github.com/bkaradzic/bgfx/issues/653
+/// float 在 GPU 中表现为 vec4
 const (
 	UniformStart UniformType = iota
-	UniformMat4
+	UniformMat4 		// mat4 array
+	UniformMat3 		// mat3 array
+	UniformVec4 		// vec4 array
+	UniformVec1 		// float array
+	UniformInt1 		// int array
 
-	UniformFloat1 // float
-	UniformFloat2 // vec2
-	UniformFloat3 // vec3
-	UniformFloat4 // vec4
-	UniformFloatN // float[]
-
-	UniformInt1 // int
-	UniformInt2 // int_vec2
-	UniformInt3 // int_vec3
-	UniformInt4 // int_vec4
-	UniformIntN // int[]
+	UniformSampler 		// sampler
 
 	UniformEnd
 )
@@ -36,16 +35,18 @@ type Uniform struct {
 	Count uint8
 }
 
-func (um *Uniform) create(program uint32, name string, xType UniformType, num uint32) {
-	um.Slot = uint8(gl.GetAttribLocation(program, gl.Str(name)))
+func (um *Uniform) create(program uint32, name string, xType UniformType, num uint32) (slot int32) {
+	slot = gl.GetUniformLocation(program, gl.Str(name))
+	um.Slot = uint8(slot)
 	um.Name = name
 	um.Type = xType
 	um.Count = uint8(num)
 	um.Size = g_uniform_type2size[xType]
+	return
 }
 
 type UniformBuffer struct {
-	buffer []uint8
+	buffer [UNIFORM_BUFFER_SIZE]uint8
 
 	size uint32
 	pos  uint32
@@ -118,7 +119,9 @@ func Uniform_encode(uType UniformType, loc, size, num uint8) uint32 {
 
 var g_uniform_type2size = [UniformEnd]uint8{
 	0,             // ignore
-	16,            // mat4
-	4, 4, 4, 4, 4, // float32
-	4, 4, 4, 4, 4, // int32
+	16 * 4,        // mat4
+	9  * 4, 	   // mat3
+	4  * 4,		   // vec4
+	4, 			   // vec1(float32)
+	4, 			   // int32
 }

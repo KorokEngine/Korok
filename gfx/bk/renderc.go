@@ -61,10 +61,6 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 	prim := g_PrimInfo[primIndex]
 
 	// 8. Render!!
-
-	sortKeys = sortKeys[1:]
-	sortValues = sortValues[1:]
-
 	for item := range sortKeys {
 		encodedKey := sortKeys[item]
 		itemId := sortValues[item]
@@ -147,24 +143,28 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 			programChanged = true
 			//constantsChanged = true
 			//bindAttribs = true
+			//log.Println("bind program")
 		}
 
 		/// 6. uniform binding
 		if draw.uniformBegin < draw.uniformEnd {
 			ctx.bindUniform(uint32(draw.uniformBegin), uint32(draw.uniformEnd))
+
+			log.Printf("write uniform: %d - %d", draw.uniformBegin, draw.uniformEnd)
 		}
 
 		/// 7. texture binding 如果纹理的采样类型变化，也要重新绑定！！
 		for stage := 0; stage < 2; stage++ {
 			bind := draw.textures[stage]
 			current := currentState.textures[stage]
-
-			if current != bind || programChanged {
-				texture := ctx.R.textures[bind]
-				texture.Bind(int32(stage))
+			if 0 != bind {
+				if current != bind || programChanged {
+					texture := ctx.R.textures[bind]
+					texture.Bind(int32(stage))
+					//log.Printf("bind texture: (%d, %d)", stage, texture.Id)
+				}
 			}
-
-			current = bind
+			currentState.textures[stage] = bind
 		}
 
 		/// 8. vertex binding
@@ -173,7 +173,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 
 		/// 9. draw
 		if draw.indexBuffer != InvalidId {
-			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.R.indexBuffers[draw.indexBuffer&0x0FFF].Id)
+			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.R.indexBuffers[draw.indexBuffer].Id)
 			gl.DrawElements(prim, int32(draw.num), gl.UNSIGNED_SHORT, nil)
 		} else {
 			gl.DrawArrays(prim, int32(draw.firstIndex), int32(draw.num))
@@ -199,13 +199,21 @@ func (ctx *RenderContext) bindUniform(begin, end uint32) {
 		Uniform_decode(opcode, &uType, &loc, &size, &num)
 		data := ub.ReadPointer(uint32(size) * uint32(num))
 
+		log.Printf("bind uniform: type %d loc %d num %d", uType, loc, num)
+
 		switch UniformType(uType) {
-		case UniformIntN:
+		case UniformInt1:
 			gl.Uniform1iv(int32(loc), int32(num), (*int32)(data))
-		case UniformFloatN:
+		case UniformVec1:
 			gl.Uniform1fv(int32(loc), int32(num), (*float32)(data))
+		case UniformVec4:
+			gl.Uniform4fv(int32(loc), int32(num), (*float32)(data))
+		case UniformMat3:
+			gl.UniformMatrix3fv(int32(loc), int32(num), false, (*float32)(data))
 		case UniformMat4:
-			gl.Uniform1fv(int32(loc), 16, (*float32)(data))
+			gl.UniformMatrix4fv(int32(loc), int32(num), false, (*float32)(data))
+		case UniformSampler:
+			gl.Uniform1i(int32(loc), *(*int32)(data))
 		}
 	}
 }

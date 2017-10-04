@@ -77,8 +77,12 @@ type AttribBind struct {
 func (sh *Shader) AddAttributeBinding(attr string, stream uint32, comp VertexComp) {
 	slot := gl.GetAttribLocation(sh.Program, gl.Str(attr))
 
-	if (g_debug & DEBUG_R) != 0 {
-		log.Printf("Bind attr: %s => %d", attr, slot)
+	if slot < 0 {
+		log.Printf("fail to bind attribute: %s, %v", attr, comp)
+	} else {
+		if (g_debug & DEBUG_R) != 0 {
+			log.Printf("bind attr: %s => %d", attr, slot)
+		}
 	}
 
 	bind := &sh.AttrBinds[sh.numAttr]
@@ -101,12 +105,13 @@ func (s *GLShader) Use() {
 	gl.UseProgram(s.Program)
 }
 
-func (s *GLShader) create(vsh, fsh string) {
+func (s *GLShader) Create(vsh, fsh string) error{
 	if program, err := Compile(vsh, fsh); err == nil {
 		s.Program = program
 		gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
+		return nil
 	} else {
-		log.Println("Failed to alloc shader..", err)
+		return err
 	}
 }
 

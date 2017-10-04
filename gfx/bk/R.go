@@ -4,6 +4,7 @@ import (
 	"github.com/go-gl/gl/v3.2-core/gl"
 	"log"
 	"unsafe"
+	"image"
 )
 
 /// 在 2D 引擎中，GPU 资源的使用时很有限的，
@@ -11,6 +12,11 @@ import (
 
 const InvalidId uint16 = 0xFFFF
 const UINT16_MAX uint16 = 0xFFFF
+
+const (
+	ID_TYPE_MASK  = 0x0FFF
+	ID_TYPE_SHIFT = 12
+)
 
 type Memory struct {
 	Data unsafe.Pointer
@@ -83,7 +89,7 @@ func (rm *ResManager) Destroy() {
 func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) {
 	id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
 	rm.ibIndex++
-	id = id | (ID_TYPE_INDEX << 12)
+	id = id | (ID_TYPE_INDEX << ID_TYPE_SHIFT)
 	ib.Create(mem.Size, mem.Data, 0)
 	return
 }
@@ -91,7 +97,7 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 func (rm *ResManager) AllocVertexBuffer(mem Memory, layout uint16) (id uint16, vb *VertexBuffer) {
 	id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
 	rm.vbIndex++
-	id = id | (ID_TYPE_VERTEX << 12)
+	id = id | (ID_TYPE_VERTEX << ID_TYPE_SHIFT)
 	vb.Create(mem.Size, mem.Data, layout, 0)
 	return
 }
@@ -99,9 +105,25 @@ func (rm *ResManager) AllocVertexBuffer(mem Memory, layout uint16) (id uint16, v
 func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, num uint32) (id uint16, um *Uniform) {
 	id, um = rm.umIndex, &rm.uniforms[rm.umIndex]
 	rm.umIndex++
-	id = id | (ID_TYPE_UNIFORM << 12)
+	id = id | (ID_TYPE_UNIFORM << ID_TYPE_SHIFT)
 	if ok, sh := rm.Shader(shId); ok {
-		um.create(sh.Program, name, xType, num)
+		if um.create(sh.Program, name, xType, num) < 0 && (g_debug & DEBUG_R) != 0{
+			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId >> ID_TYPE_MASK)
+		}
+	}
+	return
+}
+
+func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) {
+	id, tex = rm.ttIndex, &rm.textures[rm.ttIndex]
+	rm.ttIndex ++
+	id = id | (ID_TYPE_TEXTURE << ID_TYPE_SHIFT)
+	if err := tex.Create(img); err != nil {
+		log.Printf("fail to alloc texture, %s", err)
+	} else {
+		if (g_debug & DEBUG_R) != 0 {
+			log.Printf("Alloc texture id: (%d, %d)", id&ID_TYPE_MASK, tex.Id)
+		}
 	}
 	return
 }
@@ -109,20 +131,22 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 	id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
 	rm.shIndex++
-	id = id | (ID_TYPE_SHADER << 12)
+	id = id | (ID_TYPE_SHADER << ID_TYPE_SHIFT)
 
-	if (g_debug & DEBUG_R) != 0 {
-		log.Printf("Alloc shader id:(%d, %d) ", id, id&0x0FFF)
+	if err := sh.Create(vsh, fsh); err != nil {
+		log.Println("fail to alloc shader, ", err)
+	} else {
+		if (g_debug & DEBUG_R) != 0 {
+			log.Printf("Alloc shader id:(%d, %d) ", id, id&ID_TYPE_MASK)
+		}
 	}
-
-	sh.create(vsh, fsh)
 	return
 }
 
 /// Destroy Method
 func (rm *ResManager) Free(id uint16) {
-	t := (id >> 12) & 0x000F
-	v := id & 0x0FFF
+	t := (id >> ID_TYPE_SHIFT) & 0x000F
+	v := id & ID_TYPE_MASK
 
 	switch t {
 	case ID_TYPE_INDEX:
@@ -146,7 +170,7 @@ func (rm *ResManager) Free(id uint16) {
 
 /// Retrieve Method
 func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
-	t, v := id>>12, id&0x0FFF
+	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
 	if t != ID_TYPE_INDEX || v >= MAX_INDEX {
 		return false, nil
 	}
@@ -154,7 +178,7 @@ func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
 }
 
 func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
-	t, v := id>>12, id&0x0FFF
+	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
 	if t != ID_TYPE_VERTEX || v >= MAX_VERTEX {
 		return false, nil
 	}
@@ -162,7 +186,7 @@ func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 }
 
 func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
-	t, v := id >>12, id&0x0FF
+	t, v := id >>ID_TYPE_SHIFT, id&ID_TYPE_MASK
 	if t != ID_TYPE_TEXTURE || v >= MAX_TEXTURE {
 		return false, nil
 	}
@@ -170,7 +194,7 @@ func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
 }
 
 func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
-	t, v := id>>12, id&0x0FFF
+	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
 	if t != ID_TYPE_UNIFORM || v >= MAX_UNIFORM {
 		return false, nil
 	}
@@ -178,7 +202,7 @@ func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 }
 
 func (rm *ResManager) Shader(id uint16) (ok bool, sh *Shader) {
-	t, v := id>>12, id&0x0FFF
+	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
 	if t != ID_TYPE_SHADER || v >= MAX_SHADER {
 		if (g_debug & DEBUG_R) != 0 {
 			log.Printf("Invalid shader id:(%d, %d, %d)", id, t, v)
