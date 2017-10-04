@@ -118,10 +118,11 @@ func Uniform_encode(uType UniformType, loc, size, num uint8) uint32 {
 }
 
 var g_uniform_type2size = [UniformEnd]uint8{
-	0,             // ignore
-	16 * 4,        // mat4
-	9  * 4, 	   // mat3
-	4  * 4,		   // vec4
-	4, 			   // vec1(float32)
-	4, 			   // int32
+	0,				// ignore
+	16 * 4,			// mat4
+	9  * 4,			// mat3
+	4  * 4,			// vec4
+	4,				// vec1(float32)
+	4,				// int32
+	4,				// sampler
 }
