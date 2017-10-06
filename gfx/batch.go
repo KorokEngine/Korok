@@ -1,9 +1,5 @@
 package gfx
 
-import (
-	"github.com/go-gl/gl/v3.2-core/gl"
-)
-
 /**
 Batch 系统设计
 对所有物体进行分类：静态和动态，静态物体使用稳定的batch系统，动态物体每次重新计算batch
@@ -26,143 +22,16 @@ Batch 系统设计
 
 目前Batch实现只支持格式：pos_uv_color
  */
-const MaxBatch  = 2000
-const QuadSize  = 32
-
-
-
-// 使用临时内存即可
 type Batch struct {
-	vertex []QuadVertex
-	index  []int32
+	TextureId uint16
+	padding   uint16 // not used
 
-	count int32
+	VertexId  uint16
+	IndexId   uint16
+
+	firstVertex uint16
+	numVertex   uint16
+
+	firstIndex uint16
+	numIndex   uint16
 }
-
-func NewBatch() *Batch {
-	b := new(Batch)
-	return b
-}
-
-func (b *Batch) Add(qv [4]QuadVertex) bool{
-	if b.count + QuadSize > MaxBatch {
-		return false
-	}
-
-	copy(b.vertex[b.count:], qv[:])
-	b.count += 1
-
-	return true
-}
-
-//////
-///////////////
-///// update batch Data
-func (b *Batch) Commit() {
-
-}
-
-//func NewBatchCommandTest(tex uint32) {
-//	b := new(Batch)
-//	var w, h float32 = 50, 50
-//	b.vertex = []float32{
-//		0,  h,  0.0, 1.0,
-//		w,  0,  1.0, 0.0,
-//		0,  0,  0.0, 0.0,
-//		w,  h,  1.0, 1.0,
-//	}
-//	b.index = []int32{
-//		0, 1, 2,
-//		0, 3, 1,
-//	}
-//	b.count = 1
-//	b.tex = tex
-//
-//	gl.GenVertexArrays(1, &b.vao)
-//	gl.GenBuffers(1, &b.vbo)
-//	gl.GenBuffers(1, &b.ebo)
-//
-//	gl.BindVertexArray(b.vao)
-//	// vbo
-//	gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-//	gl.BufferData(gl.ARRAY_BUFFER, len(b.vertex)*4, gl.Ptr(b.vertex), gl.STATIC_DRAW)
-//
-//	// ebo optional
-//	gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, b.ebo)
-//	gl.BufferData(gl.ELEMENT_ARRAY_BUFFER, len(b.index)*4, gl.Ptr(b.index), gl.STATIC_DRAW)
-//
-//	gl.EnableVertexAttribArray(0)
-//	gl.VertexAttribPointer(0, 4, gl.FLOAT, false, 4*4, gl.PtrOffset(0))
-//
-//	gl.EnableVertexAttribArray(1)
-//	gl.VertexAttribPointer(1, 4, gl.FLOAT, false, 4*4, gl.PtrOffset(8))
-//
-//	gl.BindVertexArray(0)
-//}
-
-
-// 在这里申请一组VBO
-// 2000/20 = 100, 一次最多合并 100 个矩形， 具体多少以后再说吧
-// use it as a stack
-type BatchSystem struct {
-	VAOs [128]uint32
-	VBOs [128]uint32  		// max = 128， 共享的VBO数量, 这样最多可以合并10000个矩形应该已经足够用了
-	EBOs [128]uint32
-
-	// usage
-	count int32
-
-	// temp storage
-	vertex [2000]float32
-	index  [2000]int32
-}
-
-func NewBatchSystem() *BatchSystem {
-	bs := new(BatchSystem)
-
-	// init all vao & vbo
-	gl.GenVertexArrays(int32(len(bs.VAOs)), &bs.VAOs[0])
-	gl.GenBuffers(int32(len(bs.VBOs)), &bs.VBOs[0])
-	gl.GenBuffers(int32(len(bs.EBOs)), &bs.EBOs[0])
-
-	// init index
-	n := int32(len(bs.VAOs))
-	for i := int32(0); i < n; i ++ {
-		vi := i * 4
-		ii := i * 6
-		bs.index[ii + 0] = vi + 0
-		bs.index[ii + 1] = vi + 1
-		bs.index[ii + 2] = vi + 2
-
-		bs.index[ii + 3] = vi + 0
-		bs.index[ii + 4] = vi + 3
-		bs.index[ii + 5] = vi + 1
-	}
-
-	return bs
-}
-//
-//func (bs *BatchSystem) NewBatch(tex uint32) *Batch {
-//	b := new(Batch)
-//
-//	b.tex = tex
-//	b.vao = bs.VAOs[bs.count]
-//	b.vbo = bs.VBOs[bs.count]
-//	b.ebo = bs.EBOs[bs.count]
-//
-//	b.vertex = bs.vertex[:]
-//	b.index  = bs.index[:]
-//
-//	bs.count ++
-//	return b
-//}
-//
-//func (bs *BatchSystem) Reset() {
-//	bs.count = 0
-//}
-//
-//func (bs *BatchSystem) Release() {
-//	bs.count = 0
-//	gl.DeleteVertexArrays(int32(len(bs.VBOs)), &bs.VAOs[0])
-//	gl.DeleteBuffers(int32(len(bs.VBOs)), &bs.VBOs[0])
-//}

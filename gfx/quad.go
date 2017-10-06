@@ -1,46 +1,69 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"korok/gfx/bk"
+	//"log"
 )
 
 // USED to model sprite
-// <x,y, r,g,b,a, u,v> compress Data TODO
 
-type QuadVertex struct {
-	XY [2]float32
-	UV [2]float32
-	Color uint32
+// Anchor type
+type Anchor uint8
+const(
+	ANCHOR_CENTER Anchor = 0x00
+	ANCHOR_LEFT          = 0x01
+	ANCHOR_RIGHT         = 0x02
+	ANCHOR_UP  			 = 0x04
+	ANCHOR_DOWN          = 0x08
+)
+
+type Region struct {
+	X1, Y1 float32
+	X2, Y2 float32
 }
 
-type Quad struct {
-	buf [4]QuadVertex
-	tex uint32
+// Sprite 只需要记录 Width/Height/U/V/Tex 即可
+// Anchor
+type QuadSprite struct {
+	// Size
+	width, height uint16
 
+	// texture region
+	region Region
+
+	// texture id
+	tex uint16
+	anchor  Anchor
+
+	// next free
 	next int32
 }
 
-func (*Quad) Type() int32 {
+func (*QuadSprite) Type() int32 {
 	return 1
 }
 
-func (q *Quad) SetXY(xy mgl32.Vec2) {
-	for i := 0; i < 4; i++ {
-		q.buf[i].XY[0] += xy[0]
-		q.buf[i].XY[1] += xy[1]
-	}
+func (q *QuadSprite) SetSize(w, h uint16) {
+	q.width = w
+	q.height = h
 }
 
-func (q *Quad) SetTexture(tex *bk.SubTex) {
-	q.tex = tex.Id
+func (q *QuadSprite) SetTexture(id uint16, tex *bk.SubTex) {
+	q.tex = id
+	q.region.X1 = tex.Min[0]/tex.Width
+	q.region.Y1 = tex.Min[1]/tex.Height
+	q.region.X2 = tex.Max[0]/tex.Width
+	q.region.Y2 = tex.Max[1]/tex.Height
+}
 
+func (q *QuadSprite) SetAnchor(anchor Anchor) {
+	q.anchor = anchor
 }
 
 // a buffer to keep quad-Data together
 type QuadBuffer struct {
 	// quad Data
-	buf []Quad
+	buf []QuadSprite
 
 	// freelist and used count
 	freeList int32
@@ -49,7 +72,7 @@ type QuadBuffer struct {
 
 func NewQuadBuffer(cap int32) *QuadBuffer{
 	qb := new(QuadBuffer)
-	qb.buf = make([]Quad, cap)
+	qb.buf = make([]QuadSprite, cap)
 	qb.count = 0
 
 	// init freelist
@@ -62,7 +85,7 @@ func NewQuadBuffer(cap int32) *QuadBuffer{
 	return qb
 }
 
-func (qb *QuadBuffer) Alloc() *Quad {
+func (qb *QuadBuffer) Alloc() *QuadSprite {
 	cap := int32(len(qb.buf))
 	if qb.count >= cap {
 		qb.Resize(cap + 100)
