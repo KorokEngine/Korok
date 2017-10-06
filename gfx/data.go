@@ -9,6 +9,11 @@ type RenderData interface{
 	Type() int32
 }
 
+type CompRef struct {
+	Type int32
+	*RenderComp
+}
+
 // format <x,y,u,v rgba>
 var P4C4 = []bk.VertexComp{
 	{4, bk.ATTR_TYPE_FLOAT, 0, 0},

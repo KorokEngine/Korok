@@ -11,7 +11,7 @@ import (
 
 //
 type Mesh struct {
-	// vertex data <X,y,u,v>
+	// vertex data <x,y,u,v>
 	vertex []PosTexColorVertex
 	index  []uint16
 

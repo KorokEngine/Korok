@@ -30,9 +30,7 @@ const (
 
 // TypeRender 负责把各种各样的 RenderData 从 RenderComp 里面取出来
 type TypeRender interface {
-	Extract()
-
-	Draw(d RenderData, pos, scale mgl32.Vec2, rot float32)
+	Draw(ref []CompRef)
 }
 
 
@@ -112,11 +110,11 @@ type RenderSystem struct {
 	_map  []int
 	index int
 
+	// for cull/batch/sort...
+	refs []CompRef
+
 	// cull
 	C CullSystem
-
-	// batch
-	B *BatchSystem
 
 	// render for each-type render-data
 	renders [8]TypeRender
@@ -173,13 +171,21 @@ func (th *RenderSystem) Update(dt float32) {
 	// 1. cull
 	refs := th.C.Cull(th.comps, Camera{})
 
-	// 2. sort
+	// 2. sort by type
 	// TODO
 
 	// 3. extract and draw
-	for _, ref := range refs {
-		comp := ref.RenderComp
-		th.renders[ref.Type].Draw(comp.Data, comp.position, comp.scale, comp.rotation)
+	var N = len(refs)
+	var xType int32
+	var left, right int
+	for i := 0; i < N; i++ {
+
+		right = left + 1
+		xType = refs[left].Type
+		for right < N && refs[right].Type == xType {
+			right ++
+		}
+		th.renders[xType].Draw(refs[left:right])
 	}
 }
 

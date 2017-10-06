@@ -336,7 +336,7 @@ func (g *Game) Update()  {
 	//			if ok {
 	//				p := b.GetPosition()
 	//				comp := g.RenderSystem.GetComp(id)
-	//				comp.Model = mgl32.Translate3D(p.X * 20, p.Y * 20 - comp.Height / 2, 0).Mul4(mgl32.Scale3D(comp.Width, comp.Height, 1))
+	//				comp.Model = mgl32.Translate3D(p.x * 20, p.Y * 20 - comp.Height / 2, 0).Mul4(mgl32.Scale3D(comp.Width, comp.Height, 1))
 	//			}
 	//
 	//			//fmt.Print("position:", b.GetPosition())

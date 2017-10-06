@@ -4,11 +4,6 @@ package gfx
 // 以相机为
 //  cull with camera
 
-type CompRef struct {
-	Type int32
-	*RenderComp
-}
-
 type CullSystem interface {
 	Cull(comps []RenderComp, camera Camera) []CompRef
 }
