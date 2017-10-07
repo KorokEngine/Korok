@@ -3,7 +3,6 @@ package effect
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"korok/gfx"
 )
 
 type EmitterMode int32
@@ -106,56 +105,6 @@ func (p *ParticleSystem) NewParticleComp(id uint32, c *ParticleConfig) *Particle
 	comp.C = c
 	comp.Simulator = nil // TODO!
 	return nil
-}
-
-
-// particle shader
-type ParticleShader struct {
-	gfx.GLShader
-
-	inVertex uint32
-	inColor uint32
-	inIndex uint32
-}
-
-func (ps *ParticleShader) Setup() {
-	// uniform
-	ps.Use()
-	//  ---- Vertex GLShader
-	// projection
-	p := mgl32.Ortho2D(0, 480, 0, 320)
-	ps.SetMatrix4("projection\x00", p)
-
-	//// model
-	ps.SetVec4fArray("model\x00", vertex, 4)
-
-	// ---- Fragment GLShader
-	ps.SetInteger("tex\x00", 0)
-	gl.BindFragDataLocation(ps.Program, 0, gl.Str("outputColor\x00"))
-
-	//
-	ps.inVertex = ps.GetAttrLocation("ver\x00")
-	ps.inColor = ps.GetAttrLocation("color\x00")
-	ps.inIndex = ps.GetAttrLocation("index\x00")
-}
-
-func (ps *ParticleShader) Prepare() {
-	ps.Use()
-}
-
-
-func (ps *ParticleShader) Draw(any interface{}) {
-	comp := any.(*ParticleGroup)
-
-	// 绘制
-	if comp.vao > 0 {
-		gl.BindVertexArray(comp.vao)
-		gl.DrawElements(gl.TRIANGLES, comp.count, gl.UNSIGNED_INT, nil)
-		gl.BindVertexArray(0)
-	} else {
-		gl.BindBuffer(gl.ARRAY_BUFFER, comp.vbo)
-		// TODO
-	}
 }
 
 var vertex = []float32{
