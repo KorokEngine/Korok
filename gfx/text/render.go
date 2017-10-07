@@ -1,8 +1,6 @@
 package text
 
 import (
-	"korok/gfx"
-
 	"github.com/go-gl/mathgl/mgl32"
 	"fmt"
 )
@@ -33,8 +31,8 @@ type LabelComp struct {
 	// Color
 	Color mgl32.Vec3
 
-	// text mesh
-	mesh gfx.Mesh
+	// text data
+	TextData
 
 	RuneCount int
 
@@ -46,13 +44,10 @@ type LabelComp struct {
 func NewText(font *Font) (t *LabelComp){
 	t = new(LabelComp)
 	t.Font = font
-	t.mesh.SetRawTexture(font.Texture)
+	t.TextData.tex = uint16(font.Texture)
 	return t
 }
 
-func (t *LabelComp) Release() {
-	t.mesh.Delete()
-}
 
 func (t *LabelComp) SetScale(s float32) {
 //	t.Scale = s
@@ -64,14 +59,12 @@ func (t *LabelComp) SetString(fs string, argv ...interface{}) {
 	// init ebo, vbo
 	t.RuneCount     = len(t.String)
 
-	vboData, eboData := t.fillData()
-	t.mesh.SetVertex(vboData)
-	t.mesh.SetIndex(eboData)
-	t.mesh.Setup()
+	// fill data
+	t.fillData()
 }
 
-func (t *LabelComp) Mesh() *gfx.Mesh {
-	return &t.mesh
+func (t *LabelComp) RenderData() *TextData {
+	return &t.TextData
 }
 
 // fill vbo/ebo with the string
@@ -83,15 +76,12 @@ func (t *LabelComp) Mesh() *gfx.Mesh {
 // 		|		.  |
 // 		+----------+
 // 1 * 1 quad for each char
-func (t *LabelComp) fillData() ([]float32, []int32) {
+func (t *LabelComp) fillData() {
 	var xOffset float32
 	var yOffset float32
 
-	vboIndexCount := len(t.String) * 4 * 4  // len * 4 * <x,y,u,v>
-	eboIndexCount := len(t.String) * 6 	 // len * 6
-
-	vboData := make([]float32, vboIndexCount)
-	eboData := make([]int32, eboIndexCount)
+	chars := make([]TextQuad, len(t.String))
+	t.TextData.Chars = chars
 
 	for i, r := range t.String {
 		if glyph := t.Font.config.Find(r); glyph != nil {
@@ -100,56 +90,17 @@ func (t *LabelComp) fillData() ([]float32, []int32) {
 			vh := glyph.Height
 
 			min, max := glyph.GetTexturePosition(t.Font)
+			char := &chars[i]
 
-			/// step = 16(4*4)
-			vi := i * 16
-
-			// 0- 3 互换, 1 - 2 互换
-			// index (0, 0) <x,y,u,v>
-			vboData[vi+0] = 0 + xOffset
-			vboData[vi+1] = 0 + yOffset
-			vboData[vi+2] = min.X
-			vboData[vi+3] = max.Y
-
-
-			// index (1,0) <x,y,u,v>
-			vi += 4
-			vboData[vi+0] = float32(vw) + xOffset
-			vboData[vi+1] = 0 + yOffset
-			vboData[vi+2] = max.X
-			vboData[vi+3] = max.Y
-
-			// index(1,1) <x,y,u,v>
-			vi += 4
-			vboData[vi+0] = float32(vw) + xOffset
-			vboData[vi+1] = float32(vh) + yOffset
-			vboData[vi+2] = max.X
-			vboData[vi+3] = min.Y
-
-			// index(0, 1) <x,y,u,v>
-			vi += 4
-			vboData[vi+0] = 0 + xOffset
-			vboData[vi+1] = float32(vh) + yOffset
-			vboData[vi+2] = min.X
-			vboData[vi+3] = min.Y
-
-			/// step = 6
-			ei := i * 6
-			bi := int32(i * 4)
-
-			eboData[ei+0] = bi + 1
-			eboData[ei+1] = bi + 2
-			eboData[ei+2] = bi + 3
-
-			eboData[ei+3] = bi + 0
-			eboData[ei+4] = bi + 1
-			eboData[ei+5] = bi + 3
+			char.xOffset = xOffset
+			char.yOffset = yOffset
+			char.w, char.h = float32(vw), float32(vh)
+			char.region.X1, char.region.Y1 = min.X, min.Y
+			char.region.X2, char.region.Y2 = max.X, max.Y
 
 			// left to right shit
 			xOffset += advance
 			yOffset += 0
 		}
 	}
-
-	return vboData, eboData
 }

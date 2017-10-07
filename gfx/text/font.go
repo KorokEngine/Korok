@@ -3,6 +3,7 @@ package text
 import (
 	"image"
 	"github.com/go-gl/gl/v3.2-core/gl"
+	"korok/gfx/bk"
 )
 
 // A Font allows rendering ofg text to an OpenGL context
@@ -33,55 +34,12 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f.TexWidth = float32(ib.Dx())
 	f.TexHeight = float32(ib.Dy())
 
-	// Create the Texture itself. It will contain all glyphs.
-	// Individual glyph-quads display a subset of this Texture
-	gl.GenTextures(1, &f.Texture)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, f.Texture)
-
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-
-	gl.TexImage2D(gl.TEXTURE_2D,
-		0,
-		gl.RGBA,
-		int32(ib.Dx()),
-		int32(ib.Dy()),
-		0,
-		gl.RGBA,
-		gl.UNSIGNED_BYTE,
-		gl.Ptr(img.Pix))
+	if id, _ := bk.R.AllocTexture(img); id != bk.InvalidId {
+		f.Texture = uint32(id)
+	}
 	err = checkGLError()
 	return
 }
-
-/**
-// 4. upload Texture
-	var Texture uint32
-	// 4.1 apply space
-	gl.GenTextures(1, &Texture)
-	gl.ActiveTexture(gl.TEXTURE0)
-	gl.BindTexture(gl.TEXTURE_2D, Texture)
-	// 4.2 params
-	// 大小插值
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
-	// 环绕方式
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE)
-	gl.TexParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE)
-
-	// 4.3 upload
-	gl.TexImage2D(gl.TEXTURE_2D,
-		0,
-		gl.RGBA,
-		int32(rgba.Rect.Dx()),
-		int32(rgba.Rect.Dy()),
-		0,
-		gl.RGBA,
-		gl.UNSIGNED_BYTE,
-		gl.Ptr(rgba.Pix))
-	return Texture, nil
- */
 
 // Dir return the font's rendering orientation
 func (f *Font) Dir() Direction {
