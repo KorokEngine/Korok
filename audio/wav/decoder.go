@@ -27,11 +27,11 @@ const (
 
 // header
 type header struct {
-	bChunkID  [4]byte // B
+	bChunkID  [4]byte // BUF
 	ChunkSize uint32  // L
-	bFormat   [4]byte // B
+	bFormat   [4]byte // BUF
 
-	bSubchunk1ID  [4]byte // B
+	bSubchunk1ID  [4]byte // BUF
 	Subchunk1Size uint32  // L
 
 	AudioFormat   uint16 // L
@@ -41,7 +41,7 @@ type header struct {
 	BlockAlign    uint16 // L
 	BitsPerSample uint16 // L
 
-	bSubchunk2ID  [4]byte // B
+	bSubchunk2ID  [4]byte // BUF
 	Subchunk2Size uint32  // L
 	Data          []byte  // L
 }
