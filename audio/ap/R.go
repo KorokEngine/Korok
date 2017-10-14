@@ -4,6 +4,7 @@ import (
 	"golang.org/x/mobile/exp/audio/al"
 
 	"log"
+	"os"
 )
 
 type FileType uint8
@@ -71,7 +72,12 @@ func (am *AudioManger) LoadSound(name string, fType FileType, sType SourceType) 
 		log.Println("fail to init decoder, ", err)
 	}
 	if sType == Static {
-		data, numChan, bitDepth, freq, err := d.FullDecode()
+		file, err := os.Open(name)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		data, numChan, bitDepth, freq, err := d.FullDecode(file)
 		if err != nil {
 			log.Println("fail to full decode audio data")
 			return
@@ -84,27 +90,29 @@ func (am *AudioManger) LoadSound(name string, fType FileType, sType SourceType) 
 
 		fc := formatCodes[format]
 		fc = al.FormatMono16
-		_, sd := am.allocStaticData()
-		buff := &sd.Buffer
-		buff.Create(fc, data, freq)
+		_, sd := am.allocStaticData(fc, data, freq)
 		sound.Data = sd
 
 		log.Println("alloc sound id:", id, " sound:", sound)
 	} else {
-		sound.Data = &StreamData{d}
+		_, sd := am.allocStreamData(d)
+		sound.Data = sd
 	}
 	return
 }
 
-func (am *AudioManger) allocStaticData() (id uint16, data *StaticData) {
+func (am *AudioManger) allocStaticData(fmt uint32, bits []byte, freq int32) (id uint16, data *StaticData) {
 	id, data = am.indexStatic, &am.staticData[am.indexStatic]
 	am.indexStatic ++
+	data.Static.Create(fmt, bits, freq)
 	return
 }
 
-func (am *AudioManger) allocStreamData() (id uint16, data *StreamData) {
+func (am *AudioManger) allocStreamData(d Decoder) (id uint16, data *StreamData) {
 	id, data = am.indexStream, &am.streamData[am.indexStream]
 	am.indexStream ++
+	data.Stream.Create()
+	data.Decoder = d
 	return
 }
 
@@ -141,9 +149,6 @@ func getFormat(channels, depth int32) FormatEnum {
 	default:
 		format = FORMAT_END
 	}
-
-	log.Println("input params, chann:", channels, " depth:", depth, " format:", format)
-
 	return format
 }
 

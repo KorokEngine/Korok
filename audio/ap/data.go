@@ -1,14 +1,16 @@
 package ap
 
+import "os"
+
 // audio file decoder
 type Decoder interface {
 	// helper method for in-memory decode
-	FullDecode() (d []byte, numChan, freq int32, err error)
+	FullDecode(file *os.File) (d []byte, numChan, bitDepth, freq int32, err error)
 
 	// stream decode
 	Decode() int
-	NumOfChan() int
-	BitDepth() int
+	NumOfChan() int32
+	BitDepth() int32
 	SampleRate() int32
 	Buffer() []byte
 	ReachEnd() bool
@@ -23,7 +25,6 @@ type DecoderFactory interface {
 // sound represent a audio segment
 type Sound struct {
 	Type SourceType
-	Format uint32
 	Priority uint16
 
 	Data interface{}
@@ -31,7 +32,7 @@ type Sound struct {
 
 // static in-memory data
 type StaticData struct {
-	Buffer BufferAL
+	Static BufferAL
 
 	SampleRate int32
 	BitDepth   int32
@@ -40,6 +41,7 @@ type StaticData struct {
 
 // streamed from file
 type StreamData struct {
+	Stream StreamBuffer
 	Decoder
 }
 

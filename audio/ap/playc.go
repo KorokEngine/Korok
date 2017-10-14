@@ -136,6 +136,10 @@ func (pc *PlayContext) Play(id uint16, priority uint16) {
 	}
 }
 
+func (pc *PlayContext) Stop(id uint16) {
+
+}
+
 // play
 func (pc *PlayContext) NextFrame() {
 	// update channel state
@@ -161,4 +165,6 @@ func (pc *PlayContext) NextFrame() {
 			channel.Play(&pc.R.soundPool[play.id])
 		}
 	}
+	// reset queue
+	pc.pIndex = 0
 }

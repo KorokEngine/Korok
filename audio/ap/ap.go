@@ -1,8 +1,8 @@
 package ap
 
 /// Initialize the AudioPlayer
-func Init() {
-	g_ctx.Init()
+func Init() error{
+	return g_ctx.Init()
 }
 
 /// Destroy AudioPlayer
@@ -25,6 +25,10 @@ func Pause(pause bool) {
 /// default:priority=0
 func Play(id uint16, priority uint16) {
 	g_ctx.Play(id, priority)
+}
+
+func Stop(id uint16) {
+	g_ctx.Stop(id)
 }
 
 // advance to next frame
