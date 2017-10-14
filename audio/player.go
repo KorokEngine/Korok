@@ -1,29 +1,22 @@
 package audio
 
-import "golang.org/x/mobile/exp/audio/al"
+// player 管理 source 资源，执行音频播放
+// 1. SamplerPlayer 播放音效
+// 2. MusicPlayer 播放背景音乐
 
-type Player struct {
-	sources []al.Source
+type SamplerPlayer struct {
 }
 
-func NewPlayer(size int) (*Player, error){
-	err := al.OpenDevice()
-	if err != nil {
-		return nil, err
-	}
+func (p *SamplerPlayer) Play(id uint16) {
 
-	p := new(Player)
-	p.sources = al.GenSources(size)
-
-	return p, nil
 }
 
-func (p*Player) Play(b al.Buffer) {
-	s := p.available()
-	s.QueueBuffers(b)
+type MusicPlayer struct {
+	id uint16
 }
 
-// 选取一个可用的源
-func (p*Player) available() al.Source{
-	return p.sources[0]
+func NewMusicPlayer() (*MusicPlayer, error) {
+	return nil, nil
 }
+
+

@@ -1,24 +1,15 @@
 package audio
 
-import "golang.org/x/mobile/exp/audio/al"
-
-/**
-音频接口设计....音频和其它组件的
-
-*/
-
-type SourceState int
-
-const (
-	READY SourceState = iota
-	PLAYING
-	STOP
+import (
+	"korok/audio/ap"
 )
 
 // 组件设计
 type SourceComp struct {
 	// 音频资源
-	Id string
+	Id uint16
+	// 优先级
+	P  uint16
 
 	// 静音
 	Mute bool
@@ -29,42 +20,55 @@ type SourceComp struct {
 	// 音量 [0, 1]
 	Volume float32
 
-	// 声源状态
-	state SourceState
+	// system
+	as *AudioSystem
 }
 
-func (s *SourceComp) Play(id string) {
-	s.Id = id
-	s.state = READY
+func (s *SourceComp) Play() {
+
 }
 
 // 系统设计
 type AudioSystem struct {
-	bank *Bank
-	player *Player
 	comps []SourceComp
+
+	// player
+	sPlayer SamplerPlayer
+	mPlayer MusicPlayer
 }
 
+func NewAudioSystem() (*AudioSystem, error) {
+	ap.Init()
+
+	sys := &AudioSystem{}
+	g_sPlayer = &sys.sPlayer
+	g_mPlayer = &sys.mPlayer
+
+	return sys, nil
+}
+
+// 必须通过更新方法，来检测音频的状态
 func (sys *AudioSystem) Update(dt float32) {
-	p := sys.player
-
-	for i := range sys.comps {
-		comp := &sys.comps[i]
-		if comp.state == READY {
-			p.Play(sys.id2buffer(comp.Id))
-			comp.state = PLAYING
-		}
-	}
+	ap.NextFrame()
 }
 
-func (sys *AudioSystem) id2buffer(id string) al.Buffer {
-	return sys.bank.GetBuffer(id)
+//////////////// static & global field
+
+// 便捷的方法，无视优先级系统直接进入播放
+func Play(id uint16) (ok bool){
+	// TODO!
+	return
 }
 
+// default Audio-File-Decoder
+var DefaultDecoderFactory = &HaDecoderFactory{}
 
+// shared player
+var g_sPlayer *SamplerPlayer
+var g_mPlayer *MusicPlayer
 
-
-
+func init() {
+}
 
 
 

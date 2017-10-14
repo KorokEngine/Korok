@@ -10,7 +10,7 @@ import (
 type FileType uint8
 const (
 	WAV 	FileType = iota
-	VORBIS
+	VORB
 
 	// NOT IMPLEMENT YET
 	OPUS
