@@ -2,8 +2,10 @@ package wav
 
 import (
 	"io"
-	"korok/audio/codec"
 	"encoding/binary"
+	"os"
+	"io/ioutil"
+	"log"
 )
 
 const (
@@ -46,49 +48,9 @@ type header struct {
 	Data          []byte  // L
 }
 
-// pcm stream
-type stream struct {
-	offset int
-	reader io.Reader
-}
-
-func (s*stream)Seek(offset int64, whence int) (int64, error) {
-	return 0, nil
-}
-
-func (s*stream)Close() error {
-	return nil
-}
-
-func (s*stream)Read(b []byte) (int, error) {
-	return s.reader.Read(b)
-}
-
-type Audio struct {
-	header
-	stream
-}
-
-func (a *Audio) Format() *codec.Format {
-	return &codec.Format{
-		NumChannels: int(a.header.NumChannels),
-		SampleRate: int(a.header.SampleRate),
-		BitDepth: int(a.header.BitsPerSample),
-	}
-}
-
-func (d *Audio) Stream() codec.Stream {
-	return &d.stream
-}
-
-// impl Decode(r io.Reader) (codec.Audio, error)
-type Decoder struct {
-}
-
 // Read returns raw wav data from an input reader
-func (*Decoder)Decode(r io.Reader) (codec.Audio, error) {
-	h := header{}
-
+func decode(r io.Reader) (*header, error) {
+	h := &header{}
 	// header
 	err := binary.Read(r, binary.BigEndian, &h.bChunkID)
 	if err != nil {
@@ -144,21 +106,108 @@ func (*Decoder)Decode(r io.Reader) (codec.Audio, error) {
 	if err != nil {
 		return nil, err
 	}
+	return h, nil
+}
 
-	// pcm stream
-	s := stream{
-		offset:44,
-		reader:r,
+/**
+impl:
+type Decoder interface {
+	FullDecode() (d []byte, numChan, freq int32, err error)
+
+	Decode() int
+	NumOfChan() int
+	BitDepth() int
+	SampleRate() int32
+	Static() []byte
+	ReachEnd() bool
+}
+ */
+type Decoder struct {
+	numChannels   int32
+	sampleRate    int32
+	bitDepth      int32
+
+	buffer []byte
+	size int32
+	offset int32
+
+	file *os.File
+	name string
+}
+
+// DON'T change decoder state! pure-virtual function
+func (*Decoder) FullDecode(file *os.File) (data []byte, numChan, bitDepth, freq int32, err error) {
+	h, err := decode(file)
+	defer file.Close()
+
+	if err != nil {
+		return
 	}
 
-	// return audio
-	return &Audio{h, s}, nil
+	buf, err := ioutil.ReadAll(file)
+	if err != nil {
+		return
+	}
+
+	numChan = int32(h.NumChannels)
+	freq    = int32(h.SampleRate)
+	bitDepth= int32(h.BitsPerSample)
+	data    = buf
+	return
 }
 
+// streamed from disc
+func (d *Decoder) Decode() (decoded int) {
+	if d.file == nil {
+		file, err := os.Open(d.name)
+		if err != nil {
+			return
+		}
+		d.file = file
+		h, err := decode(file)
+		if err != nil {
+			return
+		}
+		d.numChannels = int32(h.NumChannels)
+		d.sampleRate  = int32(h.SampleRate)
+		d.bitDepth    = int32(h.BitsPerSample)
+		d.buffer      = make([]byte, 16384)
 
-func init() {
-	/// Register to codec.formats
-	codec.RegisterFormat("wav", "wav", &Decoder{})
+		fi, err := file.Stat()
+		if err == nil {
+			log.Println("init decoder context... file size:", fi.Size()/16384)
+		}
+	}
+	decoded, _ = io.ReadFull(d.file, d.buffer)
+	return
 }
 
+func (d *Decoder) NumOfChan() int32 {
+	return d.numChannels
+}
 
+func (d *Decoder) BitDepth() int32 {
+	return d.bitDepth
+}
+
+func (d *Decoder) SampleRate() int32 {
+	return d.sampleRate
+}
+
+func (d *Decoder) Buffer() []byte {
+	return d.buffer
+}
+
+func (d *Decoder) ReachEnd() bool {
+	return d.offset == d.size
+}
+
+func (d *Decoder) Close() {
+	d.file.Close()
+}
+
+func NewDecoder(name string) (d *Decoder, err error) {
+	d = new(Decoder)
+	d.name = name
+	return
+}
