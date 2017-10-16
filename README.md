@@ -50,5 +50,24 @@ Batch接口采用了一个半自动的方案：提供一个 batch-id 字段，�
 
 --2017/10/14
 
+在 `gfx/dbg/` 目录下实现了 debug 绘制功能，这这种功能通常用来显示一些debug信息，比如fps,GPU和GPU状态监控等。目前可以用来在屏幕上打印矩形和字符串，这是一个自包含的
+模块，可以说是一个微型的渲染系统，它不依赖GUI，也不依赖于引擎的渲染系统（直接基于bk-API）实现。我们的API使用了 *ImmediateMode GUI* 设计，这种 API 接口简单，却能够
+实现强大的功能，对于打印一些临时信息来说再好不过，下面是一个段示例：
+
+```
+func OnLoop() {
+	// draw something...
+	dbg.Move(50, 50)
+	dbg.Color(0xFFFF0000)
+	dbg.DrawRect(0, 0, 50, 50)
+
+	dbg.Move(300, 50)
+	dbg.DrawStr("fps:60000!!")
+
+	// advance frame
+	dbg.NextFrame()
+}
+```
+
 
 
