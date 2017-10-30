@@ -9,7 +9,8 @@ import (
 	"unsafe"
 )
 
-//
+/// MeshComp and MeshTable
+
 type Mesh struct {
 	// vertex data <x,y,u,v>
 	vertex []PosTexColorVertex
@@ -20,6 +21,8 @@ type Mesh struct {
 	IndexId   uint16
 	VertexId  uint16
 }
+
+type MeshComp Mesh
 
 func (*Mesh) Type() int32{
 	return 0
@@ -165,4 +168,20 @@ var vertices = []float32{
 }
 
 
+type MeshTable struct {
+	_comps []MeshComp
+	_index uint32
+	_map  map[int]int
+}
+
+func (mt *MeshTable) NewComp() (mc *MeshComp) {
+	mc = &mt._comps[mt._index]
+	mt._index ++
+	return
+}
+
+func (mt *MeshTable) Comp() (mc *MeshComp) {
+	mc = &mt._comps[mt._index]
+	return
+}
 

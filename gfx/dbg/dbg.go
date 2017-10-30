@@ -4,8 +4,14 @@ import (
 	"korok/gfx/bk"
 	"github.com/go-gl/mathgl/mgl32"
 	"unsafe"
-	// "log"
 	"log"
+)
+
+type DrawType uint8
+const (
+	TEXT DrawType = iota
+	RECT
+	CIRCLE
 )
 
 // dbg - draw debug info
@@ -44,8 +50,8 @@ func Move(x, y float32) {
 	g_buffer.x, g_buffer.y = x, y
 }
 
-func Color(color uint32) {
-	g_buffer.color = color
+func Color(argb uint32) {
+	g_buffer.color = argb
 }
 
 // draw a rect

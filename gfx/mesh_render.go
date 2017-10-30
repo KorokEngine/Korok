@@ -11,6 +11,9 @@ import (
 /// For simple mesh, not 3D model
 
 type MeshRender struct {
+	MT *MeshTable
+	TT *TransformTable
+
 	stateFlags uint64
 	rgba       uint32
 
@@ -63,22 +66,31 @@ func NewMeshRender(vsh, fsh string) *MeshRender {
 	return mr
 }
 
+func (mr *MeshRender) RequireTable(mt *MeshTable, tt *TransformTable) {
+	mr.MT = mt
+	mr.TT = tt
+}
+
+type RenderMesh struct {
+	*Mesh
+	Matrix []float32
+}
+
 // extract render object
-func (mr *MeshRender) Extract() {
+func (mr *MeshRender) Extract(visibleObjects []uint32) {
 
 }
 
 // draw
-func (mr *MeshRender) Draw(d RenderData, pos, scale mgl32.Vec2, rot float32) {
+func (mr *MeshRender) Draw(d RenderData, mat4 mgl32.Mat4) {
 	m := d.(*Mesh)
 
 	// state
 	bk.SetState(mr.stateFlags, mr.rgba)
 	bk.SetTexture(0, mr.umh_S0, uint16(m.TextureId), 0)
-	//
+
 	// set uniform - mvp
-	mm := mgl32.Translate3D(pos[0], pos[1], 0)
-	bk.SetUniform(mr.umh_M, unsafe.Pointer(&mm[0]))
+	bk.SetUniform(mr.umh_M, unsafe.Pointer(&mat4[0]))
 
 	// set vertex
 	bk.SetVertexBuffer(0, m.VertexId, 0, 4)

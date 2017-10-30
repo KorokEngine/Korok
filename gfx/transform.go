@@ -1,4 +1,4 @@
-package space
+package gfx
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
@@ -89,15 +89,15 @@ func (xf *Transform) AddChild(c *Transform) {
 	}
 }
 
-var nodeSystem *NodeSystem
+var nodeSystem *TransformTable
 
-type NodeSystem struct {
+type TransformTable struct {
  	comps []Transform
 	_map []int
 	index, capacity int
 }
 
-func (th *NodeSystem) NewTransform(id uint32) *Transform {
+func (th *TransformTable) NewTransform(id uint32) *Transform {
 	th.index += 1
 	len := len(th.comps)
 	if th.index >= len {
@@ -112,20 +112,20 @@ func (th *NodeSystem) NewTransform(id uint32) *Transform {
 	return nil
 }
 
-func (th *NodeSystem) Get(id uint32) *Transform {
+func (th *TransformTable) Get(id uint32) *Transform {
 	return &th.comps[id]
 }
 
-func (th *NodeSystem) Delete(id uint32) {
+func (th *TransformTable) Delete(id uint32) {
 	//
 }
 
-func (th *NodeSystem) Destroy() {
+func (th *TransformTable) Destroy() {
 	//
 }
 
-func NewNodeSystem() *NodeSystem {
-	nodeSystem = new(NodeSystem)
+func NewNodeSystem() *TransformTable {
+	nodeSystem = new(TransformTable)
 	nodeSystem.comps = make([]Transform, nodeSystem.capacity)
 	return nodeSystem
 }

@@ -35,3 +35,16 @@ type Batch struct {
 	firstIndex uint16
 	numIndex   uint16
 }
+
+type BatchConverter interface {
+	Fill(vertex []PosTexColorVertex)
+}
+
+type BatchSystem struct {
+
+}
+
+// 传入一组可 Batch 的渲染对象，返回一组batch好的渲染对象
+func (*BatchSystem) Batch(obj []RenderObject) []RenderObject{
+	return nil
+}

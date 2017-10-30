@@ -1,31 +1,15 @@
 package gfx
 
 import (
-	"github.com/go-gl/gl/v3.2-core/gl"
 	"github.com/go-gl/mathgl/mgl32"
-	"korok/ecs"
-	"korok/gfx/bk"
+	"korok/space"
 )
 
-// 可以在划分出几个子系统：
-// 1. BatchSystem 批量合并系统
-// 2. CullingSystem 不可见剔除
-// 3. LayerSystem Z-Order 绘制顺序管理系统
-// 4. RenderSystem - 最终调用 OpenGL API进行绘制
-//
-// 应该设计一个渲染上下文的概念，每个上下文具备所有需要条件
-// 来渲染指定的数据流 - 这里面抽象成了 Command
-// RenderComp 现在变成一个中间层的概念，在 gameplay > RenderComp > Command
-// 用来协调不同渲染数据的承载
 type RenderType int32
 
 const (
 	RenderType_Mesh 	RenderType = iota
-	RenderType_Quad
-	RenderType_Shape
-	RenderType_Text
 	RenderType_Batch
-	RenderType_Ptl
 )
 
 // TypeRender 负责把各种各样的 RenderData 从 RenderComp 里面取出来
@@ -33,35 +17,13 @@ type TypeRender interface {
 	Draw(ref []CompRef)
 }
 
+// 适合于渲染系统访问的表达方式.
+// 其实不必这么麻烦，我们在 RenderFeature里面涉及一个 Extract 步骤，构建一个渲染列表，然后再绘制即可.
+// 这个列表需要动态构建
+type RenderObject struct {
+	RenderData
 
-/**
-	处理渲染相关问题
-
-	关于 Render 的设计，shader, texture, func 其实属于GPU的资源，是GPU的状态
-	状态应该单独控制。用 Render 来管理GPU，但是还有些数据，比如如何渲染某个图形，这类
-	操作大多是用户定义的，例如 uniform 的操作！所以应该把 uniform 的操作从 Render
-	中剥离.
-
-	uniform 涉及的内容其实就是非常具体的如何绘制的问题！
- */
-
-// 真正渲染的时候需要的数据：
-// 1. VAO - 如果支持，仅此即可。否则需要下面的数据
-// 2. VBO - 绑定 buffer
-// 3. Shader内部属性偏移，用来执行 VertexAttribPointer 操作 (这部分数据可以放到Shader里面自动执行)
-
-// 渲染组件
-type RenderComp struct{
-	ecs.Entity
-
-	// type
-	Type RenderType
-
-	// 渲染数据
-	Data RenderData
-
-	// <visible, >
-	flag uint32
+	Type uint32
 
 	// Position
 	position mgl32.Vec2
@@ -71,53 +33,34 @@ type RenderComp struct{
 
 	// Scale
 	scale mgl32.Vec2
-
-	// width & height
-	width, height float32
 }
-
-func (comp *RenderComp) SetSize(width, height float32)  {
-	comp.width = width
-	comp.height = height
-}
-
-func (comp *RenderComp) SetPosition(position mgl32.Vec2)  {
-	comp.position = position
-}
-
-func (comp *RenderComp) SetRotation(rotation float32)  {
-	comp.rotation = rotation
-}
-
-func (comp *RenderComp) SetScale(x, y float32)  {
-	comp.scale[0] = x
-	comp.scale[1] = y
-}
-
-// return model translation
-func (comp *RenderComp) SRT(identity *mgl32.Mat4) *mgl32.Mat4{
-	id := identity.Mul4(mgl32.Translate3D(comp.position[0], comp.position[1], 0))
-	return &id
-}
-
-// 渲染系统
-// 渲染架构 - 草稿
-
-const STEP  = 100
 
 type RenderSystem struct {
-	comps []RenderComp
-	_map  []int
-	index int
-
-	// for cull/batch/sort...
-	refs []CompRef
+	MainCamera Camera
 
 	// cull
 	C CullSystem
 
+	// batch
+	B BatchSystem
+
 	// render for each-type render-data
 	renders [8]TypeRender
+}
+
+// 在渲染系统里面，可以维护一组 Transform 缓存，
+// 这样不需要访问 TransformSystem 就可以快速的使用这些数据
+// 有两个地方期待这里的数据：
+// 1. CullingSystem - 更新位移数据
+// 2. RenderSystem 的 Matrix 缓存
+// 现在问题来了，部分游戏对象是通过Batch系统绘制的，不需要 Matrix，同时希望能够直接
+// 访问 SRT 数据，而不是 Matrix！
+func (th *RenderSystem) UpdateTransform(transforms []space.Transform) {
+	// update culling system TODO
+	cs := th.C
+	for _, xform := range transforms {
+		cs.UpdateBounding(int32(xform.Entity), BoundingBox{})
+	}
 }
 
 // register type-render
@@ -125,179 +68,68 @@ func (th *RenderSystem) RegisterTypeRender(t RenderType, render TypeRender) {
 	th.renders[t] = render
 }
 
-func (th *RenderSystem) NewRenderComp(id uint32) *RenderComp{
-	th.index += 1
-	len := len(th.comps)
-	if th.index >= len {
-		th.comps = resize(th.comps, len + STEP)
-		th._map = resizeInt(th._map, len + STEP)
-	}
-	comp := RenderComp{
-		Entity: ecs.Entity(th.index),
-	}
-	th.comps[th.index] = comp
-	th._map[id] = th.index
-	return &th.comps[th.index]
-}
-
-func (th *RenderSystem) Size() int{
-	return th.index
-}
-
-// 在跑循环的时候处理batch吗？还是提前算好再提交？？
-// 其实可以算出来一个新的队列！
-// 1. 进行排序，保证渲染顺序
-// 2. 过滤，得到可以直接执行的 RenderCommand
-// 对 renderObj 进行排序是一个耗时的过程，主要是因为 renderObj 都比较大，其实是不方便进行排序的！！！
-// 或许应该先把所有的 renderObj 转化为 Command，之后再进行排序。但是由于之前的RenderObj数量较多，
-// 所以会得到灯亮的 Command，之后在对这些 Command 进行合并。
-// renderCmd 的抓化虽然耗时，但是可以用多线程转化！！
 func (th *RenderSystem) Update(dt float32) {
-	//// cap := len(th.comps)
-	//
-	////
-	//cmds := th.ToCommand()
-	//// 1. sort cmds
-	//
-	//// 2. batch
-	//cmds = th.B.Merge(cmds)
-	//
+	// 使用筛选系统对所有的可渲染对象进行筛选, 得到一个可见对象列表
+	// 如果需要实现多相机，只需要在此进行多次筛选，比如:
+	// main_view = th.C.Collect(&th.MainCamera)
+	// view1 = th.C.Collect(&th.SecondCamera)
+	// view2 = th.C.Collect(&th.ThirdCamera)
+	visibleObjects := th.C.Collect(&th.MainCamera)
 
-	// 1. Cull - collect visible object
-	// 2. d/c
-	// 2. Batch - find batch-able object
-	// 3.
-
-	// 1. cull
-	refs := th.C.Cull(th.comps, Camera{})
+	// 对当前的可见列表进行渲染
+	// 可见对象的底层数据是按类型存储的，比如 Sprite/Mesh 分别存储在各自的列表里面
+	// 所以应该对可见对象按类型排序，这样实际渲染的时候，对每种底层类型数据的访问，
+	// 内存是连续的.
+	renderObjects := visibleObjects
 
 	// 2. sort by type
 	// TODO
+	// 假设已经排好序了. - 可以在此时筛选出所有的可Batch对象，执行Batch系统
+	// 这样就不必把 Batch 放在 BatchRender 里面，Render 继续负责最底层的渲染
+	// 典型的Batch对象，Sprite/Text/
+	// 筛选batch对象可以非常迅速，采用首尾交换的遍历，可以迅速分开可以Batch的不可Batch的对象
+	// 2.1 find batchable object
+	unbatchObjects := renderObjects[:10]
+	batchableObject := renderObjects[10:]
+
+	// 2.2 execute batch system
+	batchObjects := th.B.Batch(batchableObject)
+
+	// 2.3 合并batch后的结果, 此时可以进行最终的绘制了！
+	// 无论是 Cull 还是 Batch 只是性能优化而已， 渲染需要转化最终的渲染命令
+	// 这是 RenderFeature 的事情
+	renderObjects = append(unbatchObjects, batchObjects...)
+
+	// 使用 RenderFeature 转化渲染命令
+	// 渲染不仅需要待渲染对象还要得到 Transform 目前
+	// 其实此时已经没有必要合并 renderObject了，既然batch后的全部都是batch对象，那么直接渲染即可。
+
+	// 以上逻辑不对，Cull系统中保存的 id 是 Entity-Id，但是对应的确实 Comp，所以！！！！
+	// 所以需要重新思考：Cull/场景管理/渲染系统集成
+	//
 
 	// 3. extract and draw
-	var N = len(refs)
-	var xType int32
-	var left, right int
-	for i := 0; i < N; i++ {
-
-		right = left + 1
-		xType = refs[left].Type
-		for right < N && refs[right].Type == xType {
-			right ++
-		}
-		th.renders[xType].Draw(refs[left:right])
-	}
-}
-
-func (th *RenderSystem) Delete(id uint32) {
-	i := th._map[id]
-	if i < th.index {
-		th.comps[i] = th.comps[th.index]
-		th._map[th.comps[i].Index()] = i
-		th._map[th.index] = 0
-	} else if i == th.index {
-		th._map[th.index] = 0
-	}
-	th.index -= 1
-}
-
-func (th *RenderSystem) GetComp(id uint32)  *RenderComp{
-	if th._map[id] == 0 {
-		return nil
-	}
-	return &th.comps[th._map[id]]
+	//var N = len(refs)
+	//var xType int32
+	//var left, right int
+	//for i := 0; i < N; i++ {
+	//
+	//	right = left + 1
+	//	xType = refs[left].Type
+	//	for right < N && refs[right].Type == xType {
+	//		right ++
+	//	}
+	//	th.renders[xType].Draw(refs[left:right])
+	//}
+	// 4. debug draw
+	//
 }
 
 func (th *RenderSystem) Destroy() {
 
 }
 
-func resize(slice []RenderComp, size int) []RenderComp {
-	newSlice := make([]RenderComp, size)
-	copy(newSlice, slice)
-	return newSlice
-}
-
-func resizeInt(slice []int, size int) []int {
-	newSlice := make([]int, size)
-	copy(newSlice, slice)
-	return newSlice
-}
-
 func NewRenderSystem() *RenderSystem {
 	th := new(RenderSystem)
-	th.comps = make([]RenderComp, STEP)
-	th._map = make([]int, STEP)
 	return th
-}
-
-//
-//type BatchShader struct {
-//	GLShader
-//
-//	inPosition uint32
-//	inTexCoord uint32
-//	inColor    uint32
-//}
-//
-//func (bs *BatchShader) Setup() {
-//	// uniform
-//	bs.Use()
-//	//  ---- Vertex GLShader
-//	// projection
-//	p := mgl32.Ortho2D(0, 480, 0, 320)
-//	bs.SetMatrix4("projection\x00", p)
-//
-//	//// model
-//	//model := mgl32.Ident4()
-//	//bs.SetModel(model)
-//	//
-//
-//	// ---- Fragment GLShader
-//	bs.SetInteger("tex\x00", 0)
-//	gl.BindFragDataLocation(bs.Program, 0, gl.Str("outputColor\x00"))
-//
-//	// in/out stream
-//	//bs.inPosition = bs.GLShader.GetAttrLocation("position\x00")
-//	//bs.inTexCoord = bs.GLShader.GetAttrLocation("texCoord\x00")
-//	//bs.inColor    = bs.GLShader.GetAttrLocation("color\x00")
-//}
-//
-//func (bs *BatchShader) Prepare() {
-//	bs.Use()
-//}
-//
-//func (bs *BatchShader) Draw(any interface{}) {
-//	b := any.(*Batch)
-//
-//	if b.vao > 0{
-//		gl.BindVertexArray(b.vao)
-//		gl.DrawElements(gl.TRIANGLES, int32(b.count * 6), gl.UNSIGNED_INT, nil)
-//		gl.BindVertexArray(0)
-//	} else {
-//		gl.BindBuffer(gl.ARRAY_BUFFER, b.vbo)
-//		gl.EnableVertexAttribArray(bs.inPosition)
-//		gl.VertexAttribPointer(bs.inPosition, 2, gl.FLOAT, false, 20, gl.Ptr(0))
-//		gl.VertexAttribPointer(bs.inTexCoord, 2, gl.FLOAT, false, 20, gl.Ptr(8))
-//		gl.VertexAttribPointer(bs.inColor, 4, gl.UNSIGNED_BYTE, true, 20, gl.Ptr(16))
-//
-//		gl.DrawElements(gl.TRIANGLES, int32(b.count), gl.UNSIGNED_INT, nil)
-//		gl.BindBuffer(gl.ARRAY_BUFFER, 0)
-//	}
-//}
-
-func NewTextShader(ts bk.GLShader) bk.GLShader{
-	ts.Use()
-
-	p := mgl32.Ortho2D(0, 480, 0, 320)
-
-	// vertex
-	ts.SetMatrix4("projection\x00", p)
-	ts.SetVector3f("model\x00", 50, 50, 10)
-
-	// fragment
-	ts.SetInteger("text\x00", 0)
-	gl.BindFragDataLocation(ts.Program, 0, gl.Str("color\x00"))
-
-	return ts
 }

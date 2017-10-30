@@ -8,6 +8,9 @@ import (
 )
 
 //
+type FontSystem interface {
+	Glyph(r rune) (tex uint16, left, right, bottom, top float32)
+}
 
 var font_width float32 = 12
 var font_height float32 = 32

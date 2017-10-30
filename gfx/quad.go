@@ -22,6 +22,13 @@ type Region struct {
 	X2, Y2 float32
 }
 
+type SubTex struct {
+	TexId   uint16
+	padding uint16
+
+	Region
+}
+
 // Sprite 只需要记录 Width/Height/U/V/Tex 即可
 // Anchor
 type QuadSprite struct {
