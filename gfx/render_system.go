@@ -2,7 +2,6 @@ package gfx
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"korok/space"
 )
 
 type RenderType int32
@@ -55,7 +54,7 @@ type RenderSystem struct {
 // 2. RenderSystem 的 Matrix 缓存
 // 现在问题来了，部分游戏对象是通过Batch系统绘制的，不需要 Matrix，同时希望能够直接
 // 访问 SRT 数据，而不是 Matrix！
-func (th *RenderSystem) UpdateTransform(transforms []space.Transform) {
+func (th *RenderSystem) UpdateTransform(transforms []Transform) {
 	// update culling system TODO
 	cs := th.C
 	for _, xform := range transforms {

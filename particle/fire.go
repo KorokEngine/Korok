@@ -1,4 +1,4 @@
-package effect
+package particle
 
 import (
 	"github.com/go-gl/mathgl/mgl32"

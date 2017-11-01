@@ -1,9 +1,14 @@
 package gfx
 
+import (
+	"korok/engi"
+)
+
 /// SpriteComp & SpriteTable
 /// Usually, sprite can be rendered with a BatchRenderer
 
 type SpriteComp struct {
+	engi.Entity
 	*SubTex
 
 	Scale float32
@@ -13,12 +18,14 @@ type SpriteComp struct {
 type SpriteTable struct {
 	_comps [1024]SpriteComp
 	_index uint32
-	_map   [1024]int
+	_map   [1024]uint32
 }
 
-func (st *SpriteTable) NewComp(tex *SubTex) (sc *SpriteComp) {
+func (st *SpriteTable) NewComp(entity engi.Entity, tex *SubTex) (sc *SpriteComp) {
 	sc = &st._comps[st._index]
 	sc.SubTex = tex
+	sc.Entity = entity
+	st._map[entity] = st._index
 	st._index ++
 	return
 }

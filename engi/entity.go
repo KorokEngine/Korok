@@ -1,4 +1,4 @@
-package ecs
+package engi
 
 /**
 	定义ECS组件: Entity/Component/System
@@ -16,6 +16,16 @@ const INDEX_MASK  = (1<<INDEX_BITS)-1
 
 const GENERATION_BITS  = 8
 const GENERATION_MASK  = (1<<GENERATION_BITS)-1
+
+type ComponentType uint16
+const (
+	COMP_DEBUG_NAME ComponentType = iota
+	COMP_SPRITE
+	COMP_MESH
+	COMP_TAG
+	COMP_TRANSFORM
+	COMP_PARTICLE
+)
 
 type Entity uint32
 
@@ -42,10 +52,26 @@ func Create() Entity {
 	return id
 }
 
-func Alive(e Entity) bool {
+func (Entity) Alive() bool {
 	return false
 }
 
-func Destroy(e Entity) {
+func (Entity) Destroy() {
 
+}
+
+func (Entity)AddComponent(xType ComponentType) Component{
+	return nil
+}
+
+func (Entity)Component(xType ComponentType) Component{
+	return nil
+}
+
+type EntityManager struct {
+
+}
+
+func (*EntityManager) New() Entity{
+	return 0
 }

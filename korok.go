@@ -2,9 +2,12 @@ package korok
 
 import (
 	"log"
-	"korok/hid"
-	"korok/gameplay"
 	"io/ioutil"
+
+	"korok/gfx"
+	"korok/engi"
+	"korok/game"
+	"korok/hid"
 )
 
 const VERSION_CODE  = 1
@@ -18,8 +21,8 @@ type Options struct {
 func Run(options *Options)  {
 	log.Println("Game Start! " + options.Title)
 
-	g := &gameplay.Game{}
-	gameplay.G = g
+	g := &game.Game{}
+	G = g
 
 	hid.RegisterWindowCallback(g)
 	hid.CreateWindow(&hid.WindowOptions{
@@ -34,5 +37,14 @@ func SetDebug(enable bool) {
 		log.SetOutput(ioutil.Discard)
 	}
 }
+var G *game.Game
+
+///// entity-api
+var Entity *engi.EntityManager
+
+///// shortcut component-api for rendering system
+var Sprite 	   *gfx.SpriteTable
+var Mesh       *gfx.MeshTable
+var Transform  *gfx.TransformTable
 
 

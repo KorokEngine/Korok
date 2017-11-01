@@ -1,4 +1,4 @@
-package gameplay
+package game
 
 /**
 	游戏性 - GamePlay

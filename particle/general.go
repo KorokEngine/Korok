@@ -1,4 +1,4 @@
-package effect
+package particle
 
 import "github.com/go-gl/mathgl/mgl32"
 
@@ -37,7 +37,7 @@ type GravityCloud struct {
 }
 
 // alloc a big block ?
-func (g *GravityCloud) Initialize(cap int32, c *ParticleConfig) {
+func (g *GravityCloud) Initialize(cap int32, c *Config) {
 	// memory
 	g.r, g.d_r = make([]float32, cap), make([]float32, cap)
 	g.g, g.d_g = make([]float32, cap), make([]float32, cap)

@@ -1,4 +1,4 @@
-package effect
+package particle
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
@@ -20,7 +20,7 @@ type Var struct {
 	B, Var float32
 }
 
-type ParticleConfig struct {
+type Config struct {
 	//
 	MaxParticle uint32
 
@@ -54,7 +54,7 @@ type ParticleConfig struct {
 }
 
 type GravityConfig struct {
-	ParticleConfig
+	Config
 
 	// gravity
 	Gravity mgl32.Vec2
@@ -72,7 +72,7 @@ type GravityConfig struct {
 }
 
 type RadiusConfig struct {
-	ParticleConfig
+	Config
 
 	// min, max radius and d
 	Radius, D_Radius Range
@@ -82,7 +82,7 @@ type RadiusConfig struct {
 }
 
 type ParticleComp struct {
-	C *ParticleConfig
+	C *Config
 	Simulator
 }
 
@@ -100,7 +100,7 @@ func (p *ParticleSystem) Update(dt float32) {
 	}
 }
 
-func (p *ParticleSystem) NewParticleComp(id uint32, c *ParticleConfig) *ParticleComp {
+func (p *ParticleSystem) NewParticleComp(id uint32, c *Config) *ParticleComp {
 	comp := new(ParticleComp)
 	comp.C = c
 	comp.Simulator = nil // TODO!

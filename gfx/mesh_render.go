@@ -11,6 +11,7 @@ import (
 /// For simple mesh, not 3D model
 
 type MeshRender struct {
+
 	MT *MeshTable
 	TT *TransformTable
 

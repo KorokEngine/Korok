@@ -7,6 +7,7 @@ import (
 
 	"fmt"
 	"unsafe"
+	"korok/engi"
 )
 
 /// MeshComp and MeshTable
@@ -22,7 +23,10 @@ type Mesh struct {
 	VertexId  uint16
 }
 
-type MeshComp Mesh
+type MeshComp struct {
+	engi.Entity
+	Mesh
+}
 
 func (*Mesh) Type() int32{
 	return 0
@@ -171,11 +175,13 @@ var vertices = []float32{
 type MeshTable struct {
 	_comps []MeshComp
 	_index uint32
-	_map  map[int]int
+	_map  map[int]uint32
 }
 
-func (mt *MeshTable) NewComp() (mc *MeshComp) {
+func (mt *MeshTable) NewComp(entity engi.Entity) (mc *MeshComp) {
 	mc = &mt._comps[mt._index]
+	mc.Entity = entity
+	mt._map[int(entity)] = mt._index
 	mt._index ++
 	return
 }

@@ -2,7 +2,8 @@ package gfx
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"korok/ecs"
+
+	"korok/engi"
 )
 
 /**
@@ -26,7 +27,7 @@ const none = 0
 // rotation, rotation, rotation .... rotation
 // 把这两个数组申请为一块，然后分两个小组使用
 type Transform struct {
-	ecs.Entity
+	engi.Entity
 	Position, Scale mgl32.Vec2
 	Rotation        float32
 
@@ -97,18 +98,18 @@ type TransformTable struct {
 	index, capacity int
 }
 
-func (th *TransformTable) NewTransform(id uint32) *Transform {
+func (th *TransformTable) NewComp(entity engi.Entity) *Transform {
 	th.index += 1
 	len := len(th.comps)
 	if th.index >= len {
 		th.comps = resize(th.comps, len + STEP)
 	}
 	comp := Transform{
-		Entity: ecs.Entity(th.index),
-		Scale:mgl32.Vec2{1, 1},
+		Entity: entity,
+		Scale:  mgl32.Vec2{1, 1},
 	}
 	th.comps[th.index] = comp
-	th._map[id] = th.index
+	th._map[entity] = th.index
 	return nil
 }
 

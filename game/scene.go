@@ -1,4 +1,4 @@
-package gameplay
+package game
 
 /**
 	场景
