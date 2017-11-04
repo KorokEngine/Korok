@@ -8,6 +8,10 @@ import (
 	"korok/engi"
 	"korok/game"
 	"korok/hid"
+	"korok/gfx/dbg"
+	"korok/particle"
+	"korok/anim"
+	"korok/physics"
 )
 
 const VERSION_CODE  = 1
@@ -23,6 +27,32 @@ func Run(options *Options)  {
 
 	g := &game.Game{}
 	G = g
+	Entity = g.DB.EntityM
+
+	for _, table := range g.DB.Tables {
+		switch t := table.(type) {
+		case *gfx.SpriteTable:
+			Sprite = t
+		case *gfx.MeshTable:
+			Mesh = t
+		case *gfx.TransformTable:
+			Transform = t
+		case *gfx.TextTable:
+			Text = t
+		case *particle.ParticleSystemTable:
+			ParticleSystem = t
+		case *anim.SkeletonTable:
+			Skeleton = t
+		case *physics.RigidBodyTable:
+			RigidBody = t
+		case *physics.ColliderTable:
+			Collider = t
+		case *game.TagTable:
+			Tag = t
+		case *game.ScriptTable:
+			Script = t
+		}
+	}
 
 	hid.RegisterWindowCallback(g)
 	hid.CreateWindow(&hid.WindowOptions{
@@ -34,7 +64,7 @@ func Run(options *Options)  {
 
 func SetDebug(enable bool) {
 	if enable == false {
-		log.SetOutput(ioutil.Discard)
+		dbg.SetOutput(ioutil.Discard)
 	}
 }
 var G *game.Game
@@ -42,9 +72,23 @@ var G *game.Game
 ///// entity-api
 var Entity *engi.EntityManager
 
+var Script *game.ScriptTable
+var Tag    *game.TagTable
+
 ///// shortcut component-api for rendering system
 var Sprite 	   *gfx.SpriteTable
 var Mesh       *gfx.MeshTable
 var Transform  *gfx.TransformTable
+var Text       *gfx.TextTable
+
+///// particle system
+var ParticleSystem *particle.ParticleSystemTable
+
+///// animation
+var Skeleton       *anim.SkeletonTable
+
+///// physics
+var RigidBody *physics.RigidBodyTable
+var Collider  *physics.ColliderTable
 
 
