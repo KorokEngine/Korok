@@ -6,6 +6,7 @@ import (
 	"box2d/dynamics/rigid"
 	"box2d/collision/shapes"
 	"log"
+	"korok/engi"
 )
 
 func init() {
@@ -25,6 +26,31 @@ func (*RigidBodyComp) MoveBy(dx, dy float32)  {
 
 }
 
+type RigidBodyTable struct {
+	_comps []RigidBodyComp
+	_index uint32
+	_map   map[int]uint32
+}
+
+func (bt *RigidBodyTable) NewComp(entity engi.Entity) (bc *RigidBodyComp) {
+	bc = &bt._comps[bt._index]
+	bt._map[int(entity)] = bt._index
+	bt._index ++
+	return
+}
+
+func (bt *RigidBodyTable) Comp(entity engi.Entity) (bc *RigidBodyComp) {
+	if v, ok := bt._map[int(entity)]; ok{
+		bc = &bt._comps[v]
+	}
+	return
+}
+
+// TODO impl
+func (bt *RigidBodyTable) Delete(entity engi.Entity) (bc *RigidBodyComp) {
+	return nil
+}
+
 // 可碰撞组件
 type ColliderComp struct {
 	*rigid.Body
@@ -38,7 +64,30 @@ func (th *ColliderComp) SetSize(w, h float32) {
 
 }
 
+type ColliderTable struct {
+	_comps []ColliderComp
+	_index uint32
+	_map   map[int]uint32
+}
 
+func (ct *ColliderTable) NewComp(entity engi.Entity) (cc *ColliderComp){
+	cc = &ct._comps[ct._index]
+	ct._map[int(entity)] = ct._index
+	ct._index ++
+	return
+}
+
+func (ct *ColliderTable) Comp(entity engi.Entity) (cc *ColliderComp) {
+	if v, ok := ct._map[int(entity)]; ok {
+		cc = &ct._comps[v]
+	}
+	return
+}
+
+// TODO impl
+func (ct *ColliderTable) Delete(entity engi.Entity) (cc *ColliderComp) {
+	return nil
+}
 
 type CollisionSystem struct {
 	B2World *box2d.World
