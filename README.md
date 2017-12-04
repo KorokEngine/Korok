@@ -76,3 +76,8 @@ Korok的最终架构这几天确定了 - Comp/Table/System，我们的所有数�
 
 -- 万圣节的第二天 🎃
 
+可见性系统的设计还是很不完善，而且也没有太好的想法，暂时去掉这个功能，这样可以继续完善渲染系统。目前渲染系统的把Feature和Render分开了，Render是可以复用的基于
+Shader的渲染工具，Feature是具体的渲染类型，比如SpriteComp/TextComp.. 它们都可以用BatchRender来渲染，只是使用上有细微的差别。由于 Golang 不支持泛型所以
+只能采取间接层的方式--既Feature，来实现差异部分的功能。
+
+-- 2017/12/04
