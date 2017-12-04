@@ -11,7 +11,8 @@ type RenderData interface{
 
 type CompRef struct {
 	Type int32
-	*RenderComp
+	*Transform
+	*SpriteComp
 }
 
 // format <x,y,u,v rgba>

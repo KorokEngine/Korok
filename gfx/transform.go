@@ -117,6 +117,11 @@ func (th *TransformTable) Get(id uint32) *Transform {
 	return &th.comps[id]
 }
 
+func (th *TransformTable) Comp(entity engi.Entity) *Transform {
+	return nil
+}
+
+
 func (th *TransformTable) Delete(id uint32) {
 	//
 }

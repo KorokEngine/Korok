@@ -1,4 +1,4 @@
-package text
+package font
 
 type Point struct {
 	X, Y float32

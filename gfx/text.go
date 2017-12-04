@@ -2,8 +2,9 @@ package gfx
 
 import (
 	"korok/engi"
-	"github.com/go-gl/mathgl/mgl32"
 	"korok/gfx/font"
+
+	"sort"
 )
 
 // 文字应该采用 BatchRender 绘制
@@ -11,6 +12,7 @@ import (
 
 type FontSystem interface {
 	Glyph(rune rune) *font.Glyph
+	Tex() uint16
 }
 
 type TextQuad struct {
@@ -33,9 +35,20 @@ type TextComp struct {
 	color uint32
 	text  string
 
+	batchId int16
+	zOrder  int16
+
 	// TextModel
 	vertex []TextQuad
 	runeCount int32
+}
+
+func (tc *TextComp) SetBatchId(bid int16) {
+	tc.batchId = bid
+}
+
+func (tc *TextComp) SetZOrder(z int16) {
+	tc.zOrder = z
 }
 
 func (tc *TextComp) SetColor(color uint32) {
@@ -89,39 +102,6 @@ func (tc *TextComp) fillData() {
 	}
 }
 
-func (tc *TextComp) Fill(buf []PosTexColorVertex, p mgl32.Vec2) {
-	for i, char := range tc.vertex {
-		vi := i * 4
-
-		v := &buf[vi+0]
-		v.X = p[0] + char.xOffset
-		v.Y = p[1] + char.yOffset
-		v.U = char.region.X1
-		v.V = char.region.Y1
-
-		// index (1,0) <x,y,u,v>
-		v = &buf[vi+1]
-		v.X = p[0] + char.xOffset + char.w
-		v.Y = p[1] + char.yOffset
-		v.U = char.region.X2
-		v.V = char.region.Y2
-
-		// index(1,1) <x,y,u,v>
-		v = &buf[vi+2]
-		v.X = p[0] + char.xOffset + char.w
-		v.Y = p[1] + char.yOffset + char.h
-		v.U = char.region.X2
-		v.V = char.region.Y1
-
-		// index(0, 1) <x,y,u,v>
-		v = &buf[vi+3]
-		v.X = p[0] + char.xOffset
-		v.Y = p[1] + char.yOffset + char.h
-		v.U = char.region.X1
-		v.V = char.region.Y1
-	}
-}
-
 // should have default font!!
 func (tc *TextComp) SetFont(fs FontSystem) {
 	tc.font = fs
@@ -165,5 +145,131 @@ func (tt *TextTable) Destroy() {
 }
 
 
+type TextRenderFeature struct {
+	Stack *StackAllocator
+	R *BatchRender
+
+	tt *TextTable
+	xt *TransformTable
+}
+
+// 此处初始化所有的依赖
+func (trf *TextRenderFeature) Register(rs *RenderSystem) {
+	// init render
+	for _, r := range rs.RenderList {
+		switch br := r.(type) {
+		case *BatchRender:
+			trf.R = br; break
+		}
+	}
+
+	// init table
+	for _, t := range rs.TableList {
+		switch table := t.(type){
+		case *TextTable:
+			trf.tt = table
+		case *TransformTable:
+			trf.xt = table
+		}
+	}
+	rs.Accept(trf)
+}
+
+
+// 此处执行渲染
+// BatchRender 需要的是一组排过序的渲染对象！！！
+func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
+	xt, tt, n := trf.xt, trf.tt, trf.tt._index
+	bList := make([]textBatchObject, n)
+
+	// get batch list
+	for i := uint32(0); i < n; i++ {
+		text := &tt._comps[i]
+		xform  := xt.Comp(text.Entity)
+		bList[i] = textBatchObject{
+			text.batchId,
+			text,
+			xform,
+		}
+	}
+
+	// sort
+	sort.Slice(bList, func(i, j int) bool {
+		return bList[i].batchId < bList[j].batchId
+	})
+
+	var batchId int16 = 0xFFFF
+	var begin = false
+	var render = trf.R
+
+	// batch draw!
+	for _, b := range bList{
+		bid := b.batchId
+
+		if batchId != bid {
+			if begin {
+				render.End()
+			}
+			batchId = bid
+			begin = true
+
+			render.Begin(b.TextComp.font.Tex())
+		}
+
+		render.Draw(b)
+	}
+
+	if begin {
+		render.End()
+		render.flushBuffer()
+	}
+
+	render.Flush()
+}
+
+type textBatchObject struct {
+	batchId int16
+	*TextComp
+	*Transform
+}
+
+func (tbo textBatchObject) Fill(buf []PosTexColorVertex) {
+	p := tbo.Transform.Position
+
+	for i, char := range tbo.vertex {
+		vi := i * 4
+
+		v := &buf[vi+0]
+		v.X = p[0] + char.xOffset
+		v.Y = p[1] + char.yOffset
+		v.U = char.region.X1
+		v.V = char.region.Y1
+
+		// index (1,0) <x,y,u,v>
+		v = &buf[vi+1]
+		v.X = p[0] + char.xOffset + char.w
+		v.Y = p[1] + char.yOffset
+		v.U = char.region.X2
+		v.V = char.region.Y2
+
+		// index(1,1) <x,y,u,v>
+		v = &buf[vi+2]
+		v.X = p[0] + char.xOffset + char.w
+		v.Y = p[1] + char.yOffset + char.h
+		v.U = char.region.X2
+		v.V = char.region.Y1
+
+		// index(0, 1) <x,y,u,v>
+		v = &buf[vi+3]
+		v.X = p[0] + char.xOffset
+		v.Y = p[1] + char.yOffset + char.h
+		v.U = char.region.X1
+		v.V = char.region.Y1
+	}
+}
+
+func (tbo textBatchObject) Size() int {
+	return 4 * len(tbo.vertex)
+}
 
 

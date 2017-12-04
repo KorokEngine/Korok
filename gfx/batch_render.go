@@ -62,7 +62,7 @@ func NewBatchRender(vsh, fsh string) *BatchRender {
 }
 
 // submit all batched group
-func (br *BatchRender) Submit(bList []Batch) {
+func (br *BatchRender) submit(bList []Batch) {
 	for i := range bList {
 		b := &bList[i]
 
@@ -82,46 +82,68 @@ func (br *BatchRender) Submit(bList []Batch) {
 // 如果所有的数据都可以放入到一个大的 VBO 里面自然可以，但是
 // 如果一个 VBO 不够放？ 那应该怎么办?
 //
-func (br *BatchRender) Draw(refs []CompRef) {
+//func (br *BatchRender) Draw(refs []BatchObject) {
+//	bc := br.BatchContext
+//
+//	// 1. sort comp by batch id
+//
+//	// 2. batch draw
+//	var N = len(refs)
+//	var batchId int32 = 0x0000FFFF
+//	var begin = false
+//
+//	for i := 0; i < N; i++ {
+//		ref := refs[i]
+//		bid := refs[i].Type & 0x0000FFFF
+//
+//		if batchId != bid {
+//			if begin {
+//				bc.End()
+//			}
+//			batchId = bid
+//			begin = true
+//
+//			bc.Begin(ref.Data.(*QuadSprite).tex) // todo
+//			bc.DrawComp(ref)
+//		} else {
+//			bc.DrawComp(ref)
+//		}
+//	}
+//
+//	if begin {
+//		bc.End()
+//		bc.flushBuffer()
+//	}
+//
+//	// 3. submit
+//	br.submit(bc.BatchList[:bc.batchUsed])
+//
+//	// 4. reset batch state
+//	bc.Reset()
+//}
+
+func (br *BatchRender) Begin(tex uint16) {
+	br.begin(tex)
+}
+
+func (br *BatchRender) Draw(converter BatchConverter) {
+	br.drawComp(converter)
+}
+
+func (br *BatchRender) End() {
+	br.end()
+}
+
+func (br *BatchRender) Flush() {
 	bc := br.BatchContext
-
-	// 1. sort comp by batch id
-
-	// 2. batch draw
-	var N = len(refs)
-	var batchId int32 = 0x0000FFFF
-	var begin = false
-
-	for i := 0; i < N; i++ {
-		ref := refs[i]
-		bid := refs[i].Type & 0x0000FFFF
-
-		if batchId != bid {
-			if begin {
-				bc.End()
-			}
-			batchId = bid
-			begin = true
-
-			bc.Begin(ref.Data.(*QuadSprite).tex) // todo
-			bc.DrawComp(ref)
-		} else {
-			bc.DrawComp(ref)
-		}
-	}
-
-	if begin {
-		bc.End()
-		bc.flushBuffer()
-	}
-
 	// 3. submit
-	br.Submit(bc.BatchList[:bc.batchUsed])
+	br.submit(bc.BatchList[:bc.batchUsed])
 
 	// 4. reset batch state
-	bc.Reset()
-
+	bc.reset()
 }
+
+
 
 const MAX_BATCH_QUAD_SIZE   uint32 = 1000
 const MAX_BATCH_INDEX_SIZE  uint32 = 6 * 1000
@@ -176,22 +198,20 @@ func (bc *BatchContext)init() {
 	bc.vbUsed = 0
 }
 
-func (bc *BatchContext) Begin(tex uint16) {
+func (bc *BatchContext) begin(tex uint16) {
 	bc.texId = tex
 	bc.firstVertex = bc.vertexPos
 }
 
 // 计算世界坐标并保存到 Batch 结构
 //
-//   3 ----- 2
-//   | `     |
-//   |   `   |
-//   0-------1
+//   3 ---- 2
+//   | `    |
+//   |   `  |
+//   0------1
 
-func (bc *BatchContext) DrawComp(ref CompRef) {
-	comp := ref.RenderComp
-	data := ref.Data.(*QuadSprite)
-	step := uint32(4)
+func (bc *BatchContext) drawComp(converter BatchConverter) {
+	step := uint32(converter.Size())
 
 	if bc.vertexPos + 4 > MAX_BATCH_VERTEX_SIZE {
 		bc.flushBuffer()
@@ -207,27 +227,11 @@ func (bc *BatchContext) DrawComp(ref CompRef) {
 
 	buf := bc.vertex[bc.vertexPos:bc.vertexPos+step]
 	bc.vertexPos = bc.vertexPos+step
-	p := comp.position
-
-	buf[0].X, buf[0].Y = p[0], p[1]
-	buf[0].U, buf[0].V = data.region.X1, data.region.Y1
-	buf[0].RGBA = 0x00ffffff
-
-	buf[1].X, buf[1].Y = p[0] + float32(data.width), p[1]
-	buf[1].U, buf[1].V = data.region.X2, data.region.Y1
-	buf[1].RGBA = 0x00ffffff
-
-	buf[2].X, buf[2].Y = p[0] + float32(data.width), p[1] + float32(data.height)
-	buf[2].U, buf[2].V = data.region.X2, data.region.Y2
-	buf[2].RGBA = 0x00ffffff
-
-	buf[3].X, buf[3].Y = p[0], p[1] + float32(data.height)
-	buf[3].U, buf[3].V = data.region.X1, data.region.Y2
-	buf[3].RGBA = 0x00ffffff
+	converter.Fill(buf)
 }
 
 // commit a batch
-func (bc *BatchContext) End() {
+func (bc *BatchContext) end() {
 	if bc.batchUsed >= 128 {
 		log.Printf("Batch List out of size:(%d, %d) ", 128, bc.batchUsed)
 	}
@@ -247,7 +251,7 @@ func (bc *BatchContext) End() {
 }
 
 // upload buffer
-func (bc *BatchContext) Reset() {
+func (bc *BatchContext) reset() {
 	bc.texId = 0
 	bc.firstVertex = 0
 	bc.vertexPos = 0
