@@ -81,3 +81,22 @@ Shader的渲染工具，Feature是具体的渲染类型，比如SpriteComp/TextC
 只能采取间接层的方式--既Feature，来实现差异部分的功能。
 
 -- 2017/12/04
+
+当前已经可以使用 MeshComp 来渲染网格，用 SpriteComp 来渲染精灵图片，从接口API道底层渲染系统联调通过。中间写了一些临时代码，以后会去掉。批量渲染精灵的API如下:
+
+```
+    id, _ := assets.Texture.GetTexture("src/main/assets/ball.png")
+
+	for i := 0; i < 50; i++ {
+		face := korok.Entity.New()
+		korok.Sprite.NewComp(face, assets.AsSubTexture(id))
+
+		faceXF := korok.Transform.NewComp(face)
+
+		x := float32(rand.Intn(480))
+		y := float32(rand.Intn(320))
+		faceXF.Position = mgl32.Vec2{x, y}
+	}
+```
+今天是个值得庆祝的日子！😊
+-- 2017/12/07
