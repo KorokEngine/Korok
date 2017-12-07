@@ -212,6 +212,7 @@ func (rq *RenderQueue) Submit(id uint8, program uint16, depth int32) uint32 {
 	// encode sort-key
 	sk := &rq.sk
 	sk.Layer = 0
+
 	sk.Shader = program & ID_TYPE_MASK // trip type
 	sk.Blend = 0
 	sk.Texture = rq.drawCall.textures[0]

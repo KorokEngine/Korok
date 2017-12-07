@@ -4,10 +4,11 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 
 	"korok/gfx/bk"
+	"korok/engi"
 
 	"fmt"
 	"unsafe"
-	"korok/engi"
+	"log"
 )
 
 /// MeshComp and MeshTable
@@ -173,9 +174,13 @@ var vertices = []float32{
 
 
 type MeshTable struct {
-	_comps []MeshComp
+	_comps [100]MeshComp
 	_index uint32
 	_map  map[int]uint32
+}
+
+func NewMeshTable() *MeshTable {
+	return &MeshTable{_map:make(map[int]uint32)}
 }
 
 func (mt *MeshTable) NewComp(entity engi.Entity) (mc *MeshComp) {
@@ -190,4 +195,62 @@ func (mt *MeshTable) Comp() (mc *MeshComp) {
 	mc = &mt._comps[mt._index]
 	return
 }
+
+/////
+type MeshRenderFeature struct {
+	Stack *StackAllocator
+
+	R *MeshRender
+	mt *MeshTable
+	xt *TransformTable
+}
+
+// 此处初始化所有的依赖
+func (srf *MeshRenderFeature) Register(rs *RenderSystem) {
+	// init render
+	for _, r := range rs.RenderList {
+		switch br := r.(type) {
+		case *MeshRender:
+			srf.R = br; break
+		}
+	}
+	// init table
+	for _, t := range rs.TableList {
+		switch table := t.(type){
+		case *MeshTable:
+			srf.mt = table
+		case *TransformTable:
+			srf.xt = table
+		}
+	}
+	// add new feature
+	rs.Accept(srf)
+}
+
+var mat4 = mgl32.Translate3D(300, 100, 0)
+// 此处执行渲染
+// BatchRender 需要的是一组排过序的渲染对象！！！
+func (srf *MeshRenderFeature) Draw(filter []engi.Entity) {
+	if srf == nil {
+		log.Println("this is null!!")
+	}
+
+	xt, mt, n := srf.xt, srf.mt, srf.mt._index
+	mr := srf.R
+
+	for i := uint32(0); i < n; i++ {
+		mesh := &mt._comps[i]
+		entity := mesh.Entity
+		xform  := xt.Comp(entity)
+
+		// TODO transform!!
+		mat4.Set(0, 3, xform.Position[0])
+		mat4.Set(1, 3, xform.Position[1])
+
+		mr.Draw(&mesh.Mesh, &mat4)
+	}
+}
+
+
+
 

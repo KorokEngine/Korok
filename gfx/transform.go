@@ -94,39 +94,32 @@ var nodeSystem *TransformTable
 
 type TransformTable struct {
  	comps []Transform
-	_map []int
+	_map [1024]int
 	index, capacity int
 }
 
-func (th *TransformTable) NewComp(entity engi.Entity) *Transform {
-	th.index += 1
-	len := len(th.comps)
-	if th.index >= len {
-		th.comps = resize(th.comps, len + STEP)
+func (tt *TransformTable) NewComp(entity engi.Entity) (xf *Transform) {
+	size := len(tt.comps)
+	if tt.index >= size {
+		tt.comps = resize(tt.comps, size + STEP)
 	}
-	comp := Transform{
-		Entity: entity,
-		Scale:  mgl32.Vec2{1, 1},
-	}
-	th.comps[th.index] = comp
-	th._map[entity] = th.index
-	return nil
+	xf = &tt.comps[tt.index]
+	tt._map[entity] = tt.index
+	xf.Entity = entity
+	xf.Scale = mgl32.Vec2{1, 1}
+	tt.index += 1
+	return
 }
 
-func (th *TransformTable) Get(id uint32) *Transform {
-	return &th.comps[id]
+func (tt *TransformTable) Comp(entity engi.Entity) *Transform {
+	return &tt.comps[tt._map[entity]]
 }
 
-func (th *TransformTable) Comp(entity engi.Entity) *Transform {
-	return nil
-}
-
-
-func (th *TransformTable) Delete(id uint32) {
+func (tt *TransformTable) Delete(entity engi.Entity) {
 	//
 }
 
-func (th *TransformTable) Destroy() {
+func (tt *TransformTable) Destroy() {
 	//
 }
 

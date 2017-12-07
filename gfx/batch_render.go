@@ -23,6 +23,8 @@ type BatchRender struct {
 	umh_PJ uint16 	// Projection
 	umh_S0 uint16 	// Sampler0
 
+	// Camera
+	Camera
 	// batch context
 	BatchContext
 }
@@ -54,11 +56,16 @@ func NewBatchRender(vsh, fsh string) *BatchRender {
 			br.umh_S0 = id
 			bk.SetUniform(id, unsafe.Pointer(&s0))
 		}
-		bk.Touch(0)
+		//bk.Touch(0)
+		bk.Submit(0, shId, 0)
 	}
 	// setup batch context
 	br.BatchContext.init()
 	return br
+}
+
+func (br *BatchRender) SetCamera(camera Camera) {
+	br.Camera = camera
 }
 
 // submit all batched group
@@ -135,7 +142,7 @@ func (br *BatchRender) End() {
 }
 
 func (br *BatchRender) Flush() {
-	bc := br.BatchContext
+	bc := &br.BatchContext
 	// 3. submit
 	br.submit(bc.BatchList[:bc.batchUsed])
 
@@ -213,7 +220,7 @@ func (bc *BatchContext) begin(tex uint16) {
 func (bc *BatchContext) drawComp(converter BatchConverter) {
 	step := uint32(converter.Size())
 
-	if bc.vertexPos + 4 > MAX_BATCH_VERTEX_SIZE {
+	if bc.vertexPos + step > MAX_BATCH_VERTEX_SIZE {
 		bc.flushBuffer()
 
 		bc.vertexPos = 0

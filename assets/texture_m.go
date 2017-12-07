@@ -2,11 +2,13 @@ package assets
 
 import (
 	"log"
-	"korok/gfx/bk"
 	"os"
 	"fmt"
 	"image"
 	"errors"
+
+	"korok/gfx/bk"
+	"korok/gfx"
 )
 
 type TextureManager struct {
@@ -17,7 +19,7 @@ func NewTextureManager() *TextureManager {
 	return &TextureManager{make(map[string]RefCount)}
 }
 
-func (tm *TextureManager) LoadTexture(file string) {
+func (tm *TextureManager) Load(file string) {
 	var rid, cnt uint16
 	if v, ok := tm.repo[file]; ok {
 		cnt = v.cnt
@@ -71,6 +73,12 @@ func (tm *TextureManager) loadTexture(file string)(uint16, error)  {
 }
 
 // helper method
-func AsSubTexture() {
-
+func AsSubTexture(id uint16) *gfx.SubTex{
+	return &gfx.SubTex{
+		TexId: id,
+		Region: gfx.Region {
+			0, 0,
+			1, 1,
+		},
+	}
 }

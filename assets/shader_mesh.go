@@ -1,28 +1,36 @@
 package assets
 
 // mesh shader
+
 var vertex = `
-	#version 330
-	uniform mat4 projection;
-	uniform mat4 model;
+#version 330
 
-	layout (location = 0) in vec4 vert;  // <vec2 pos, vec2 tex>
+uniform mat4 proj;
+// uniform mat4 camera;
+uniform mat4 model;
 
-	out vec2 fragTexCoord;
-	void main() {
-	    fragTexCoord = vert.zw;
-	    gl_Position = projection * model * vec4(vert.xy, 0, 1);
-	}
-	` + "\x00"
+in vec4 xyuv;
+in vec4 rgba;
+
+out vec4 outColor;
+out vec2 fragTexCoord;
+
+void main() {
+    outColor = rgba;
+	fragTexCoord = xyuv.zw;
+    gl_Position = proj * model * vec4(xyuv.xy, 1, 1);
+}
+` + "\x00"
 
 var color = `
-	#version 330
-	uniform sampler2D tex;
+#version 330
 
-	in vec2 fragTexCoord;
-	out vec4 outputColor;
+uniform sampler2D tex;
 
-	void main() {
-	    outputColor = texture(tex, fragTexCoord);
-	}
-	` + "\x00"
+in vec2 fragTexCoord;
+in vec4 outColor;
+out vec4 outputColor;
+void main() {
+    outputColor = texture(tex, fragTexCoord) * outColor;
+}
+` + "\x00"

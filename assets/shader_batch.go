@@ -3,32 +3,34 @@ package assets
 
 // shader for batch-system
 var bVertex = `
-	#version 330
-	uniform mat4 projection;
+#version 330
 
-	layout (location = 0) in vec2 position;  // <vec2 pos, vec2 tex>
-	layout (location = 1) in vec2 texCoord;  // <vec2 pos, vec2 tex>
-	layout (location = 2) in vec4 color;     // <vec2 pos, vec2 tex>
+uniform mat4 proj;
+// uniform mat4 camera;
 
-	out vec2 fragTexCoord;
-	out vec4 fragColor;
+in vec4 xyuv;
+in vec4 rgba;
 
-	void main() {
-	    fragTexCoord = texCoord;
-	    fragColor = color;
-	    gl_Position = projection * vec4(position, 0, 1);
-	}
-	` + "\x00"
+out vec4 outColor;
+out vec2 fragTexCoord;
+
+void main() {
+    outColor = rgba;
+	fragTexCoord = xyuv.zw;
+    gl_Position = proj * vec4(xyuv.xy, 1, 1);
+}
+` + "\x00"
 
 var bColor = `
-	#version 330
-	uniform sampler2D tex;
+#version 330
 
-	in vec2 fragTexCoord;
-	in vec4 fragColor;
-	out vec4 outputColor;
+uniform sampler2D tex;
 
-	void main() {
-	    outputColor = texture(tex, fragTexCoord);
-	}
-	` + "\x00"
+in vec2 fragTexCoord;
+in vec4 outColor;
+out vec4 outputColor;
+void main() {
+    outputColor = texture(tex, fragTexCoord);// * outColor;
+}
+` + "\x00"
+

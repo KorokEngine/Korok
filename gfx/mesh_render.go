@@ -62,9 +62,14 @@ func NewMeshRender(vsh, fsh string) *MeshRender {
 		}
 
 		// submit render state
-		bk.Touch(0)
+		// bk.Touch(0)
+		bk.Submit(0, id, 0)
 	}
 	return mr
+}
+
+func (srf *MeshRender) SetCamera(camera Camera) {
+	// TODO!!
 }
 
 func (mr *MeshRender) RequireTable(mt *MeshTable, tt *TransformTable) {
@@ -83,9 +88,7 @@ func (mr *MeshRender) Extract(visibleObjects []uint32) {
 }
 
 // draw
-func (mr *MeshRender) Draw(d RenderData, mat4 mgl32.Mat4) {
-	m := d.(*Mesh)
-
+func (mr *MeshRender) Draw(m *Mesh, mat4 *mgl32.Mat4) {
 	// state
 	bk.SetState(mr.stateFlags, mr.rgba)
 	bk.SetTexture(0, mr.umh_S0, uint16(m.TextureId), 0)

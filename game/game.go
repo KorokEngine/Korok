@@ -5,23 +5,20 @@ import (
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 
-	"korok/gfx"
-	"korok/assets"
-	"korok/physics"
-	"korok/anim"
-	"korok/audio"
 	"korok/engi"
+	"korok/gfx"
+	"korok/particle"
+	"korok/anim"
+	"korok/physics"
+	// "korok/assets"
+	"korok/assets"
 )
 
-type Table interface {}
+type Table interface{}
 
-type DB struct {
+type VirtualDB struct {
 	EntityM *engi.EntityManager
-	Tables []Table
-}
-
-func (db DB) Add(t interface{}) {
-	db.Tables = append(db.Tables, t)
+	Tables  []interface{}
 }
 
 // 统一管理游戏各个子系统的创建和销毁的地方
@@ -30,15 +27,11 @@ var scenes = make(map[string]Scene)
 var current Scene
 
 type Game struct {
-	DB
+	DB VirtualDB
 
 	*gfx.RenderSystem
-	*physics.CollisionSystem
-	*anim.AnimationSystem
-	*audio.AudioSystem
-
-	State int
 }
+
 /// window callback
 func (g *Game) OnCreate() {
 	g.Create()
@@ -52,32 +45,36 @@ func (g *Game) OnDestroy() {
 	g.Destroy()
 }
 
-func AddScene(scene Scene)  {
+func AddScene(scene Scene) {
 	scenes[scene.Name()] = scene
 	current = scene
 }
 
 // init subsystem
 func (g *Game) Create() {
-	g.Init()
-}
+	// render system
+	rs := &gfx.RenderSystem{}
+	g.RenderSystem = rs
+	rs.Initialize()
+	//
+	// set table
+	rs.RequireTable(g.DB.Tables)
+	// set render
+	var vertex, color string
 
-// destroy subsystem
-func (g *Game) Destroy() {
-	g.RenderSystem.Destroy()
-}
+	vertex, color = assets.Shader.GetShaderStr("batch")
+	batchRender := gfx.NewBatchRender(vertex, color)
+	rs.RegisterRender(gfx.RenderType(0), batchRender)
 
-func (g *Game) Init()  {
-	// assets
-	assets.LoadShader()
+	vertex, color = assets.Shader.GetShaderStr("mesh")
+	meshRender := gfx.NewMeshRender(vertex, color)
+	rs.RegisterRender(gfx.RenderType(1), meshRender)
 
-	// render
-	g.RenderSystem = gfx.NewRenderSystem()
-
-	// physics system
-	g.CollisionSystem = physics.NewCollisionSystem()
-
-	// animation
+	// set feature
+	srf := &gfx.SpriteRenderFeature{}
+	srf.Register(rs)
+	mrf := &gfx.MeshRenderFeature{}
+	mrf.Register(rs)
 
 	/// Customized scene
 	if current != nil {
@@ -86,16 +83,50 @@ func (g *Game) Init()  {
 	}
 }
 
+// destroy subsystem
+func (g *Game) Destroy() {
+	g.RenderSystem.Destroy()
+}
 
-func (g *Game) Input(dt float32)  {
+func (g *Game) Init() {
+	g.loadTables()
+}
+
+func (g *Game) loadTables() {
+	// init tables
+	scriptTable := &ScriptTable{}
+	tagTable := &TagTable{}
+
+	g.DB.Tables = append(g.DB.Tables, scriptTable, tagTable)
+
+	spriteTable := &gfx.SpriteTable{}
+	meshTable := gfx.NewMeshTable()
+	xfTable := &gfx.TransformTable{}
+	textTable := &gfx.TextTable{}
+
+	g.DB.Tables = append(g.DB.Tables, spriteTable, meshTable, xfTable, textTable)
+
+	psTable := &particle.ParticleSystemTable{}
+	g.DB.Tables = append(g.DB.Tables, psTable)
+
+	skTable := &anim.SkeletonTable{}
+	g.DB.Tables = append(g.DB.Tables, skTable)
+
+	rigidTable := &physics.RigidBodyTable{}
+	colliderTable :=& physics.ColliderTable{}
+	g.DB.Tables = append(g.DB.Tables, rigidTable, colliderTable)
+}
+
+func (g *Game) Input(dt float32) {
 	if current != nil {
 	}
 }
 
 var previousTime float64
-func (g *Game) Update()  {
+
+func (g *Game) Update() {
 	// update
-	time :=  glfw.GetTime()
+	time := glfw.GetTime()
 	elapsed := time - previousTime
 	previousTime = time
 
@@ -105,7 +136,7 @@ func (g *Game) Update()  {
 	}
 
 	if dt < 0.0166 {
-		timer.Sleep(timer.Duration(0.0166 - dt) * timer.Second)
+		timer.Sleep(timer.Duration(0.0166-dt) * timer.Second)
 	}
 
 	//// simulation....
@@ -118,7 +149,10 @@ func (g *Game) Update()  {
 	// 粒子系统更新
 	//g.ParticleSystem.Update(dt)
 
+	// Render
+	g.RenderSystem.Update(dt)
+
 }
 
-func (g *Game) Draw(dt float32)  {
+func (g *Game) Draw(dt float32) {
 }

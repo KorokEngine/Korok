@@ -57,9 +57,9 @@ func (sm *ShaderManager) GetShader(key string) (uint16, *bk.Shader) {
 	return bk.InvalidId, nil
 }
 
-func (sm *ShaderManager) GetDefaultShader(key string) (ver, color string) {
+func (sm *ShaderManager) GetShaderStr(key string) (string, string) {
 	switch key {
-	case "def":
+	case "dft", "mesh":
 		return vertex, color
 	case "batch":
 		return bVertex, bColor

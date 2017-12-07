@@ -4,6 +4,7 @@ package engi
 	定义ECS组件: Entity/Component/System
 
 	Entity 仅仅是一个类型为 uint 的 id， 后8位表示类型，前24位表示索引
+	一个Entity可以包含多个Comp所以不可能拿来表示Comp类型..
 	三个主要接口：
 	1. Create() Entity
 	2. Alive(Entity)
@@ -73,5 +74,5 @@ type EntityManager struct {
 }
 
 func (*EntityManager) New() Entity{
-	return 0
+	return Create()
 }

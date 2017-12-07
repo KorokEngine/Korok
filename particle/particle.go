@@ -3,6 +3,7 @@ package particle
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/gl/v3.2-core/gl"
+	"korok/engi"
 )
 
 type EmitterMode int32
@@ -81,13 +82,45 @@ type RadiusConfig struct {
 	RotationPerSecond, D_RotationPerSecond float32
 }
 
-type ParticleComp struct {
+// particle component
+type ParticleSystemComp struct {
 	C *Config
 	Simulator
 }
 
+// component manager
+type ParticleSystemTable struct {
+	_comps []ParticleSystemComp
+	_index uint32
+	_map   map[int]uint32
+}
+
+func (pst *ParticleSystemTable) NewComp(entity engi.Entity) (psc *ParticleSystemComp) {
+	psc = &pst._comps[pst._index]
+	pst._map[int(entity)] = pst._index
+	pst._index ++
+	return
+}
+
+func (pst *ParticleSystemTable) Comp(entity engi.Entity) (psc *ParticleSystemComp) {
+	if ii, ok := pst._map[int(entity)]; ok {
+		return &pst._comps[ii]
+	}
+	return
+}
+
+// ps-comp simulate
+// 在仿真系统中，直接读取 PSTable 的 Comp 进行模拟仿真
+type ParticleSystemSystem struct {
+	PST *ParticleSystemTable
+}
+
+func (pss *ParticleSystemSystem) Update(dt float32) {
+
+}
+
 type ParticleSystem struct {
-	comps []ParticleComp
+	comps []ParticleSystemComp
 }
 
 func NewParticleSystem() *ParticleSystem {
@@ -100,8 +133,8 @@ func (p *ParticleSystem) Update(dt float32) {
 	}
 }
 
-func (p *ParticleSystem) NewParticleComp(id uint32, c *Config) *ParticleComp {
-	comp := new(ParticleComp)
+func (p *ParticleSystem) NewParticleComp(id uint32, c *Config) *ParticleSystemComp {
+	comp := new(ParticleSystemComp)
 	comp.C = c
 	comp.Simulator = nil // TODO!
 	return nil

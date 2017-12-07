@@ -12,6 +12,7 @@ import (
 	"korok/particle"
 	"korok/anim"
 	"korok/physics"
+	"reflect"
 )
 
 const VERSION_CODE  = 1
@@ -27,6 +28,8 @@ func Run(options *Options)  {
 
 	g := &game.Game{}
 	G = g
+	g.Init()
+
 	Entity = g.DB.EntityM
 
 	for _, table := range g.DB.Tables {
@@ -52,6 +55,11 @@ func Run(options *Options)  {
 		case *game.ScriptTable:
 			Script = t
 		}
+	}
+
+	log.Printf("Load table: %v", len(g.DB.Tables))
+	for i, v := range g.DB.Tables {
+		log.Println(i, "table - ", reflect.TypeOf(v))
 	}
 
 	hid.RegisterWindowCallback(g)

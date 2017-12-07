@@ -3,6 +3,7 @@ package gfx
 import (
 	"korok/engi"
 	"sort"
+	"log"
 )
 
 /// SpriteComp & SpriteTable
@@ -87,6 +88,9 @@ func (srf *SpriteRenderFeature) Register(rs *RenderSystem) {
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
+	if srf == nil {
+		log.Println("this is null!!")
+	}
 	xt, st, n := srf.xt, srf.st, srf.st._index
 	bList := make([]spriteBatchObject, n)
 
@@ -107,7 +111,7 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 		return bList[i].batchId < bList[j].batchId
 	})
 
-	var batchId int16 = 0xFFFF
+	var batchId int16 = 0x0FFF
 	var begin = false
 	var render = srf.R
 
@@ -147,6 +151,9 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 	r := sbo.SpriteComp.Region
 	w := sbo.Width
 	h := sbo.Height
+
+	w = 100
+	h = 100
 
 	buf[0].X, buf[0].Y = p[0], p[1]
 	buf[0].U, buf[0].V = r.X1, r.Y1

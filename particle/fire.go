@@ -173,7 +173,8 @@ func (f *FireCloud) Visualize() {
 	}
 
 	// write mesh!
-	f.Mesh.SetVertex(f.vbo)
+	// TODO convert vertex format!!
+	// f.Mesh.SetVertex(f.vbo)
 
 	// upload
 	f.Mesh.Setup()

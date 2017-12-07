@@ -86,7 +86,7 @@ func (tc *TextComp) fillData() {
 			vw := glyph.Width
 			vh := glyph.Height
 
-			min, max := glyph.GetTexturePosition(t.Font)
+			min, max := glyph.GetTexturePosition(nil) // TODO font-system
 			char := &chars[i]
 
 			char.xOffset = xOffset
@@ -198,7 +198,7 @@ func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 		return bList[i].batchId < bList[j].batchId
 	})
 
-	var batchId int16 = 0xFFFF
+	var batchId int16 = 0x0FFF
 	var begin = false
 	var render = trf.R
 

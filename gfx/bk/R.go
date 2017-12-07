@@ -14,7 +14,7 @@ const InvalidId uint16 = 0xFFFF
 const UINT16_MAX uint16 = 0xFFFF
 
 const (
-	ID_TYPE_MASK  = 0x0FFF
+	ID_TYPE_MASK  uint16 = 0x0FFF
 	ID_TYPE_SHIFT = 12
 )
 

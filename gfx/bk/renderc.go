@@ -136,7 +136,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		//var constantsChanged bool
 
 		/// 5. Update program
-		if key.Shader != shaderId {
+		if key.Shader != shaderId { //TODO shader id err
 			shaderId = key.Shader
 			var id uint32 = ctx.R.shaders[shaderId].GLShader.Program
 			gl.UseProgram(id)

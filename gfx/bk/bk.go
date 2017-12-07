@@ -136,7 +136,7 @@ func SetViewTransform(id uint8, view, proj *mgl32.Mat4, flags uint8) {
 /// @param id View id
 /// @param Number of drawCall calls
 func Touch(id uint8) uint32 {
-	return Submit(id, 0, 0)
+	return Submit(id, InvalidId, 0)
 }
 
 /// Submit primitive for rendering

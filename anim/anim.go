@@ -12,6 +12,10 @@ func (sk *SkeletonSystem) Update(dt float32) {
 
 }
 
+type AnimationSystem struct {
+
+}
+
 /**
 func (sr*SkeletonRender)Draw(skeleton *spine.Skeleton) {
 	for _, slot := range skeleton.Slots {
