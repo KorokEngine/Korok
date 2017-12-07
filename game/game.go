@@ -12,6 +12,8 @@ import (
 	"korok/physics"
 	// "korok/assets"
 	"korok/assets"
+	"log"
+	"reflect"
 )
 
 type Table interface{}
@@ -70,11 +72,23 @@ func (g *Game) Create() {
 	meshRender := gfx.NewMeshRender(vertex, color)
 	rs.RegisterRender(gfx.RenderType(1), meshRender)
 
+	log.Println("Load Render:", len(rs.RenderList))
+	for i, v := range rs.RenderList {
+		log.Println(i, " render - ", reflect.TypeOf(v))
+	}
+
 	// set feature
 	srf := &gfx.SpriteRenderFeature{}
 	srf.Register(rs)
 	mrf := &gfx.MeshRenderFeature{}
 	mrf.Register(rs)
+	trf := &gfx.TextRenderFeature{}
+	trf.Register(rs)
+
+	log.Println("Load Feature:", len(rs.FeatureList))
+	for i, v := range rs.FeatureList {
+		log.Println(i, " feature - ", reflect.TypeOf(v))
+	}
 
 	/// Customized scene
 	if current != nil {
@@ -99,10 +113,10 @@ func (g *Game) loadTables() {
 
 	g.DB.Tables = append(g.DB.Tables, scriptTable, tagTable)
 
-	spriteTable := &gfx.SpriteTable{}
+	spriteTable := gfx.NewSpriteTable()
 	meshTable := gfx.NewMeshTable()
-	xfTable := &gfx.TransformTable{}
-	textTable := &gfx.TextTable{}
+	xfTable := gfx.NewTransformTable()
+	textTable := gfx.NewTextTable()
 
 	g.DB.Tables = append(g.DB.Tables, spriteTable, meshTable, xfTable, textTable)
 

@@ -25,8 +25,10 @@ func Clear()  {
 
 var Shader *ShaderManager
 var Texture *TextureManager
+var Font *FontManager
 
 func init() {
 	Shader = NewShaderManager()
 	Texture = NewTextureManager()
+	Font = NewFontManager()
 }

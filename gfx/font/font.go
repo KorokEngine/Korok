@@ -2,14 +2,13 @@ package font
 
 import (
 	"image"
-	"github.com/go-gl/gl/v3.2-core/gl"
 	"korok/gfx/bk"
 )
 
 // A Font allows rendering ofg text to an OpenGL context
 type Font struct {
 	config         *FontConfig // Character set for this font.
-	Texture        uint32      // Holds the glyph Texture id.
+	Texture        uint16      // Holds the glyph Texture id.
 	maxGlyphWidth  int         // Largest glyph width.
 	maxGlyphHeight int         // Largest glyph height.
 	TexWidth 	   float32
@@ -35,7 +34,7 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	f.TexHeight = float32(ib.Dy())
 
 	if id, _ := bk.R.AllocTexture(img); id != bk.InvalidId {
-		f.Texture = uint32(id)
+		f.Texture = id
 	}
 	err = checkGLError()
 	return
@@ -64,7 +63,7 @@ func (f *Font) Glyphs() Charset {
 // Release release font resources.
 // A font can no longer be used for rendering after this call completes
 func (f *Font) Release() {
-	gl.DeleteTextures(1, &f.Texture)
+	bk.R.Free(f.Texture)
 	// gl.DeleteList display list TODO
 	f.config = nil
 }
@@ -116,6 +115,18 @@ func (f *Font) advanceSize(line string) int {
 	return size
 }
 
+// implement font-system
+func (f *Font) Glyph(rune rune) *Glyph {
+	return f.config.Find(rune)
+}
+
+func (f *Font) Tex() (id uint16, tex *bk.Texture2D) {
+	id = f.Texture
+	if ok, t := bk.R.Texture(id); ok {
+		tex = t
+	}
+	return
+}
 
 // Printf draws the given string at the specified coordinates.
 // It expects the string to be a single line. Line breaks are not

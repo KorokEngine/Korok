@@ -5,6 +5,8 @@ import (
 	"korok/gfx/font"
 
 	"sort"
+	"korok/gfx/bk"
+	"log"
 )
 
 // 文字应该采用 BatchRender 绘制
@@ -12,7 +14,7 @@ import (
 
 type FontSystem interface {
 	Glyph(rune rune) *font.Glyph
-	Tex() uint16
+	Tex() (uint16, *bk.Texture2D)
 }
 
 type TextQuad struct {
@@ -79,6 +81,11 @@ func (tc *TextComp) fillData() {
 
 	chars := make([]TextQuad, len(tc.text))
 	tc.vertex = chars
+	id, tex := tc.font.Tex()
+
+	if id == bk.InvalidId {
+		log.Println("failt to get font texture!!")
+	}
 
 	for i, r := range tc.text {
 		if glyph := tc.font.Glyph(r); glyph != nil {
@@ -86,7 +93,9 @@ func (tc *TextComp) fillData() {
 			vw := glyph.Width
 			vh := glyph.Height
 
-			min, max := glyph.GetTexturePosition(nil) // TODO font-system
+			min := font.Point{float32(glyph.X) / tex.Width, float32(glyph.Y) / tex.Height}
+			max := font.Point{float32(glyph.X+glyph.Width)/ tex.Width, float32(glyph.Y+glyph.Height) / tex.Height}
+
 			char := &chars[i]
 
 			char.xOffset = xOffset
@@ -104,19 +113,27 @@ func (tc *TextComp) fillData() {
 
 // should have default font!!
 func (tc *TextComp) SetFont(fs FontSystem) {
+	if fs != nil {
+		log.Println("set font success!!")
+	}
 	tc.font = fs
 }
 
 // TextTable
 type TextTable struct {
-	_comps []TextComp
+	_comps [10]TextComp
 	_index uint32
 	_map   map[int]uint32
 
 }
 
+func NewTextTable() *TextTable {
+	return &TextTable{_map:make(map[int]uint32)}
+}
+
 func (tt *TextTable) NewComp(entity engi.Entity) (tc *TextComp) {
 	tc = &tt._comps[tt._index];
+	tc.Entity = entity
 	tt._map[int(entity)] = tt._index;
 	tt._index ++
 	return
@@ -185,13 +202,13 @@ func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 	// get batch list
 	for i := uint32(0); i < n; i++ {
 		text := &tt._comps[i]
-		xform  := xt.Comp(text.Entity)
-		bList[i] = textBatchObject{
-			text.batchId,
-			text,
-			xform,
-		}
+		entity := text.Entity
+
+		xform  := xt.Comp(entity)
+		bList[i] = textBatchObject{text.batchId, text, xform}
 	}
+
+
 
 	// sort
 	sort.Slice(bList, func(i, j int) bool {
@@ -213,7 +230,8 @@ func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 			batchId = bid
 			begin = true
 
-			render.Begin(b.TextComp.font.Tex())
+			id, _ := b.TextComp.font.Tex()
+			render.Begin(id)
 		}
 
 		render.Draw(b)

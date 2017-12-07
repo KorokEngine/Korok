@@ -70,6 +70,10 @@ func Run(options *Options)  {
 	})
 }
 
+func PushScene(sc game.Scene) {
+	game.AddScene(sc)
+}
+
 func SetDebug(enable bool) {
 	if enable == false {
 		dbg.SetOutput(ioutil.Discard)

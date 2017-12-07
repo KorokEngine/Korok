@@ -11,10 +11,6 @@ import (
 /// For simple mesh, not 3D model
 
 type MeshRender struct {
-
-	MT *MeshTable
-	TT *TransformTable
-
 	stateFlags uint64
 	rgba       uint32
 
@@ -25,6 +21,9 @@ type MeshRender struct {
 	umh_P  uint16 // Projection
 	umh_M  uint16 // Model
 	umh_S0 uint16 // Sampler0
+
+	// camera
+	Camera
 }
 
 func NewMeshRender(vsh, fsh string) *MeshRender {
@@ -68,13 +67,8 @@ func NewMeshRender(vsh, fsh string) *MeshRender {
 	return mr
 }
 
-func (srf *MeshRender) SetCamera(camera Camera) {
-	// TODO!!
-}
-
-func (mr *MeshRender) RequireTable(mt *MeshTable, tt *TransformTable) {
-	mr.MT = mt
-	mr.TT = tt
+func (mr *MeshRender) SetCamera(camera Camera) {
+	mr.Camera = camera
 }
 
 type RenderMesh struct {

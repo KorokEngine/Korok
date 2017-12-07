@@ -40,6 +40,10 @@ type SpriteTable struct {
 	_map   [1024]uint32
 }
 
+func NewSpriteTable() *SpriteTable {
+	return &SpriteTable{}
+}
+
 func (st *SpriteTable) NewComp(entity engi.Entity, tex *SubTex) (sc *SpriteComp) {
 	sc = &st._comps[st._index]
 	sc.SubTex = tex

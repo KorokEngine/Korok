@@ -98,6 +98,10 @@ type TransformTable struct {
 	index, capacity int
 }
 
+func NewTransformTable() *TransformTable {
+	return &TransformTable{}
+}
+
 func (tt *TransformTable) NewComp(entity engi.Entity) (xf *Transform) {
 	size := len(tt.comps)
 	if tt.index >= size {
