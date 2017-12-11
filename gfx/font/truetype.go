@@ -7,6 +7,7 @@ import (
 	"golang.org/x/image/math/fixed"
 	"image"
 	"github.com/golang/freetype"
+	"log"
 )
 
 // http://www.freetype.org/freetype2/docs/tutorial/step2.html
@@ -36,7 +37,7 @@ func LoadTrueType(r io.Reader, scale int32, low, high rune, dir Direction) (*Fon
 	fc.Dir = dir
 	fc.Low = low
 	fc.High = high
-	fc.Glyphs = make(Charset, high-low,+ 1)
+	fc.Glyphs = make(Charset, high-low + 1)
 
 	// Create an image, large enough to store all requested glyphs.
 	//
@@ -73,6 +74,9 @@ func LoadTrueType(r io.Reader, scale int32, low, high rune, dir Direction) (*Fon
 	var gx, gy int32
 
 	for ch := low; ch <= high; ch++ {
+
+		log.Println("init rune:", ch)
+
 		index  := ttf.Index(ch)
 		metric := ttf.HMetric(fixed.Int26_6(scale), index)
 
@@ -81,6 +85,7 @@ func LoadTrueType(r io.Reader, scale int32, low, high rune, dir Direction) (*Fon
 		fc.Glyphs[gi].Y = int(gy) - int(gh)/2 //shif up half a row so that actually get character in frame
 		fc.Glyphs[gi].Width = int(gw)
 		fc.Glyphs[gi].Height = int(gh)
+		fc.Glyphs[gi].Id = ch
 		pt := freetype.Pt(int(gx), int(gy)+int(c.PointToFixed(float64(scale))>>8))
 		c.DrawString(string(ch), pt)
 

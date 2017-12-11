@@ -1,5 +1,6 @@
 package hid
 
+// 窗口生命周期
 type WindowCallback interface {
 	// 窗口创建
 	OnCreate()
@@ -10,3 +11,10 @@ type WindowCallback interface {
 	// 窗口销毁
 	OnDestroy()
 }
+
+// 输入系统
+type InputCallback interface {
+	OnKeyEvent(key int, pressed bool)
+}
+
+

@@ -9,6 +9,7 @@ import (
 )
 
 var windowCallback WindowCallback
+var inputCallback InputCallback
 var Keys  [1024]int
 
 func init()  {
@@ -17,6 +18,10 @@ func init()  {
 
 func RegisterWindowCallback(callback WindowCallback) {
 	windowCallback = callback
+}
+
+func RegisterInputCallback(callback InputCallback) {
+	inputCallback = callback
 }
 
 func CreateWindow(option *WindowOptions)  {
@@ -54,11 +59,18 @@ func CreateWindow(option *WindowOptions)  {
 			w.SetShouldClose(true)
 		}
 
-		if key >= 0 && key < 1024 {
+		//if key >= 0 && key < 1024 {
+		//	if action == glfw.Press {
+		//		Keys[key] = gl.TRUE
+		//	} else if action == glfw.Release {
+		//		Keys[key] = gl.FALSE
+		//	}
+		//}
+		if inputCallback != nil {
 			if action == glfw.Press {
-				Keys[key] = gl.TRUE
+				inputCallback.OnKeyEvent(int(key), true)
 			} else if action == glfw.Release {
-				Keys[key] = gl.FALSE
+				inputCallback.OnKeyEvent(int(key), false)
 			}
 		}
 	})

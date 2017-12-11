@@ -87,11 +87,15 @@ func (tc *TextComp) fillData() {
 		log.Println("failt to get font texture!!")
 	}
 
+	log.Println("fill data:", len(tc.text))
+
 	for i, r := range tc.text {
 		if glyph := tc.font.Glyph(r); glyph != nil {
 			advance := float32(glyph.Advance)
 			vw := glyph.Width
 			vh := glyph.Height
+
+			log.Println("fill glyph:", glyph)
 
 			min := font.Point{float32(glyph.X) / tex.Width, float32(glyph.Y) / tex.Height}
 			max := font.Point{float32(glyph.X+glyph.Width)/ tex.Width, float32(glyph.Y+glyph.Height) / tex.Height}

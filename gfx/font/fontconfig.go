@@ -38,7 +38,7 @@ type FontConfig struct {
 	Glyphs Charset `json:"glyphs"`
 }
 
-// Load reads font configuration data from the given JSON encoded stream.
+// LoadBitmap reads font configuration data from the given JSON encoded stream.
 func (fc *FontConfig) Load(r io.Reader) (err error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {

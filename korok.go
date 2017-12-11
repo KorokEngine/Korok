@@ -13,6 +13,7 @@ import (
 	"korok/anim"
 	"korok/physics"
 	"reflect"
+	"korok/hid/inputs"
 )
 
 const VERSION_CODE  = 1
@@ -57,12 +58,13 @@ func Run(options *Options)  {
 		}
 	}
 
-	log.Printf("Load table: %v", len(g.DB.Tables))
+	log.Printf("LoadBitmap table: %v", len(g.DB.Tables))
 	for i, v := range g.DB.Tables {
 		log.Println(i, "table - ", reflect.TypeOf(v))
 	}
 
 	hid.RegisterWindowCallback(g)
+	hid.RegisterInputCallback(g)
 	hid.CreateWindow(&hid.WindowOptions{
 		options.Title,
 		options.Width,
@@ -103,4 +105,5 @@ var Skeleton       *anim.SkeletonTable
 var RigidBody *physics.RigidBodyTable
 var Collider  *physics.ColliderTable
 
-
+///// input system
+var Input *inputs.InputSystem

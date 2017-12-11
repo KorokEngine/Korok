@@ -19,7 +19,7 @@ func NewFontManager() *FontManager {
 	return &FontManager{repo: make(map[string]FRefCount)}
 }
 
-func (fm *FontManager) Load(name string, img, fc string) {
+func (fm *FontManager) LoadBitmap(name string, img, fc string) {
 	var cnt int32 = 0
 	var fnt *font.Font
 
@@ -47,7 +47,33 @@ func (fm *FontManager) Load(name string, img, fc string) {
 	}
 
 	fm.repo[name] = FRefCount{cnt + 1, fnt}
-	fmt.Println("load font sucess...", name)
+	fmt.Println("load bitmap font sucess...", name)
+}
+
+func (fm *FontManager) LoadTrueType(name string, fc string) {
+	var cnt int32 = 0
+	var fnt *font.Font
+
+	if v, ok := fm.repo[name]; ok {
+		cnt = v.cnt
+		fnt = v.fnt
+	} else {
+		fcr, err := os.Open(fc)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+
+		f, err := font.LoadTrueType(fcr, 1,  '0', 'z', 0)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		fnt = f
+	}
+
+	fm.repo[name] = FRefCount{cnt + 1, fnt}
+	fmt.Println("load true-type font sucess...", name)
 }
 
 func (fm *FontManager) Unload(name string) {

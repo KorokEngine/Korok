@@ -10,8 +10,9 @@ import (
 	"korok/particle"
 	"korok/anim"
 	"korok/physics"
-	// "korok/assets"
 	"korok/assets"
+	"korok/hid/inputs"
+
 	"log"
 	"reflect"
 )
@@ -32,6 +33,7 @@ type Game struct {
 	DB VirtualDB
 
 	*gfx.RenderSystem
+	*inputs.InputSystem
 }
 
 /// window callback
@@ -45,6 +47,11 @@ func (g *Game) OnLoop() {
 
 func (g *Game) OnDestroy() {
 	g.Destroy()
+}
+
+/// input callback
+func (g *Game) OnKeyEvent(key int, pressed bool) {
+	g.InputSystem.SetKeyEvent(key, pressed)
 }
 
 func AddScene(scene Scene) {
@@ -72,7 +79,7 @@ func (g *Game) Create() {
 	meshRender := gfx.NewMeshRender(vertex, color)
 	rs.RegisterRender(gfx.RenderType(1), meshRender)
 
-	log.Println("Load Render:", len(rs.RenderList))
+	log.Println("LoadBitmap Render:", len(rs.RenderList))
 	for i, v := range rs.RenderList {
 		log.Println(i, " render - ", reflect.TypeOf(v))
 	}
@@ -85,10 +92,13 @@ func (g *Game) Create() {
 	trf := &gfx.TextRenderFeature{}
 	trf.Register(rs)
 
-	log.Println("Load Feature:", len(rs.FeatureList))
+	log.Println("LoadBitmap Feature:", len(rs.FeatureList))
 	for i, v := range rs.FeatureList {
 		log.Println(i, " feature - ", reflect.TypeOf(v))
 	}
+
+	/// input system
+	g.InputSystem = inputs.NewInputSystem()
 
 	/// Customized scene
 	if current != nil {
@@ -144,10 +154,15 @@ func (g *Game) Update() {
 	elapsed := time - previousTime
 	previousTime = time
 
+	// update input-system
+	g.InputSystem.Frame()
+
 	dt := float32(elapsed)
 	if current != nil {
 		current.Update(dt)
 	}
+
+	g.InputSystem.Reset()
 
 	if dt < 0.0166 {
 		timer.Sleep(timer.Duration(0.0166-dt) * timer.Second)
@@ -165,6 +180,7 @@ func (g *Game) Update() {
 
 	// Render
 	g.RenderSystem.Update(dt)
+
 
 }
 
