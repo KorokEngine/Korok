@@ -100,3 +100,6 @@ Shader的渲染工具，Feature是具体的渲染类型，比如SpriteComp/TextC
 ```
 今天是个值得庆祝的日子！😊
 -- 2017/12/07
+
+重新组织了包名和域名，现在可以使用 `go get korok.io/korok` 来下载引擎了(还没有启用HTTPS，需要加`-insecure`标记).
+-- 2017/12/12
