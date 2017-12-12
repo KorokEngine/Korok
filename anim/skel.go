@@ -1,6 +1,6 @@
 package anim
 
-import "korok/engi"
+import "korok.io/korok/engi"
 
 // 当前动画模块的性能是比较低的，需要一次重写
 // 同时也会用 Comp/Table/System 架构重新组织功能

@@ -1,12 +1,13 @@
 package physics
 
 import (
-	"box2d"
-	"box2d/common/f32"
-	"box2d/dynamics/rigid"
-	"box2d/collision/shapes"
+	"korok.io/box2d"
+	"korok.io/korok/engi"
+	"korok.io/box2d/common/f32"
+	"korok.io/box2d/dynamics/rigid"
+	"korok.io/box2d/collision/shapes"
+
 	"log"
-	"korok/engi"
 )
 
 func init() {

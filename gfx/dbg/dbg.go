@@ -1,8 +1,10 @@
 package dbg
 
 import (
-	"korok/gfx/bk"
+	"korok.io/korok/gfx/bk"
+
 	"github.com/go-gl/mathgl/mgl32"
+
 	"unsafe"
 	"log"
 )

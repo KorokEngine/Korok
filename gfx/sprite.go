@@ -1,7 +1,8 @@
 package gfx
 
 import (
-	"korok/engi"
+	"korok.io/korok/engi"
+
 	"sort"
 	"log"
 )

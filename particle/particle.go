@@ -3,7 +3,7 @@ package particle
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"korok/engi"
+	"korok.io/korok/engi"
 )
 
 type EmitterMode int32

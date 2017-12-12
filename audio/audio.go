@@ -1,7 +1,7 @@
 package audio
 
 import (
-	"korok/audio/ap"
+	"korok.io/korok/audio/ap"
 )
 
 // 组件设计

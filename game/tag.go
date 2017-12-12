@@ -1,6 +1,6 @@
 package game
 
-import "korok/engi"
+import "korok.io/korok/engi"
 
 type TagComp struct {
 	Name string

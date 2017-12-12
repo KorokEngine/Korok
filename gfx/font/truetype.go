@@ -3,11 +3,12 @@ package font
 import (
 	"io"
 	"io/ioutil"
+	"image"
+	"log"
+
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/math/fixed"
-	"image"
 	"github.com/golang/freetype"
-	"log"
 )
 
 // http://www.freetype.org/freetype2/docs/tutorial/step2.html

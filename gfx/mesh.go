@@ -3,8 +3,8 @@ package gfx
 import (
 	"github.com/go-gl/mathgl/mgl32"
 
-	"korok/gfx/bk"
-	"korok/engi"
+	"korok.io/korok/gfx/bk"
+	"korok.io/korok/engi"
 
 	"fmt"
 	"unsafe"

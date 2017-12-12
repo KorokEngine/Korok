@@ -1,11 +1,11 @@
 package gfx
 
 import (
-	"korok/engi"
-	"korok/gfx/font"
+	"korok.io/korok/engi"
+	"korok.io/korok/gfx/bk"
+	"korok.io/korok/gfx/font"
 
 	"sort"
-	"korok/gfx/bk"
 	"log"
 )
 

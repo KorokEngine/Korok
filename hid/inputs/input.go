@@ -3,7 +3,6 @@ package inputs
 import (
 	"sync"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	//"log"
 )
 
 type InputSystem struct {

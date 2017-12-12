@@ -2,7 +2,7 @@ package gfx
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"korok/engi"
+	"korok.io/korok/engi"
 )
 
 /// 可见性系统，以一个组件的形式呈现

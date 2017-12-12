@@ -3,7 +3,8 @@ package assets
 import (
 	"os"
 	"fmt"
-	"korok/gfx/font"
+
+	"korok.io/korok/gfx/font"
 )
 
 type FRefCount struct {

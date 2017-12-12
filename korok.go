@@ -3,17 +3,17 @@ package korok
 import (
 	"log"
 	"io/ioutil"
-
-	"korok/gfx"
-	"korok/engi"
-	"korok/game"
-	"korok/hid"
-	"korok/gfx/dbg"
-	"korok/particle"
-	"korok/anim"
-	"korok/physics"
 	"reflect"
-	"korok/hid/inputs"
+
+	"korok.io/korok/gfx"
+	"korok.io/korok/engi"
+	"korok.io/korok/game"
+	"korok.io/korok/hid"
+	"korok.io/korok/gfx/dbg"
+	"korok.io/korok/particle"
+	"korok.io/korok/anim"
+	"korok.io/korok/physics"
+	"korok.io/korok/hid/inputs"
 )
 
 const VERSION_CODE  = 1

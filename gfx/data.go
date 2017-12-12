@@ -1,7 +1,7 @@
 package gfx
 
 import (
-	"korok/gfx/bk"
+	"korok.io/korok/gfx/bk"
 	"unsafe"
 )
 

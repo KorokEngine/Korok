@@ -3,7 +3,7 @@ package gfx
 import (
 	"github.com/go-gl/mathgl/mgl32"
 
-	"korok/engi"
+	"korok.io/korok/engi"
 )
 
 /**

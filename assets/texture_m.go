@@ -7,8 +7,8 @@ import (
 	"image"
 	"errors"
 
-	"korok/gfx/bk"
-	"korok/gfx"
+	"korok.io/korok/gfx/bk"
+	"korok.io/korok/gfx"
 )
 
 type TextureManager struct {

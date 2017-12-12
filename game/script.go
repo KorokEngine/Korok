@@ -1,6 +1,6 @@
 package game
 
-import "korok/engi"
+import "korok.io/korok/engi"
 
 /**
 	游戏对象绑定脚本/行为

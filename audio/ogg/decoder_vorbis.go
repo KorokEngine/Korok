@@ -3,10 +3,10 @@ package ogg
 import (
 	"io/ioutil"
 	"os"
-
-	"vorbis"
 	"unsafe"
 	"log"
+
+	"korok.io/vorbis"
 )
 
 /// 此处是双通道的代码示例！！

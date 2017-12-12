@@ -5,13 +5,13 @@ import (
 
 	"github.com/go-gl/glfw/v3.2/glfw"
 
-	"korok/engi"
-	"korok/gfx"
-	"korok/particle"
-	"korok/anim"
-	"korok/physics"
-	"korok/assets"
-	"korok/hid/inputs"
+	"korok.io/korok/engi"
+	"korok.io/korok/gfx"
+	"korok.io/korok/particle"
+	"korok.io/korok/anim"
+	"korok.io/korok/physics"
+	"korok.io/korok/assets"
+	"korok.io/korok/hid/inputs"
 
 	"log"
 	"reflect"

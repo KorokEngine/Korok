@@ -2,7 +2,7 @@ package particle
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"korok/gfx"
+	"korok.io/korok/gfx"
 )
 
 type FireCloud struct {

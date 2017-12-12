@@ -2,7 +2,7 @@ package font
 
 import (
 	"image"
-	"korok/gfx/bk"
+	"korok.io/korok/gfx/bk"
 )
 
 // A Font allows rendering ofg text to an OpenGL context
