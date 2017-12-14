@@ -4,10 +4,6 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 
 	"korok.io/korok/engi"
-	"korok.io/korok/gfx/bk"
-	"time"
-	"korok.io/korok/gfx/dbg"
-	"fmt"
 )
 
 type RenderType int32
@@ -60,14 +56,6 @@ type RenderSystem struct {
 	FeatureList []RenderFeature
 }
 
-func (th *RenderSystem) Initialize() {
-	bk.Init()
-	bk.Reset(480, 320)
-
-	// Enable debug text
-	bk.SetDebug(bk.DEBUG_R|bk.DEBUG_Q)
-}
-
 func (th *RenderSystem) RequireTable(tables []interface{}) {
 	th.TableList = tables
 }
@@ -90,8 +78,6 @@ func (th *RenderSystem) RegisterRender(t RenderType, render Render) {
 }
 
 func (th *RenderSystem) Update(dt float32) {
-	now := time.Now()
-
 	// main camera
 	for _, r := range th.RenderList {
 		r.SetCamera(th.MainCamera)
@@ -101,19 +87,6 @@ func (th *RenderSystem) Update(dt float32) {
 	for _, f := range th.FeatureList {
 		f.Draw(nil)
 	}
-
-	du := time.Now().Sub(now)
-
-	dbg.Move(100, 10)
-	dbg.DrawStr(fmt.Sprintf("render update: %d", du.Nanoseconds()))
-
-	now = time.Now()
-	bk.Flush()
-	du = time.Now().Sub(now)
-
-	dbg.Move(100, 30)
-	dbg.DrawStr(fmt.Sprintf("render flush: %d", du.Nanoseconds()))
-
 }
 
 func (th *RenderSystem) Destroy() {

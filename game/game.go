@@ -8,12 +8,11 @@ import (
 	"korok.io/korok/physics"
 	"korok.io/korok/assets"
 	"korok.io/korok/hid/input"
+	"korok.io/korok/gfx/dbg"
 
 	"log"
 	"reflect"
-	"korok.io/korok/gfx/dbg"
 	"fmt"
-	"time"
 )
 
 type Table interface{}
@@ -61,10 +60,11 @@ func AddScene(scene Scene) {
 
 // init subsystem
 func (g *Game) Create() {
+	gfx.Init()
 	// render system
 	rs := &gfx.RenderSystem{}
 	g.RenderSystem = rs
-	rs.Initialize()
+
 	//
 	// set table
 	rs.RequireTable(g.DB.Tables)
@@ -149,12 +149,7 @@ func (g *Game) Input(dt float32) {
 	}
 }
 
-var t = time.Now()
-
 func (g *Game) Update() {
-	now := time.Now()
-	t = now
-
 	// update
 	g.FPS.Step()
 
@@ -168,8 +163,6 @@ func (g *Game) Update() {
 
 	g.InputSystem.Reset()
 
-	perframe := time.Now().Sub(now)
-
 	//// simulation....
 
 	/// 动画更新，骨骼数据
@@ -180,6 +173,16 @@ func (g *Game) Update() {
 	// 粒子系统更新
 	//g.ParticleSystem.Update(dt)
 
+	// Render
+	g.RenderSystem.Update(dt)
+
+	// fps & profile
+	g.DrawProfile()
+
+	gfx.Flush()
+}
+
+func (g *Game) DrawProfile() {
 	//dbg.FPS(g.FPS.fps)
 	dbg.Move(5, 5)
 
@@ -187,21 +190,18 @@ func (g *Game) Update() {
 	dbg.DrawRect(0, 0, 50, 6)
 
 	// format: RGBA
-	dbg.Color(0xFFFFFF00)
+	dbg.Color(0xFF00FF00)
 
 	w := float32(g.fps)/60 * 50
 	dbg.DrawRect(0, 0, w, 5)
 
-	dbg.Move(5, 100)
-	dbg.DrawStr(fmt.Sprintf("%d fps, dt: %d", g.fps, perframe.Nanoseconds()))
+	// format: RGBA
+	dbg.Color(0xFF000000)
 
-	//dbg.Move(5, 50)
-	//dbg.DrawStr(fmt.Sprintf("per frame: %d", perframe))
+	dbg.Move(5, 10)
+	dbg.DrawStrScaled(fmt.Sprintf("%d fps", g.fps), 0.6)
 
 	dbg.NextFrame()
-
-	// Render
-	g.RenderSystem.Update(dt)
 }
 
 func (g *Game) Draw(dt float32) {
