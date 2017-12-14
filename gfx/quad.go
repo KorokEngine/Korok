@@ -25,6 +25,8 @@ type Region struct {
 type SubTex struct {
 	TexId   uint16
 	padding uint16
+	Width   uint16
+	Height  uint16
 
 	Region
 }

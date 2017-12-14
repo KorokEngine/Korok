@@ -243,7 +243,6 @@ func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 
 	if begin {
 		render.End()
-		render.flushBuffer()
 	}
 
 	render.Flush()

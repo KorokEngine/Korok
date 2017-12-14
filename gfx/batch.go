@@ -36,7 +36,7 @@ type Batch struct {
 	numIndex   uint16
 }
 
-type BatchConverter interface {
+type BatchObject interface {
 	Fill(vertex []PosTexColorVertex)
 	Size() int
 }

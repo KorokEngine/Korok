@@ -5,6 +5,9 @@ import (
 
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx/bk"
+	"time"
+	"korok.io/korok/gfx/dbg"
+	"fmt"
 )
 
 type RenderType int32
@@ -87,6 +90,8 @@ func (th *RenderSystem) RegisterRender(t RenderType, render Render) {
 }
 
 func (th *RenderSystem) Update(dt float32) {
+	now := time.Now()
+
 	// main camera
 	for _, r := range th.RenderList {
 		r.SetCamera(th.MainCamera)
@@ -97,7 +102,18 @@ func (th *RenderSystem) Update(dt float32) {
 		f.Draw(nil)
 	}
 
+	du := time.Now().Sub(now)
+
+	dbg.Move(100, 10)
+	dbg.DrawStr(fmt.Sprintf("render update: %d", du.Nanoseconds()))
+
+	now = time.Now()
 	bk.Flush()
+	du = time.Now().Sub(now)
+
+	dbg.Move(100, 30)
+	dbg.DrawStr(fmt.Sprintf("render flush: %d", du.Nanoseconds()))
+
 }
 
 func (th *RenderSystem) Destroy() {

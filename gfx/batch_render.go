@@ -87,68 +87,34 @@ func (br *BatchRender) submit(bList []Batch) {
 	}
 }
 
-// 如果所有的数据都可以放入到一个大的 VBO 里面自然可以，但是
-// 如果一个 VBO 不够放？ 那应该怎么办?
-//
-//func (br *BatchRender) Draw(refs []BatchObject) {
-//	bc := br.BatchContext
-//
-//	// 1. sort comp by batch id
-//
-//	// 2. batch draw
-//	var N = len(refs)
-//	var batchId int32 = 0x0000FFFF
-//	var begin = false
-//
-//	for i := 0; i < N; i++ {
-//		ref := refs[i]
-//		bid := refs[i].Type & 0x0000FFFF
-//
-//		if batchId != bid {
-//			if begin {
-//				bc.End()
-//			}
-//			batchId = bid
-//			begin = true
-//
-//			bc.Begin(ref.Data.(*QuadSprite).tex) // todo
-//			bc.DrawComp(ref)
-//		} else {
-//			bc.DrawComp(ref)
-//		}
-//	}
-//
-//	if begin {
-//		bc.End()
-//		bc.flushBuffer()
-//	}
-//
-//	// 3. submit
-//	br.submit(bc.BatchList[:bc.batchUsed])
-//
-//	// 4. reset batch state
-//	bc.Reset()
-//}
-
 func (br *BatchRender) Begin(tex uint16) {
-	br.begin(tex)
+	br.BatchContext.begin(tex)
 }
 
-func (br *BatchRender) Draw(converter BatchConverter) {
-	br.drawComp(converter)
+func (br *BatchRender) Draw(b BatchObject) {
+	br.BatchContext.drawComp(b)
 }
 
 func (br *BatchRender) End() {
-	br.end()
+	br.BatchContext.end()
 }
 
-func (br *BatchRender) Flush() {
+func (br *BatchRender) Flush() (num int) {
 	bc := &br.BatchContext
-	// 3. submit
+	num = bc.batchUsed
+
+	// flush unclosed vertex buffer
+	if bc.vertexPos > 0 {
+		bc.flushBuffer()
+	}
+
+	// submit
 	br.submit(bc.BatchList[:bc.batchUsed])
 
-	// 4. reset batch state
+	// reset batch state
 	bc.reset()
+
+	return
 }
 
 
@@ -218,11 +184,12 @@ func (bc *BatchContext) begin(tex uint16) {
 //   |   `  |
 //   0------1
 
-func (bc *BatchContext) drawComp(converter BatchConverter) {
-	step := uint32(converter.Size())
+func (bc *BatchContext) drawComp(b BatchObject) {
+	step := uint32(b.Size())
 
 	if bc.vertexPos + step > MAX_BATCH_VERTEX_SIZE {
 		bc.flushBuffer()
+		bc.end()
 
 		bc.vertexPos = 0
 		bc.firstVertex = 0
@@ -235,7 +202,7 @@ func (bc *BatchContext) drawComp(converter BatchConverter) {
 
 	buf := bc.vertex[bc.vertexPos:bc.vertexPos+step]
 	bc.vertexPos = bc.vertexPos+step
-	converter.Fill(buf)
+	b.Fill(buf)
 }
 
 // commit a batch
@@ -252,7 +219,7 @@ func (bc *BatchContext) end() {
 	batch.numVertex = uint16(bc.vertexPos-bc.firstVertex)
 
 	batch.IndexId = bc.indexId
-	batch.firstIndex = 0
+	batch.firstIndex = uint16(batch.firstVertex/4 * 6)
 	batch.numIndex = uint16(batch.numVertex/4 * 6)
 
 	bc.batchUsed += 1
@@ -267,6 +234,8 @@ func (bc *BatchContext) reset() {
 	bc.vbUsed = 0
 }
 
+// flushBuffer() will write and switch vertex-buffer
+// we must submit batch with a end() method
 func (bc *BatchContext) flushBuffer() {
 	vb := bc.vb[bc.vbUsed]
 	vb.Update(0, bc.vertexPos * 20, unsafe.Pointer(&bc.vertex[0]), false)

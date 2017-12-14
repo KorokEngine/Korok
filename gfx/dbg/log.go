@@ -16,6 +16,11 @@ const (
 	CLOSE
 )
 
+// print all log
+func Dump() {
+
+}
+
 func SetDebug(level DEBUG_LEVEL) {
 	g_level = level
 }

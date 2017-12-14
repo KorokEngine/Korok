@@ -7,6 +7,7 @@ import (
 
 	"unsafe"
 	"log"
+	"fmt"
 )
 
 type DrawType uint8
@@ -45,7 +46,15 @@ func Destroy() {
 }
 
 func FPS(fps int32) {
+	x, y := g_buffer.x, g_buffer.y
+	color := g_buffer.color
 
+	g_buffer.x, g_buffer.y = 10, 10
+	g_buffer.color = 0xFF121212
+	DrawStr(fmt.Sprintf("%d FPS", fps))
+
+	g_buffer.x, g_buffer.y = x, y
+	g_buffer.color = color
 }
 
 func Move(x, y float32) {
@@ -125,7 +134,8 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		}
 
 		// submit render state
-		bk.Touch(0)
+		// bk.Touch(0)
+		bk.Submit(0, id, 0)
 	}
 	// setup buffer, we can draw 512 rect at most!!
 	dr.Buffer.init(512)

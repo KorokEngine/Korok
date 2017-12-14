@@ -4,7 +4,6 @@ import (
 	"korok.io/korok/engi"
 
 	"sort"
-	"log"
 )
 
 /// SpriteComp & SpriteTable
@@ -25,6 +24,11 @@ type SpriteComp struct {
 
 func (sc *SpriteComp) SetTexture(tex *SubTex) {
 	sc.SubTex = tex
+	if tex != nil {
+		sc.batchId = int16(tex.TexId)
+		sc.Width = float32(tex.Width)
+		sc.Height = float32(tex.Width)
+	}
 }
 
 func (sc *SpriteComp) SetZOrder(z int16) {
@@ -49,6 +53,11 @@ func (st *SpriteTable) NewComp(entity engi.Entity, tex *SubTex) (sc *SpriteComp)
 	sc = &st._comps[st._index]
 	sc.SubTex = tex
 	sc.Entity = entity
+	if tex != nil {
+		sc.batchId = int16(tex.TexId)
+		sc.Width = float32(tex.Width)
+		sc.Height = float32(tex.Width)
+	}
 	st._map[entity] = st._index
 	st._index ++
 	return
@@ -65,6 +74,14 @@ type SpriteRenderFeature struct {
 	R *BatchRender
 	st *SpriteTable
 	xt *TransformTable
+}
+
+func (srf *SpriteRenderFeature) SetRender(render *BatchRender) {
+	srf.R = render
+}
+
+func (srf *SpriteRenderFeature) SetTable(st *SpriteTable, xt *TransformTable) {
+	srf.st, srf.xt = st, xt
 }
 
 // 此处初始化所有的依赖
@@ -93,9 +110,6 @@ func (srf *SpriteRenderFeature) Register(rs *RenderSystem) {
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
-	if srf == nil {
-		log.Println("this is null!!")
-	}
 	xt, st, n := srf.xt, srf.st, srf.st._index
 	bList := make([]spriteBatchObject, n)
 
@@ -139,7 +153,6 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 
 	if begin {
 		render.End()
-		render.flushBuffer()
 	}
 
 	render.Flush()
@@ -157,20 +170,17 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 	w := sbo.Width
 	h := sbo.Height
 
-	w = 100
-	h = 100
-
 	buf[0].X, buf[0].Y = p[0], p[1]
 	buf[0].U, buf[0].V = r.X1, r.Y1
-	buf[0].RGBA = 0x00ffffff
+	buf[0].RGBA = 0xffffffff
 
 	buf[1].X, buf[1].Y = p[0] + w, p[1]
 	buf[1].U, buf[1].V = r.X2, r.Y1
-	buf[1].RGBA = 0x00ffffff
+	buf[1].RGBA = 0xffffffff
 
 	buf[2].X, buf[2].Y = p[0] + w, p[1] + h
 	buf[2].U, buf[2].V = r.X2, r.Y2
-	buf[2].RGBA = 0x00ffffff
+	buf[2].RGBA = 0xffffffff
 
 	buf[3].X, buf[3].Y = p[0], p[1] + h
 	buf[3].U, buf[3].V = r.X1, r.Y2
