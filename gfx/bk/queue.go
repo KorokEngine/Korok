@@ -247,6 +247,8 @@ func (rq *RenderQueue) Flush() uint32 {
 	rq.ctx.Draw(sortKeys, sortValues, drawList)
 
 	rq.drawCallNum = 0
+	rq.uniformBegin = 0
+	rq.uniformEnd = 0
 	rq.ub.Reset()
 
 	return uint32(rq.drawCallNum)

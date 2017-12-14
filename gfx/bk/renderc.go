@@ -159,7 +159,6 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 				if current != bind || programChanged {
 					texture := ctx.R.textures[bind]
 					texture.Bind(int32(stage))
-					//log.Printf("bind texture: (%d, %d)", stage, texture.Id)
 				}
 			}
 			currentState.textures[stage] = bind
