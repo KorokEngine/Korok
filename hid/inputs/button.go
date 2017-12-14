@@ -16,7 +16,7 @@ var buttonCache = make([]button, 64)
 func NewButton() (btn *button) {
 	btn = &buttonCache[btnId]
 	btnId ++
-	return btn
+	return
 }
 
 func (btn button) JustPressed() bool {

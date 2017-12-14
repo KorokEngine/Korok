@@ -5,6 +5,33 @@ import (
 	"github.com/go-gl/glfw/v3.2/glfw"
 )
 
+// 记录一帧之内的按键，一帧时间做多支持同时按6个按键
+type SparseMap struct {
+	keys [6]Key
+	stat [6]bool
+	used int
+}
+
+func (m *SparseMap) Put(k Key, st bool) {
+	m.keys[m.used] = k
+	m.stat[m.used] = st
+	m.used ++
+}
+
+func (m *SparseMap) Clear() {
+	m.used = 0
+}
+
+func (m *SparseMap) Get(k Key) (st, ok bool) {
+	for i := 0; i < m.used; i++ {
+		if m.keys[i] == k {
+			st, ok = m.stat[i], true
+			break
+		}
+	}
+	return
+}
+
 type InputSystem struct {
 	buttons map[string]*button
 	axes	map[string]*VAxis
@@ -12,7 +39,7 @@ type InputSystem struct {
 	// 记录每帧的按键状态
 	// 无论是用数组还是哈希，这里的实现总之要达到快速
 	// 查询一个按键的状态的效果
-	dirty map[int]bool
+	dirty SparseMap
 	mutex   sync.RWMutex
 
 	// 按照button排序，这样同一个Button的绑定按键是
@@ -24,7 +51,6 @@ func NewInputSystem() *InputSystem {
 	in := &InputSystem{
 		buttons:make(map[string]*button),
 		axes:make(map[string]*VAxis),
-		dirty:make(map[int]bool),
 	}
 	Input = in
 	return in
@@ -46,29 +72,34 @@ func (in *InputSystem) RegisterButton(name string, keys ...Key) {
 }
 
 // 更新 Button 状态....
+// TODO 此处的输入状态，更新有bug！！
 func (in *InputSystem) Frame() {
-	if n := len(in.binds); n > 0 && len(in.dirty) > 0 {
-		st := in.dirty[int(in.binds[0].key)]
-		i := 1;
-		for ; i < n; i++ {
-			pr, bd := in.binds[i-1], in.binds[i]
-			if pr.btn != bd.btn {
-				bd.btn.Update(st)
-				st = in.dirty[int(bd.key)]
-			} else {
-				st = st || in.dirty[int(pr.key)]
+	if n, dirty := len(in.binds), in.dirty.used; n > 0 && dirty > 0 {
+		var st, ok bool
+		var pr *button
+
+		for _, bd := range in.binds {
+			if s, o := in.dirty.Get(bd.key); o {
+				st = st || s
+				ok = ok || o
 			}
+
+			if pr != bd.btn {
+				if ok {
+					bd.btn.Update(st)
+				}
+				st, ok = false, false
+			}
+
+			pr = bd.btn
 		}
-		in.binds[i-1].btn.Update(st)
 	}
 }
 
 func (in *InputSystem) Reset() {
 	// clear dirty map!!
 	in.mutex.Lock()
-	for k, _ := range in.dirty {
-		delete(in.dirty, k)
-	}
+	in.dirty.Clear()
 	in.mutex.Unlock()
 	// reset button state
 	for _, v := range in.buttons {
@@ -79,7 +110,7 @@ func (in *InputSystem) Reset() {
 // 更新 key 的状态
 func (in *InputSystem) SetKeyEvent(key int, pressed bool) {
 	in.mutex.Lock()
-	in.dirty[key] = pressed
+	in.dirty.Put(Key(key), pressed)
 	in.mutex.Unlock()
 }
 
