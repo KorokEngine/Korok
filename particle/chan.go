@@ -2,7 +2,7 @@ package particle
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
-	"korok.io/korok/math"
+	"korok.io/korok/engi/math"
 )
 
 // 计算通道定义：

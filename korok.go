@@ -13,7 +13,7 @@ import (
 	"korok.io/korok/particle"
 	"korok.io/korok/anim"
 	"korok.io/korok/physics"
-	"korok.io/korok/hid/inputs"
+	"korok.io/korok/hid/input"
 )
 
 const VERSION_CODE  = 1
@@ -106,4 +106,4 @@ var RigidBody *physics.RigidBodyTable
 var Collider  *physics.ColliderTable
 
 ///// input system
-var Input *inputs.InputSystem
+var Input *input.InputSystem

@@ -73,9 +73,11 @@ func (tm *TextureManager) loadTexture(file string)(uint16, error)  {
 }
 
 // helper method
-func AsSubTexture(id uint16) *gfx.SubTex{
+func AsSubTexture(id uint16, tex *bk.Texture2D) *gfx.SubTex{
 	return &gfx.SubTex{
 		TexId: id,
+		Width: uint16(tex.Width),
+		Height: uint16(tex.Height),
 		Region: gfx.Region {
 			0, 0,
 			1, 1,

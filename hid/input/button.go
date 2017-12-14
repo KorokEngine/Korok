@@ -1,4 +1,4 @@
-package inputs
+package input
 
 
 // JustPressed/JustReleased 表示按键事件

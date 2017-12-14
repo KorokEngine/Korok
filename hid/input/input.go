@@ -1,4 +1,4 @@
-package inputs
+package input
 
 import (
 	"sync"

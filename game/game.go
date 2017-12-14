@@ -1,25 +1,24 @@
 package game
 
 import (
-	timer "time"
-
-	"github.com/go-gl/glfw/v3.2/glfw"
-
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx"
 	"korok.io/korok/particle"
 	"korok.io/korok/anim"
 	"korok.io/korok/physics"
 	"korok.io/korok/assets"
-	"korok.io/korok/hid/inputs"
+	"korok.io/korok/hid/input"
 
 	"log"
 	"reflect"
+	"korok.io/korok/gfx/dbg"
+	"fmt"
+	"time"
 )
 
 type Table interface{}
 
-type VirtualDB struct {
+type DB struct {
 	EntityM *engi.EntityManager
 	Tables  []interface{}
 }
@@ -30,10 +29,11 @@ var scenes = make(map[string]Scene)
 var current Scene
 
 type Game struct {
-	DB VirtualDB
+	FPS
+	DB
 
 	*gfx.RenderSystem
-	*inputs.InputSystem
+	*input.InputSystem
 }
 
 /// window callback
@@ -97,8 +97,11 @@ func (g *Game) Create() {
 		log.Println(i, " feature - ", reflect.TypeOf(v))
 	}
 
+	/// init debug
+	dbg.Init()
+
 	/// input system
-	g.InputSystem = inputs.NewInputSystem()
+	g.InputSystem = input.NewInputSystem()
 
 	/// Customized scene
 	if current != nil {
@@ -146,27 +149,26 @@ func (g *Game) Input(dt float32) {
 	}
 }
 
-var previousTime float64
+var t = time.Now()
 
 func (g *Game) Update() {
+	now := time.Now()
+	t = now
+
 	// update
-	time := glfw.GetTime()
-	elapsed := time - previousTime
-	previousTime = time
+	g.FPS.Step()
 
 	// update input-system
 	g.InputSystem.Frame()
 
-	dt := float32(elapsed)
+	dt := g.FPS.dt
 	if current != nil {
 		current.Update(dt)
 	}
 
 	g.InputSystem.Reset()
 
-	if dt < 0.0166 {
-		timer.Sleep(timer.Duration(0.0166-dt) * timer.Second)
-	}
+	perframe := time.Now().Sub(now)
 
 	//// simulation....
 
@@ -178,10 +180,28 @@ func (g *Game) Update() {
 	// 粒子系统更新
 	//g.ParticleSystem.Update(dt)
 
+	//dbg.FPS(g.FPS.fps)
+	dbg.Move(5, 5)
+
+	dbg.Color(0xFF000000)
+	dbg.DrawRect(0, 0, 50, 6)
+
+	// format: RGBA
+	dbg.Color(0xFFFFFF00)
+
+	w := float32(g.fps)/60 * 50
+	dbg.DrawRect(0, 0, w, 5)
+
+	dbg.Move(5, 100)
+	dbg.DrawStr(fmt.Sprintf("%d fps, dt: %d", g.fps, perframe.Nanoseconds()))
+
+	//dbg.Move(5, 50)
+	//dbg.DrawStr(fmt.Sprintf("per frame: %d", perframe))
+
+	dbg.NextFrame()
+
 	// Render
 	g.RenderSystem.Update(dt)
-
-
 }
 
 func (g *Game) Draw(dt float32) {
