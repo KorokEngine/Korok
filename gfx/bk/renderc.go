@@ -138,7 +138,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		/// 5. Update program
 		if key.Shader != shaderId { //TODO shader id err
 			shaderId = key.Shader
-			var id uint32 = ctx.R.shaders[shaderId].GLShader.Program
+			var id = ctx.R.shaders[shaderId].GLShader.Program
 			gl.UseProgram(id)
 			programChanged = true
 			//constantsChanged = true
@@ -155,7 +155,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		for stage := 0; stage < 2; stage++ {
 			bind := draw.textures[stage]
 			current := currentState.textures[stage]
-			if 0 != bind {
+			if InvalidId != bind {
 				if current != bind || programChanged {
 					texture := ctx.R.textures[bind]
 					texture.Bind(int32(stage))

@@ -9,8 +9,9 @@ import (
 
 /// 在 2D 引擎中，GPU 资源的使用时很有限的，
 /// 大部分图元会在 Batch 环节得到优化，最终生成有限的渲染指令.
+/// Id从1开始，0作为Invalid-Id比0xFFFF有很多天然的好处
 
-const InvalidId uint16 = 0xFFFF
+const InvalidId uint16 = 0x0000
 const UINT16_MAX uint16 = 0xFFFF
 
 const (
@@ -67,8 +68,16 @@ func NewResManager() *ResManager {
 	return &ResManager{}
 }
 
+// skip first index - 0
 func (rm *ResManager) Init() {
-
+	if rm.ibIndex == 0 {
+		rm.ibIndex ++
+		rm.vbIndex ++
+		rm.ttIndex ++
+		rm.vlIndex ++
+		rm.umIndex ++
+		rm.shIndex ++
+	}
 }
 
 func (rm *ResManager) Destroy() {
