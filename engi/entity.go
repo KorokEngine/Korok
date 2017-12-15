@@ -19,23 +19,19 @@ const GENERATION_BITS  = 8
 const GENERATION_MASK  = (1<<GENERATION_BITS)-1
 
 type ComponentType uint16
-const (
-	COMP_DEBUG_NAME ComponentType = iota
-	COMP_SPRITE
-	COMP_MESH
-	COMP_TAG
-	COMP_TRANSFORM
-	COMP_PARTICLE
-)
 
 type Entity uint32
 
-func (entity Entity)Index() uint32 {
-	return uint32(entity) & INDEX_MASK
+func (e Entity) Index() uint32 {
+	return uint32(e) & INDEX_MASK
 }
 
-func (entity Entity)Generation() uint32 {
-	return uint32(entity >> INDEX_BITS) & GENERATION_MASK
+func (e Entity) Generation() uint32 {
+	return uint32(e >> INDEX_BITS) & GENERATION_MASK
+}
+
+func (e Entity) Alive() bool {
+	return e != 0
 }
 
 // Components
@@ -46,33 +42,18 @@ type Component interface {
 type System interface {
 }
 
-var id Entity
-// Entity Manager
-func Create() Entity {
-	id ++
-	return id
-}
-
-func (Entity) Alive() bool {
-	return false
-}
-
-func (Entity) Destroy() {
-
-}
-
-func (Entity)AddComponent(xType ComponentType) Component{
-	return nil
-}
-
-func (Entity)Component(xType ComponentType) Component{
-	return nil
-}
-
+// 要不要用一个数组来管理所有的 Entity-Id 索引？
+// 好处是可以方便的跟踪游戏整个生命周期中产生的所有对象.
+// 同时需要一个 FreeList 来记录所有的对象.
 type EntityManager struct {
-
+	id Entity
 }
 
-func (*EntityManager) New() Entity{
-	return Create()
+func NewEntityManager() *EntityManager {
+	return &EntityManager{}
+}
+
+func (em *EntityManager) New() Entity {
+	em.id ++
+	return em.id
 }

@@ -15,6 +15,13 @@ import (
 	"fmt"
 )
 
+const (
+	MaxSpriteSize = 64 << 10
+	MaxTransformSize = 64 << 10
+	MaxTextSize = 64 << 10
+	MaxMeshSize = 64 << 10
+)
+
 type Table interface{}
 
 type DB struct {
@@ -120,16 +127,18 @@ func (g *Game) Init() {
 }
 
 func (g *Game) loadTables() {
+	g.DB.EntityM = engi.NewEntityManager()
+
 	// init tables
 	scriptTable := &ScriptTable{}
 	tagTable := &TagTable{}
 
 	g.DB.Tables = append(g.DB.Tables, scriptTable, tagTable)
 
-	spriteTable := gfx.NewSpriteTable()
-	meshTable := gfx.NewMeshTable()
-	xfTable := gfx.NewTransformTable()
-	textTable := gfx.NewTextTable()
+	spriteTable := gfx.NewSpriteTable(MaxSpriteSize)
+	meshTable := gfx.NewMeshTable(MaxMeshSize)
+	xfTable := gfx.NewTransformTable(MaxTransformSize)
+	textTable := gfx.NewTextTable(MaxTextSize)
 
 	g.DB.Tables = append(g.DB.Tables, spriteTable, meshTable, xfTable, textTable)
 

@@ -2,26 +2,31 @@ package game
 
 import "korok.io/korok/engi"
 
+/**
+标记并分类游戏对象
+ */
 type TagComp struct {
 	Name string
 }
 
 type TagTable struct {
-	_comps []TagComp
-	_index uint32
-	_map   map[int]uint32
+	comps []TagComp
+	_map   map[uint32]int
+	index, cap int
+
+	d map[string][]engi.Entity
 }
 
 func (tt *TagTable) NewComp(entity engi.Entity) (tc *TagComp) {
-	tc = &tt._comps[tt._index]
-	tt._map[int(entity)] = tt._index
-	tt._index ++
+	tc = &tt.comps[tt.index]
+	tt._map[entity.Index()] = tt.index
+	tt.index ++
 	return
 }
 
 func (tt *TagTable) Comp(entity engi.Entity) (tc *TagComp) {
-	if v, ok := tt._map[int(entity)]; ok {
-		tc = &tt._comps[v]
+	if v, ok := tt._map[entity.Index()]; ok {
+		tc = &tt.comps[v]
 	}
 	return
 }
@@ -31,9 +36,12 @@ func (tt *TagTable) Delete(entity engi.Entity) (tc *TagComp) {
 	return nil
 }
 
-type TagSystem struct {
-	*TagTable
-	// any ?
+func (tt *TagTable) Group(tag string) []engi.Entity {
+	return nil
+}
+
+func (tt *TagTable) Size() (size, cap int) {
+	return 0, 0
 }
 
 
