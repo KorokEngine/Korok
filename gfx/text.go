@@ -125,44 +125,81 @@ func (tc *TextComp) SetFont(fs FontSystem) {
 
 // TextTable
 type TextTable struct {
-	_comps [10]TextComp
-	_index uint32
-	_map   map[int]uint32
+	comps []TextComp
+	_map   map[uint32]int
+	index, cap int
 
 }
 
-func NewTextTable() *TextTable {
-	return &TextTable{_map:make(map[int]uint32)}
+func NewTextTable(cap int) *TextTable {
+	return &TextTable{cap: cap,_map: make(map[uint32]int)}
 }
 
 func (tt *TextTable) NewComp(entity engi.Entity) (tc *TextComp) {
-	tc = &tt._comps[tt._index];
+	if size := len(tt.comps); tt.index >= size {
+		tt.comps = textResize(tt.comps, size + STEP)
+	}
+	ei := entity.Index()
+	if v, ok := tt._map[ei]; ok {
+		return &tt.comps[v]
+	}
+
+	tc = &tt.comps[tt.index]
 	tc.Entity = entity
-	tt._map[int(entity)] = tt._index;
-	tt._index ++
+	tt._map[ei] = tt.index;
+	tt.index ++
 	return
 }
 
+func (tt *TextTable) Alive(entity engi.Entity) bool {
+	if v, ok := tt._map[entity.Index()]; ok {
+		return tt.comps[v].Entity == 0
+	}
+	return false
+}
+
 func (tt *TextTable) Comp(entity engi.Entity) (tc *TextComp) {
-	if v, ok := tt._map[int(entity)]; ok {
-		tc = &tt._comps[v]
+	if v, ok := tt._map[entity.Index()]; ok {
+		tc = &tt.comps[v]
 	}
 	return
 }
 
-func (tt *TextTable) Delete(entity engi.Entity) (tc *TextComp){
-	if v, ok := tt._map[int(entity)]; ok {
-		tc = &tt._comps[v]
-		delete(tt._map, int(entity))
-		// todo swap erase
+func (tt *TextTable) Delete(entity engi.Entity) (tc *TextComp) {
+	ei := entity.Index()
+	if v, ok := tt._map[ei]; ok {
+		if tail := tt.index -1; v != tail && tail > 0 {
+			tt.comps[v] = tt.comps[tail]
+			// remap index
+			tComp := &tt.comps[tail]
+			ei := tComp.Entity.Index()
+			tt._map[ei] = v
+			tComp.Entity = 0
+		} else {
+			tt.comps[tail].Entity = 0
+		}
 
+		tt.index -= 1
+		delete(tt._map, ei)
 	}
 	return
 }
 
 // Destroy Table
 func (tt *TextTable) Destroy() {
+	tt.comps = make([]TextComp, 0)
+	tt._map = make(map[uint32]int)
+	tt.index = 0
+}
 
+func (tt *TextTable) Size() (size, cap int) {
+	return tt.index, tt.cap
+}
+
+func textResize(slice []TextComp, size int) []TextComp {
+	newSlice := make([]TextComp, size)
+	copy(newSlice, slice)
+	return newSlice
 }
 
 
@@ -200,12 +237,12 @@ func (trf *TextRenderFeature) Register(rs *RenderSystem) {
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
-	xt, tt, n := trf.xt, trf.tt, trf.tt._index
+	xt, tt, n := trf.xt, trf.tt, trf.tt.index
 	bList := make([]textBatchObject, n)
 
 	// get batch list
-	for i := uint32(0); i < n; i++ {
-		text := &tt._comps[i]
+	for i := 0; i < n; i++ {
+		text := &tt.comps[i]
 		entity := text.Entity
 
 		xform  := xt.Comp(entity)

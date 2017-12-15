@@ -174,26 +174,78 @@ var vertices = []float32{
 
 
 type MeshTable struct {
-	_comps [100]MeshComp
-	_index uint32
-	_map  map[int]uint32
+	comps []MeshComp
+	_map  map[uint32]int
+	index, cap int
 }
 
-func NewMeshTable() *MeshTable {
-	return &MeshTable{_map:make(map[int]uint32)}
+func NewMeshTable(cap int) *MeshTable {
+	return &MeshTable{cap:cap, _map:make(map[uint32]int)}
 }
 
 func (mt *MeshTable) NewComp(entity engi.Entity) (mc *MeshComp) {
-	mc = &mt._comps[mt._index]
+	if size := len(mt.comps); mt.index >= size {
+		mt.comps = meshResize(mt.comps, size + STEP)
+	}
+	ei := entity.Index()
+	if v, ok := mt._map[ei]; ok {
+		return &mt.comps[v]
+	}
+
+	mc = &mt.comps[mt.index]
 	mc.Entity = entity
-	mt._map[int(entity)] = mt._index
-	mt._index ++
+	mt._map[ei] = mt.index
+	mt.index ++
 	return
 }
 
-func (mt *MeshTable) Comp() (mc *MeshComp) {
-	mc = &mt._comps[mt._index]
+func (mt *MeshTable) Alive(entity engi.Entity) bool {
+	if v, ok := mt._map[entity.Index()]; ok {
+		return mt.comps[v].Entity == 0
+	}
+	return false
+}
+
+func (mt *MeshTable) Comp(entity engi.Entity) (mc *MeshComp) {
+	if v, ok := mt._map[entity.Index()]; ok {
+		mc = &mt.comps[v]
+	}
 	return
+}
+
+func (mt *MeshTable) Delete(entity engi.Entity) {
+	ei := entity.Index()
+	if v, ok := mt._map[ei]; ok {
+		if tail := mt.index -1; v != tail && tail > 0 {
+			mt.comps[v] = mt.comps[tail]
+			// remap index
+			tComp := &mt.comps[tail]
+			ei := tComp.Entity.Index()
+			mt._map[ei] = v
+			tComp.Entity = 0
+		} else {
+			mt.comps[tail].Entity = 0
+		}
+
+		mt.index -= 1
+		delete(mt._map, ei)
+	}
+}
+
+func (mt *MeshTable) Destroy() {
+	mt.comps = make([]MeshComp, 0)
+	mt._map = make(map[uint32]int)
+	mt.index = 0
+}
+
+func (mt *MeshTable) Size() (size, cap int) {
+	return mt.index, mt.cap
+}
+
+func meshResize(slice []MeshComp, size int) []MeshComp {
+	newSlice := make([]MeshComp, size)
+	copy(newSlice, slice)
+	return newSlice
 }
 
 /////
@@ -235,11 +287,11 @@ func (srf *MeshRenderFeature) Draw(filter []engi.Entity) {
 		log.Println("this is null!!")
 	}
 
-	xt, mt, n := srf.xt, srf.mt, srf.mt._index
+	xt, mt, n := srf.xt, srf.mt, srf.mt.index
 	mr := srf.R
 
-	for i := uint32(0); i < n; i++ {
-		mesh := &mt._comps[i]
+	for i := 0; i < n; i++ {
+		mesh := &mt.comps[i]
 		entity := mesh.Entity
 		xform  := xt.Comp(entity)
 

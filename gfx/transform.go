@@ -19,7 +19,7 @@ Entity的销毁可以在每帧结束的时候扫描各个系统实现，
 来实现类似的效果。
 */
 
-const STEP = 100
+const STEP = 64
 const none = 0
 
 // 还可以做更细的拆分，把 Matrix 全部放到一个数组里面
@@ -94,51 +94,96 @@ var nodeSystem *TransformTable
 
 type TransformTable struct {
  	comps []Transform
-	_map [1024]int
-	index, capacity int
+	_map  map[uint32]int
+	index, cap int
 }
 
-func NewTransformTable() *TransformTable {
-	return &TransformTable{}
-}
-
-func (tt *TransformTable) NewComp(entity engi.Entity) (xf *Transform) {
-	size := len(tt.comps)
-	if tt.index >= size {
-		tt.comps = resize(tt.comps, size + STEP)
+func NewTransformTable(cap int) *TransformTable {
+	return &TransformTable{
+		cap:cap,
+		_map:make(map[uint32]int),
 	}
+}
+
+// Create a new TransformComp for the entity,
+// Return the old one, if it already exist .
+func (tt *TransformTable) NewComp(entity engi.Entity) (xf *Transform) {
+	if size := len(tt.comps); tt.index >= size {
+		tt.comps = transformResize(tt.comps, size + STEP)
+	}
+	ei := entity.Index()
+	if v, ok := tt._map[ei]; ok {
+		xf = &tt.comps[v]
+		return
+	}
+
 	xf = &tt.comps[tt.index]
-	tt._map[entity] = tt.index
+	tt._map[ei] = tt.index
 	xf.Entity = entity
 	xf.Scale = mgl32.Vec2{1, 1}
 	tt.index += 1
 	return
 }
 
-func (tt *TransformTable) Comp(entity engi.Entity) *Transform {
-	return &tt.comps[tt._map[entity]]
+// Return the TransformComp or nil
+func (tt *TransformTable) Comp(entity engi.Entity) (xf *Transform) {
+	ei := entity.Index()
+	if v, ok := tt._map[ei]; ok {
+		xf = &tt.comps[v]
+	}
+	return
 }
 
+func (tt *TransformTable) Alive(entity engi.Entity) bool {
+	ei := entity.Index()
+	if v, ok := tt._map[ei]; ok {
+		return tt.comps[v].Entity != 0
+	}
+	return false
+}
+
+// Swap erase the TransformComp if exist
 func (tt *TransformTable) Delete(entity engi.Entity) {
-	//
+	ei := entity.Index()
+	if v, ok := tt._map[ei]; ok {
+		if tail := tt.index -1; v != tail && tail > 0 {
+			tt.comps[v] = tt.comps[tail]
+			// remap index
+			tComp := &tt.comps[tail]
+			ei := tComp.Entity.Index()
+			tt._map[ei] = v
+			tComp.Entity = 0
+		} else {
+			tt.comps[tail].Entity = 0
+		}
+
+		tt.index -= 1
+		delete(tt._map, ei)
+	}
 }
 
 func (tt *TransformTable) Destroy() {
+	tt.comps = make([]Transform, 0)
+	tt._map = make(map[uint32]int)
+	tt.index = 0
+}
+
+func (tt *TransformTable) Compact() {
 	//
 }
 
-func NewNodeSystem() *TransformTable {
-	nodeSystem = new(TransformTable)
-	nodeSystem.comps = make([]Transform, nodeSystem.capacity)
-	return nodeSystem
+func (tt *TransformTable) Size() (size, cap int) {
+	return tt.index, tt.cap
 }
 
-func NewTransform(int uint32) *Transform {
-	return nil
-}
-
-func resize(slice []Transform, size int) []Transform {
+func transformResize(slice []Transform, size int) []Transform {
 	newSlice := make([]Transform, size)
+	copy(newSlice, slice)
+	return newSlice
+}
+
+func intResize(slice []int, size int) []int {
+	newSlice := make([]int, size)
 	copy(newSlice, slice)
 	return newSlice
 }

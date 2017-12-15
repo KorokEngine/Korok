@@ -40,17 +40,28 @@ func (sc *SpriteComp) SetBatchId(b int16) {
 }
 
 type SpriteTable struct {
-	_comps [1024]SpriteComp
-	_index uint32
-	_map   [1024]uint32
+	comps []SpriteComp
+	_map   map[uint32]int
+	index, cap int
 }
 
-func NewSpriteTable() *SpriteTable {
-	return &SpriteTable{}
+func NewSpriteTable(cap int) *SpriteTable {
+	return &SpriteTable{
+		cap:cap,
+		_map:make(map[uint32]int),
+	}
 }
 
 func (st *SpriteTable) NewComp(entity engi.Entity, tex *SubTex) (sc *SpriteComp) {
-	sc = &st._comps[st._index]
+	if size := len(st.comps); st.index >= size {
+		st.comps = spriteResize(st.comps, size + STEP)
+	}
+	ei := entity.Index()
+	if v, ok := st._map[ei]; ok {
+		sc = &st.comps[v]
+		return
+	}
+	sc = &st.comps[st.index]
 	sc.SubTex = tex
 	sc.Entity = entity
 	if tex != nil {
@@ -58,13 +69,60 @@ func (st *SpriteTable) NewComp(entity engi.Entity, tex *SubTex) (sc *SpriteComp)
 		sc.Width = float32(tex.Width)
 		sc.Height = float32(tex.Width)
 	}
-	st._map[entity] = st._index
-	st._index ++
+	st._map[ei] = st.index
+	st.index ++
 	return
 }
 
-func (st *SpriteTable) Comp(id uint32) *SpriteComp {
-	return &st._comps[st._map[id]]
+func (st *SpriteTable) Alive(entity engi.Entity) bool {
+	ei := entity.Index()
+	if v, ok := st._map[ei]; ok {
+		return st.comps[v].Entity != 0
+	}
+	return false
+}
+
+func (st *SpriteTable) Comp(entity engi.Entity) (sc *SpriteComp) {
+	ei := entity.Index()
+	if v, ok := st._map[ei]; ok {
+		sc = &st.comps[v]
+	}
+	return
+}
+
+func (st *SpriteTable) Delete(entity engi.Entity) {
+	ei := entity.Index()
+	if v, ok := st._map[ei]; ok {
+		if tail := st.index -1; v != tail && tail > 0 {
+			st.comps[v] = st.comps[tail]
+			// remap index
+			tComp := &st.comps[tail]
+			ei := tComp.Entity.Index()
+			st._map[ei] = v
+			tComp.Entity = 0
+		} else {
+			st.comps[tail].Entity = 0
+		}
+
+		st.index -= 1
+		delete(st._map, ei)
+	}
+}
+
+func (st *SpriteTable) Size() (size, cap int) {
+	return st.index, st.cap
+}
+
+func (st *SpriteTable) Destroy() {
+	st.comps = make([]SpriteComp, 0)
+	st._map = make(map[uint32]int)
+	st.index = 0
+}
+
+func spriteResize(slice []SpriteComp, size int) []SpriteComp {
+	newSlice := make([]SpriteComp, size)
+	copy(newSlice, slice)
+	return newSlice
 }
 
 /////
@@ -110,12 +168,12 @@ func (srf *SpriteRenderFeature) Register(rs *RenderSystem) {
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
-	xt, st, n := srf.xt, srf.st, srf.st._index
+	xt, st, n := srf.xt, srf.st, srf.st.index
 	bList := make([]spriteBatchObject, n)
 
 	// get batch list
-	for i := uint32(0); i < n; i++ {
-		sprite := &st._comps[i]
+	for i := 0; i < n; i++ {
+		sprite := &st.comps[i]
 		entity := sprite.Entity
 		xform  := xt.Comp(entity)
 		bList[i] = spriteBatchObject{
