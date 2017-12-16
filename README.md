@@ -3,9 +3,7 @@
 **Korok** is a free lightweight, cross-platform, component-based 2D game engine written in Golang and released under the zlib license. Greatly
 inspired by [bitsquid blog](http://bitsquid.blogspot.com/).
 
-Homepage: [korok.io](http://korok.io)
-
-Twitter: [ntop](https://twitter.com/ntoooop)
+Homepage: [korok.io](http://korok.io)      Twitter: [ntop](https://twitter.com/ntoooop)
 
 ## Getting Started
 
