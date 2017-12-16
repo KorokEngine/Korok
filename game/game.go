@@ -16,6 +16,7 @@ import (
 )
 
 const (
+	MaxScriptSize = 1024
 	MaxSpriteSize = 64 << 10
 	MaxTransformSize = 64 << 10
 	MaxTextSize = 64 << 10
@@ -40,6 +41,7 @@ type Game struct {
 
 	*gfx.RenderSystem
 	*input.InputSystem
+	*ScriptSystem
 }
 
 /// window callback
@@ -109,6 +111,8 @@ func (g *Game) Create() {
 
 	/// input system
 	g.InputSystem = input.NewInputSystem()
+	g.ScriptSystem = NewScriptSystem()
+	g.ScriptSystem.RequireTable(g.DB.Tables)
 
 	/// Customized scene
 	if current != nil {
@@ -130,7 +134,7 @@ func (g *Game) loadTables() {
 	g.DB.EntityM = engi.NewEntityManager()
 
 	// init tables
-	scriptTable := &ScriptTable{}
+	scriptTable := NewScriptTable(MaxScriptSize)
 	tagTable := &TagTable{}
 
 	g.DB.Tables = append(g.DB.Tables, scriptTable, tagTable)
@@ -169,6 +173,8 @@ func (g *Game) Update() {
 	if current != nil {
 		current.Update(dt)
 	}
+	// update script
+	g.ScriptSystem.Update(dt)
 
 	g.InputSystem.Reset()
 

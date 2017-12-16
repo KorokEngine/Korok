@@ -11,7 +11,7 @@ func TestScriptTable(t *testing.T) {
 	st := NewScriptTable(1024)
 
 	e1 := em.New()
-	xf1 := st.NewComp(e1)
+	xf1 := st.NewComp(e1, nil)
 
 	if xf := st.Comp(e1); xf != xf1 {
 		t.Error("fail to create Comp")
@@ -30,7 +30,7 @@ func TestScriptTable(t *testing.T) {
 	eList := make([]engi.Entity, 10)
 	for i := 0; i < 10; i++ {
 		e := em.New()
-		st.NewComp(e)
+		st.NewComp(e, nil)
 		eList[i] = e
 	}
 
@@ -73,7 +73,7 @@ func TestScriptTableResize(t *testing.T) {
 	list30 := make([]engi.Entity, 30)
 	for i := 0; i < 30; i++ {
 		e := em.New()
-		st.NewComp(e)
+		st.NewComp(e, nil)
 		list30[i] = e
 	}
 
@@ -81,7 +81,7 @@ func TestScriptTableResize(t *testing.T) {
 	list100 := make([]engi.Entity, 100)
 	for i := 0; i < 100; i++ {
 		e := em.New()
-		st.NewComp(e)
+		st.NewComp(e, nil)
 		list100[i] = e
 	}
 

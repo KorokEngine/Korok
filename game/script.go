@@ -7,7 +7,7 @@ import "korok.io/korok/engi"
  */
 
 type Script interface {
-	Init(id uint32)
+	Init()
 
 	Update(dt float32)
 
@@ -33,7 +33,7 @@ func NewScriptTable(cap int) *ScriptTable {
 	return &ScriptTable{cap: cap, _map: make(map[uint32]int)}
 }
 
-func (st *ScriptTable) NewComp(entity engi.Entity) (sc *ScriptComp) {
+func (st *ScriptTable) NewComp(entity engi.Entity, script Script) (sc *ScriptComp) {
 	if size := len(st.comps); st.index >= size {
 		st.comps = scriptResize(st.comps, size + 64)
 	}
@@ -43,6 +43,7 @@ func (st *ScriptTable) NewComp(entity engi.Entity) (sc *ScriptComp) {
 	}
 	sc = &st.comps[st.index]
 	sc.Entity = entity
+	sc.Script = script
 	st._map[ei] = st.index
 	st.index ++
 	return
@@ -95,11 +96,25 @@ type ScriptSystem struct {
 	*ScriptTable
 }
 
+func NewScriptSystem() *ScriptSystem {
+	return &ScriptSystem{}
+}
+func (ss *ScriptSystem) RequireTable(tables []interface{}) {
+	for _, t := range tables {
+		switch table := t.(type) {
+		case *ScriptTable:
+			ss.ScriptTable = table
+		}
+	}
+}
+
 func (ss *ScriptSystem) Update(dt float32) {
 	N := ss.ScriptTable.index
 	comps := ss.ScriptTable.comps
 	for i := 0; i < N; i++ {
-		comps[i].Update(dt)
+		if script := comps[i].Script; script != nil {
+			script.Update(dt)
+		}
 	}
 }
 

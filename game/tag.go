@@ -9,6 +9,7 @@ type TagComp struct {
 	Name string
 }
 
+// TODO 如何高效的存储和查找tag数据？
 type TagTable struct {
 	comps []TagComp
 	_map   map[uint32]int
