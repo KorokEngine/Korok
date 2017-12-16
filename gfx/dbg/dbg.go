@@ -134,7 +134,7 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		}
 
 		// submit render state
-		// bk.Touch(0)
+		//bk.Touch(0)
 		bk.Submit(0, id, 0)
 	}
 	// setup buffer, we can draw 512 rect at most!!

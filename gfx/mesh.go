@@ -8,7 +8,6 @@ import (
 
 	"fmt"
 	"unsafe"
-	"log"
 )
 
 /// MeshComp and MeshTable
@@ -283,10 +282,6 @@ var mat4 = mgl32.Translate3D(300, 100, 0)
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (srf *MeshRenderFeature) Draw(filter []engi.Entity) {
-	if srf == nil {
-		log.Println("this is null!!")
-	}
-
 	xt, mt, n := srf.xt, srf.mt, srf.mt.index
 	mr := srf.R
 

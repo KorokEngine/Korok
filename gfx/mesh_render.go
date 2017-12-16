@@ -62,7 +62,8 @@ func NewMeshRender(vsh, fsh string) *MeshRender {
 		}
 
 		// submit render state
-		bk.Touch(0)
+		// bk.Touch(0)
+		bk.Submit(0, id, 0)
 	}
 	return mr
 }
