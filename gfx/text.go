@@ -291,17 +291,28 @@ type textBatchObject struct {
 	*Transform
 }
 
+// batch system winding order
+//
+//		3----------2
+//		| . 	   |
+//      |   .	   |
+//		|     .    |
+// 		|		.  |
+// 		0----------1
+// 1 * 1 quad for each char
+// order: 3 0 1 3 1 2
 func (tbo textBatchObject) Fill(buf []PosTexColorVertex) {
 	p := tbo.Transform.Position
 
 	for i, char := range tbo.vertex {
 		vi := i * 4
 
+		// index (0, 0) <x,y,u,v>
 		v := &buf[vi+0]
 		v.X = p[0] + char.xOffset
 		v.Y = p[1] + char.yOffset
 		v.U = char.region.X1
-		v.V = char.region.Y1
+		v.V = char.region.Y2
 
 		// index (1,0) <x,y,u,v>
 		v = &buf[vi+1]

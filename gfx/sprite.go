@@ -222,6 +222,16 @@ type spriteBatchObject struct {
 	*Transform
 }
 
+// batch system winding order
+//
+//		3----------2
+//		| . 	   |
+//      |   .	   |
+//		|     .    |
+// 		|		.  |
+// 		0----------1
+// 1 * 1 quad for each char
+// order: 3 0 1 3 1 2
 func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 	p := sbo.Transform.Position
 	r := sbo.SpriteComp.Region
@@ -229,19 +239,19 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 	h := sbo.Height
 
 	buf[0].X, buf[0].Y = p[0], p[1]
-	buf[0].U, buf[0].V = r.X1, r.Y1
+	buf[0].U, buf[0].V = r.X1, r.Y2
 	buf[0].RGBA = 0xffffffff
 
 	buf[1].X, buf[1].Y = p[0] + w, p[1]
-	buf[1].U, buf[1].V = r.X2, r.Y1
+	buf[1].U, buf[1].V = r.X2, r.Y2
 	buf[1].RGBA = 0xffffffff
 
 	buf[2].X, buf[2].Y = p[0] + w, p[1] + h
-	buf[2].U, buf[2].V = r.X2, r.Y2
+	buf[2].U, buf[2].V = r.X2, r.Y1
 	buf[2].RGBA = 0xffffffff
 
 	buf[3].X, buf[3].Y = p[0], p[1] + h
-	buf[3].U, buf[3].V = r.X1, r.Y2
+	buf[3].U, buf[3].V = r.X1, r.Y1
 	buf[3].RGBA = 0x00ffffff
 }
 
