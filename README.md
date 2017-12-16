@@ -4,6 +4,7 @@
 inspired by [bitsquid blog](http://bitsquid.blogspot.com/).
 
 Homepage: [korok.io](http://korok.io)
+Twitter: [ntop](https://twitter.com/ntoooop)
 
 ## Getting Started
 
