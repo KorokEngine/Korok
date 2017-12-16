@@ -5,12 +5,22 @@ import "korok.io/korok/engi"
 /**
 	游戏对象绑定脚本/行为
  */
-type ScriptComp interface {
+
+type Script interface {
 	Init(id uint32)
 
 	Update(dt float32)
 
 	Destroy()
+}
+
+type ScriptComp struct {
+	engi.Entity
+	Script
+}
+
+func (sc *ScriptComp) SetScript(script Script) {
+	sc.Script = script
 }
 
 type ScriptTable struct {
@@ -23,24 +33,31 @@ func NewScriptTable(cap int) *ScriptTable {
 	return &ScriptTable{cap: cap, _map: make(map[uint32]int)}
 }
 
-func (st *ScriptTable) NewComp(entity engi.Entity) (sc ScriptComp) {
+func (st *ScriptTable) NewComp(entity engi.Entity) (sc *ScriptComp) {
 	if size := len(st.comps); st.index >= size {
 		st.comps = scriptResize(st.comps, size + 64)
 	}
 	ei := entity.Index()
 	if v, ok := st._map[ei]; ok {
-		return st.comps[v]
+		return &st.comps[v]
 	}
-	sc = st.comps[st.index]
+	sc = &st.comps[st.index]
+	sc.Entity = entity
 	st._map[ei] = st.index
 	st.index ++
 	return
 }
 
-
-func (st *ScriptTable) Comp(entity engi.Entity) (sc ScriptComp) {
+func (st *ScriptTable) Alive(entity engi.Entity) bool {
 	if v, ok := st._map[entity.Index()]; ok {
-		sc = st.comps[v]
+		return st.comps[v].Entity == 0
+	}
+	return false
+}
+
+func (st *ScriptTable) Comp(entity engi.Entity) (sc *ScriptComp) {
+	if v, ok := st._map[entity.Index()]; ok {
+		sc = &st.comps[v]
 	}
 	return
 }
@@ -50,18 +67,22 @@ func (st *ScriptTable) Delete(entity engi.Entity) {
 	if v, ok := st._map[ei]; ok {
 		if tail := st.index -1; v != tail && tail > 0 {
 			st.comps[v] = st.comps[tail]
-			// remap index TODO bug fix
-			//tComp := &st.comps[tail]
-			//ei := tComp.Entity.Index()
+			// remap index
+			tComp := &st.comps[tail]
+			ei := tComp.Entity.Index()
 			st._map[ei] = v
-			//tComp.Entity = 0
+			tComp.Entity = 0
 		} else {
-			st.comps[tail] = nil
+			st.comps[tail].Entity = 0
 		}
 
 		st.index -= 1
 		delete(st._map, ei)
 	}
+}
+
+func (st *ScriptTable) Size() (size, cap int) {
+	return st.index, st.cap
 }
 
 func scriptResize(slice []ScriptComp, size int) []ScriptComp {
