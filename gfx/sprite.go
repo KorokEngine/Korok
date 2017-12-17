@@ -233,7 +233,7 @@ type spriteBatchObject struct {
 // 1 * 1 quad for each char
 // order: 3 0 1 3 1 2
 func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
-	p := sbo.Transform.Position
+	p := sbo.Transform.world.Position
 	r := sbo.SpriteComp.Region
 	w := sbo.Width
 	h := sbo.Height

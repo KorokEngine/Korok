@@ -291,8 +291,8 @@ func (srf *MeshRenderFeature) Draw(filter []engi.Entity) {
 		xform  := xt.Comp(entity)
 
 		// TODO transform!!
-		mat4.Set(0, 3, xform.Position[0])
-		mat4.Set(1, 3, xform.Position[1])
+		mat4.Set(0, 3, xform.world.Position[0])
+		mat4.Set(1, 3, xform.world.Position[1])
 
 		mr.Draw(&mesh.Mesh, &mat4)
 	}

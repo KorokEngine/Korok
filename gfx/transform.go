@@ -22,75 +22,211 @@ Entity的销毁可以在每帧结束的时候扫描各个系统实现，
 const STEP = 64
 const none = 0
 
+type SRT struct {
+	Scale mgl32.Vec2
+	Rotation float32
+	Position mgl32.Vec2
+}
+
 // 还可以做更细的拆分，把 Matrix 全部放到一个数组里面
 // position, position, position .... position
 // rotation, rotation, rotation .... rotation
 // 把这两个数组申请为一块，然后分两个小组使用
 type Transform struct {
 	engi.Entity
-	Position, Scale mgl32.Vec2
-	Rotation        float32
 
-	localPosition mgl32.Vec2
-	localScale mgl32.Vec2
-	localRotation float32
+	// world location
+	world SRT
+	// relative location to parent
+	local SRT
 
-	Parent    uint32
-	FirstChild uint32
+	// graph-link
+	parent     uint16
+	firstChild uint16
+	preSibling uint16
+	nxtSibling uint16
 
-	PrevSibling uint32
-	NextSibling uint32
+	// pointer will cause gc check
+	t *TransformTable
 }
 
+func (xf *Transform) Position() mgl32.Vec2 {
+	return xf.local.Position
+}
+
+func (xf *Transform) Scale() mgl32.Vec2 {
+	return xf.local.Scale
+}
+
+func (xf *Transform) Rotation() float32 {
+	return xf.local.Rotation
+}
+
+func (xf *Transform) Local() SRT {
+	return xf.local
+}
+
+func (xf *Transform) World() SRT {
+	return xf.world
+}
+
+// Set local position relative to parent
 func (xf *Transform) SetPosition(position mgl32.Vec2) {
-	xf.localPosition = position
+	xf.local.Position = position
 	// compute world position
-	if xf.Parent == none {
-		xf.setPosition(mgl32.Vec2{0, 0}, position)
+	if xf.parent == none {
+		xf.setPosition(nil, position)
 	} else {
-		xf.setPosition(nodeSystem.comps[xf.Parent].Position, position)
+		xf.setPosition(&xf.t.comps[xf.parent].world, position)
 	}
 }
 
-func (xf *Transform) setPosition(parent, local mgl32.Vec2) {
-	xf.Position[0] = parent[0] + local[0]
-	xf.Position[1] = parent[1] + local[1]
+// update world location: world = parent.world + self.local
+func (xf *Transform) setPosition(parent *SRT, local mgl32.Vec2) {
+	p := mgl32.Vec2{0, 0}
+	if parent != nil {
+		p = parent.Position
+	}
+	xf.world.Position[0] = p[0] + local[0]
+	xf.world.Position[1] = p[1] + local[1]
 
 	// all child
-	for child := xf.FirstChild; child != none; {
-		node := nodeSystem.comps[child]
-		child = node.NextSibling
-		node.setPosition(xf.Position, node.localPosition)
+	for comps, child := xf.t.comps, xf.firstChild; child != none; {
+		node := &comps[child]
+		child = node.nxtSibling
+		node.setPosition(&xf.world, node.local.Position)
 	}
 }
 
 // apply scale to child
-func (xf *Transform) SetScale(scale float32) {
-	xf.Scale = mgl32.Vec2{scale, scale}
+func (xf *Transform) SetScale(scale mgl32.Vec2) {
+	xf.local.Scale = scale
+	// compute world scale
+	if xf.parent == none {
+		xf.setScale(nil, scale)
+	} else {
+		xf.setScale(&xf.t.comps[xf.parent].world, scale)
+	}
+}
+
+func (xf *Transform) setScale(parent *SRT, scale mgl32.Vec2) {
+	s := mgl32.Vec2{1, 1}
+	if parent != nil {
+		s = parent.Scale
+	}
+	xf.world.Scale[0] = s[0] * scale[0]
+	xf.world.Scale[1] = s[1] * scale[1]
+
+	// all child
+	for comps, child := xf.t.comps, xf.firstChild; child != none; {
+		node := comps[child]
+		child = node.nxtSibling
+		node.setPosition(&xf.world, node.local.Position)
+	}
 }
 
 // apply
 func (xf *Transform) SetRotation(rotation float32) {
-	xf.Rotation = rotation
-}
-
-func (xf *Transform) AddChild(c *Transform) {
-	if xf.FirstChild == none {
-		xf.FirstChild = c.Index()
-		c.Parent = xf.Index()
+	xf.local.Rotation = rotation
+	// compute world rotation
+	if xf.parent == none {
+		xf.setRotation(nil, rotation)
 	} else {
-		var prev uint32
-		for next := xf.FirstChild; next != none; {
-			prev = next
-			next = nodeSystem.comps[next].NextSibling
-		}
-		(&nodeSystem.comps[prev]).NextSibling = c.Index()
-		c.PrevSibling = prev
-		c.Parent = xf.Index()
+		xf.setRotation(&xf.t.comps[xf.parent].world, rotation)
 	}
 }
 
-var nodeSystem *TransformTable
+func (xf *Transform) setRotation(parent *SRT, rotation float32) {
+	r := float32(0)
+	if parent != nil {
+		r = parent.Rotation
+	}
+	xf.world.Rotation = r + rotation
+
+	// all child
+	for comps, child := xf.t.comps, xf.firstChild; child != none; {
+		node := comps[child]
+		child = node.nxtSibling
+		node.setRotation(&xf.world, node.local.Rotation)
+	}
+}
+
+func (xf *Transform) LinkChildren(list... *Transform) {
+	for _, c := range list {
+		xf.LinkChild(c)
+	}
+}
+
+func (xf *Transform) LinkChild(c *Transform) {
+	mp, comps := xf.t._map, xf.t.comps
+	pi, ci := mp[xf.Entity.Index()], mp[c.Entity.Index()]
+
+	if xf.firstChild == none {
+		xf.firstChild = uint16(ci)
+		c.parent = uint16(pi)
+	} else {
+		var prev uint16
+		for next := xf.firstChild; next != none; {
+			prev = next
+			next = comps[next].nxtSibling
+		}
+		comps[prev].nxtSibling = uint16(ci)
+		c.preSibling = prev
+		c.parent = uint16(pi)
+	}
+}
+
+func (xf *Transform) RemoveChild(c *Transform) {
+	mp, comps := xf.t._map, xf.t.comps
+	pi, ci := uint16(mp[xf.Entity.Index()]), uint16(mp[c.Entity.Index()])
+
+	if c.parent != pi {
+		return
+	}
+
+	if xf.firstChild == ci {
+		xf.firstChild = c.nxtSibling
+	} else {
+		comps[c.preSibling].nxtSibling = c.nxtSibling
+	}
+	if nxt := c.nxtSibling; nxt != none {
+		comps[nxt].preSibling = c.preSibling
+	}
+	c.parent, c.preSibling, c.nxtSibling = none, none, none
+}
+
+func (xf *Transform) FirstChild() (c *Transform) {
+	if first := xf.firstChild; first != none {
+		c = &xf.t.comps[first]
+	}
+	return
+}
+
+func (xf *Transform) Parent() (p *Transform) {
+	if x := xf.parent; x != none {
+		p = &xf.t.comps[x]
+	}
+	return
+}
+
+func (xf *Transform) Sibling() (prev, next *Transform) {
+	if x := xf.preSibling; x != none {
+		prev = &xf.t.comps[x]
+	}
+	if x := xf.nxtSibling; x != none {
+		next = &xf.t.comps[x]
+	}
+	return
+}
+
+func (xf *Transform) reset() {
+	xf.Entity = 0
+	if p := xf.parent; p != none {
+		xf.t.comps[p].RemoveChild(xf)
+	}
+	xf.parent, xf.firstChild = 0, 0
+	xf.preSibling, xf.nxtSibling = 0, 0
+}
 
 type TransformTable struct {
  	comps []Transform
@@ -102,6 +238,7 @@ func NewTransformTable(cap int) *TransformTable {
 	return &TransformTable{
 		cap:cap,
 		_map:make(map[uint32]int),
+		index:1, // skip first
 	}
 }
 
@@ -118,9 +255,11 @@ func (tt *TransformTable) NewComp(entity engi.Entity) (xf *Transform) {
 	}
 
 	xf = &tt.comps[tt.index]
-	tt._map[ei] = tt.index
 	xf.Entity = entity
-	xf.Scale = mgl32.Vec2{1, 1}
+	xf.local.Scale = mgl32.Vec2{1, 1}
+	xf.world.Scale = mgl32.Vec2{1, 1}
+	xf.t = tt
+	tt._map[ei] = tt.index
 	tt.index += 1
 	return
 }
@@ -143,37 +282,54 @@ func (tt *TransformTable) Alive(entity engi.Entity) bool {
 }
 
 // Swap erase the TransformComp if exist
+// Delete will unlink the parent-child relation
 func (tt *TransformTable) Delete(entity engi.Entity) {
 	ei := entity.Index()
 	if v, ok := tt._map[ei]; ok {
 		if tail := tt.index -1; v != tail && tail > 0 {
 			tt.comps[v] = tt.comps[tail]
+			tt.relink(uint16(tail), uint16(v))
+
 			// remap index
 			tComp := &tt.comps[tail]
 			ei := tComp.Entity.Index()
 			tt._map[ei] = v
-			tComp.Entity = 0
+			tt.comps[tail].reset()
 		} else {
-			tt.comps[tail].Entity = 0
+			tt.comps[tail].reset()
 		}
-
 		tt.index -= 1
 		delete(tt._map, ei)
 	}
 }
 
+func (tt *TransformTable) relink(old, new uint16) {
+	xf := &tt.comps[old]
+	// relink parent
+	if p := xf.parent; p != none {
+		if pxf := &tt.comps[p]; pxf.firstChild == old {
+			pxf.firstChild = new
+		} else {
+			prev := &tt.comps[xf.preSibling]
+			prev.nxtSibling = new
+		}
+	}
+	// relink children
+	if child := xf.firstChild; child != none {
+		node := &tt.comps[child]
+		node.parent = new
+	}
+}
+
+
 func (tt *TransformTable) Destroy() {
 	tt.comps = make([]Transform, 0)
 	tt._map = make(map[uint32]int)
-	tt.index = 0
-}
-
-func (tt *TransformTable) Compact() {
-	//
+	tt.index = 1
 }
 
 func (tt *TransformTable) Size() (size, cap int) {
-	return tt.index, tt.cap
+	return tt.index-1, tt.cap
 }
 
 func transformResize(slice []Transform, size int) []Transform {

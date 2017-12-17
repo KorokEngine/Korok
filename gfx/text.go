@@ -302,7 +302,7 @@ type textBatchObject struct {
 // 1 * 1 quad for each char
 // order: 3 0 1 3 1 2
 func (tbo textBatchObject) Fill(buf []PosTexColorVertex) {
-	p := tbo.Transform.Position
+	p := tbo.Transform.world.Position
 
 	for i, char := range tbo.vertex {
 		vi := i * 4
