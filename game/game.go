@@ -3,7 +3,7 @@ package game
 import (
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx"
-	"korok.io/korok/particle"
+	"korok.io/korok/effect"
 	"korok.io/korok/anim"
 	"korok.io/korok/physics"
 	"korok.io/korok/assets"
@@ -41,6 +41,7 @@ type Game struct {
 
 	*gfx.RenderSystem
 	*input.InputSystem
+	*effect.ParticleSimSystem
 	*ScriptSystem
 }
 
@@ -111,6 +112,7 @@ func (g *Game) Create() {
 
 	/// input system
 	g.InputSystem = input.NewInputSystem()
+	g.ParticleSimSystem = effect.NewSimulationSystem()
 	g.ScriptSystem = NewScriptSystem()
 	g.ScriptSystem.RequireTable(g.DB.Tables)
 
@@ -146,7 +148,7 @@ func (g *Game) loadTables() {
 
 	g.DB.Tables = append(g.DB.Tables, spriteTable, meshTable, xfTable, textTable)
 
-	psTable := &particle.ParticleSystemTable{}
+	psTable := &effect.ParticleSystemTable{}
 	g.DB.Tables = append(g.DB.Tables, psTable)
 
 	skTable := &anim.SkeletonTable{}
@@ -186,7 +188,7 @@ func (g *Game) Update() {
 	// g.CollisionSystem.Update(dt)
 
 	// 粒子系统更新
-	//g.ParticleSystem.Update(dt)
+	g.ParticleSimSystem.Update(dt)
 
 	// Render
 	g.RenderSystem.Update(dt)

@@ -1,12 +1,12 @@
-package particle
+package effect
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
 	"korok.io/korok/gfx"
 )
 
-type FireCloud struct {
-	cap int32
+type FireSimulator struct {
+	Pool
 
 	// f32 channels
 	life channel_f32
@@ -31,16 +31,27 @@ type FireCloud struct {
 	gfx.Mesh
 }
 
-func (f *FireCloud) Initialize(cap int32) {
-	f.cap = cap
-	f.life = make([]float32, cap)
-	f.size = make([]float32, cap)
-	f.position = make([]mgl32.Vec2, cap)
-	f.velocity = make([]mgl32.Vec2, cap)
+// TODO
+func NewFireSimulator(cap int) Simulator {
+	sim := FireSimulator{Pool: Pool{cap: cap}}
+	sim.AddChan(Life, Size)
+	sim.AddChan(Position, Velocity)
+	sim.AddChan(Color)
+	return &sim
+}
 
-	// vbo data <u,v, x,y, size, r, g, b, a>
+func (f *FireSimulator) Initialize() {
+	f.Pool.Initialize()
 
+	f.life = f.Field(Life).(channel_f32)
+	f.size = f.Field(Size).(channel_f32)
 
+	f.position = f.Field(Position).(channel_v2)
+	f.velocity = f.Field(Velocity).(channel_v2)
+
+	f.color = f.Field(Color).(channel_v4)
+
+	cap := int32(f.cap)
 	// init life 10 ,20
 	f.life.SetRandom(cap, Range{0.5, 1})
 
@@ -54,7 +65,7 @@ func (f *FireCloud) Initialize(cap int32) {
 	f.velocity.SetConst(cap, 20, 20)
 }
 
-func (f *FireCloud) Simulate(dt float32) {
+func (f *FireSimulator) Simulate(dt float32) {
 	// spawn new particle
 	if new := f.Rate(dt); new > 0 {
 		f.NewParticle(new)
@@ -75,14 +86,14 @@ func (f *FireCloud) Simulate(dt float32) {
 	f.gc()
 }
 
-func (f *FireCloud) SwapErase(i, j int32) {
+func (f *FireSimulator) SwapErase(i, j int32) {
 	f.life[i] = f.life[j]
 	f.size[i] = f.size[j]
 	f.position[i] = f.position[j]
 	f.velocity[i] = f.velocity[j]
 }
 
-func (f *FireCloud) NewParticle(new int32) {
+func (f *FireSimulator) NewParticle(new int32) {
 	start := f.live
 	f.live += new
 
@@ -94,7 +105,7 @@ func (f *FireCloud) NewParticle(new int32) {
 	}
 }
 
-func (f *FireCloud) gc() {
+func (f *FireSimulator) gc() {
 	n := f.live
 	// remove dead particle TODO!!!
 	for i:= int32(0); i < n; i++{
@@ -115,14 +126,14 @@ func (f *FireCloud) gc() {
 }
 
 // 控制是否产生新的粒子, 返回粒子数量
-func (f *FireCloud) Rate(dt float32) int32 {
+func (f *FireSimulator) Rate(dt float32) int32 {
 	return 1
 }
 
 // 总觉的这里可以有很大的优化空间，尤其是顶点和纹理数据大量的重复
 // write to a vertex buffer!!!
 // <u, v, r, g, b, a, x, y, size, rot>
-func (f *FireCloud) Visualize() {
+func (f *FireSimulator) Visualize() {
 	// compute vbo
 	var vi int32
 	for i := int32(0); i < f.live; i++ {
@@ -180,7 +191,7 @@ func (f *FireCloud) Visualize() {
 	f.Mesh.Setup()
 }
 
-func (f *FireCloud) WriteTexCoords() {
+func (f *FireSimulator) WriteTexCoords() {
 	for i := int32(0); i < f.live; i++ {
 		vi := 4 * 10 * i
 
@@ -206,7 +217,7 @@ func (f *FireCloud) WriteTexCoords() {
 	}
 }
 
-func (f *FireCloud) WriteIndex() {
+func (f *FireSimulator) WriteIndex() {
 	for i := int32(0); i < f.live; i++ {
 		ei := i * 6
 		bi := int32(i * 4)

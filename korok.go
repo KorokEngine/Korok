@@ -10,7 +10,7 @@ import (
 	"korok.io/korok/game"
 	"korok.io/korok/hid"
 	"korok.io/korok/gfx/dbg"
-	"korok.io/korok/particle"
+	"korok.io/korok/effect"
 	"korok.io/korok/anim"
 	"korok.io/korok/physics"
 	"korok.io/korok/hid/input"
@@ -43,7 +43,7 @@ func Run(options *Options)  {
 			Transform = t
 		case *gfx.TextTable:
 			Text = t
-		case *particle.ParticleSystemTable:
+		case *effect.ParticleSystemTable:
 			ParticleSystem = t
 		case *anim.SkeletonTable:
 			Skeleton = t
@@ -96,7 +96,7 @@ var Transform  *gfx.TransformTable
 var Text       *gfx.TextTable
 
 ///// particle system
-var ParticleSystem *particle.ParticleSystemTable
+var ParticleSystem *effect.ParticleSystemTable
 
 ///// animation
 var Skeleton       *anim.SkeletonTable

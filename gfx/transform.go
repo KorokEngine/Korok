@@ -89,7 +89,6 @@ func (xf *Transform) setPosition(parent *SRT, local mgl32.Vec2) {
 	}
 	xf.world.Position[0] = p[0] + local[0]
 	xf.world.Position[1] = p[1] + local[1]
-
 	// all child
 	for comps, child := xf.t.comps, xf.firstChild; child != none; {
 		node := &comps[child]

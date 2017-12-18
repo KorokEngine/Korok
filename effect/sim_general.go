@@ -1,12 +1,114 @@
-package particle
+package effect
 
 import "github.com/go-gl/mathgl/mgl32"
+
+
+/**
+	显示一个粒子最终只需要：Position/Rotation/Scale
+
+	但是对粒子进行建模需要更多的属性：
+	1. 粒子发射频率
+	2. 重力/重力模式
+	3. 方向
+	4. 速度/加速度
+	5. 切线速度/微分
+	6. 角速度
+	7. 放射模式
+	8. 开始放射半径/微分
+	9. 结束放射半径/微分
+	10. 旋转
+	11. 共有的属性
+		1. 生命/微分
+		2. 初始/结束旋转/微分
+		3. 初始/结束大小/微分
+		4. 初始/结束颜色/微分
+		5. 混合方程
+		6. 纹理
+
+	最好能够解决粒子建模的问题，而不是硬编码各种组合
+*/
 
 // name convention: r = red, d_r = derivative of r with respect to time
 // integrate: r' = r + d_r * t
 //
 
-type GravityCloud struct {
+type EmitterMode int32
+
+// 发射模式
+const (
+	Gravity EmitterMode = iota
+	Radius
+)
+
+type Range [2]float32
+
+// base value + var value
+type Var struct {
+	B, Var float32
+}
+
+type Config struct {
+	//
+	MaxParticle uint32
+
+	Angle, D_Angle float32
+	Duration float32
+
+	// TODO blend function
+	// start_r = r[0] + var_r[0] * random
+	// end_r = r[1] + var_r[1] * random
+	R, VAR_R Range
+	G, VAR_G Range
+	B, VAR_B Range
+	A, VAR_A Range
+
+	// size
+	Size, D_Size Range
+
+	// position
+	Position, D_Position mgl32.Vec2
+
+	Spin, D_Spin float32
+
+	// mode
+	Mode EmitterMode
+
+	// life span
+	Life, D_Life float32
+
+	// emission rate = total_particle / life
+	EmissionRate float32
+}
+
+type GravityConfig struct {
+	Config
+
+	// gravity
+	Gravity mgl32.Vec2
+
+	// speed and d
+	Speed, D_Speed float32
+
+	// Radial acceleration
+	RadialAccel, D_RadialAccel float32
+
+	// tangent acceleration
+	TangentialAccel, D_TangentialAccel float32
+
+	RotationIsDir bool
+}
+
+type RadiusConfig struct {
+	Config
+
+	// min, max radius and d
+	Radius, D_Radius Range
+
+	//
+	RotationPerSecond, D_RotationPerSecond float32
+}
+
+type GravitySimulator struct {
 	// config
 	C *GravityConfig
 
@@ -37,7 +139,7 @@ type GravityCloud struct {
 }
 
 // alloc a big block ?
-func (g *GravityCloud) Initialize(cap int32, c *Config) {
+func (g *GravitySimulator) Initialize(cap int32, c *Config) {
 	// memory
 	g.r, g.d_r = make([]float32, cap), make([]float32, cap)
 	g.g, g.d_g = make([]float32, cap), make([]float32, cap)
@@ -63,7 +165,7 @@ func (g *GravityCloud) Initialize(cap int32, c *Config) {
 	// Haha, 其实这里面的初始化方法我都没有看的太明白...
 }
 
-func (g *GravityCloud) Simulate(dt float32) {
+func (g *GravitySimulator) Simulate(dt float32) {
 	n := g.live;
 
 	// color
@@ -94,7 +196,7 @@ func (g *GravityCloud) Simulate(dt float32) {
 // delta := (end - start) / life
 // 算法：分别随机出初始值和结束值，然后除以lifetime得到变化量
 // 更新：利用变化量积分
-func (g *GravityCloud) AddParticle(n int32) {
+func (g *GravitySimulator) AddParticle(n int32) {
 	start := g.live
 	end   := g.live + n
 
@@ -115,4 +217,8 @@ func (g *GravityCloud) AddParticle(n int32) {
 	}
 
 
+}
+
+func NewGeneralSimulator() Simulator {
+	return nil
 }

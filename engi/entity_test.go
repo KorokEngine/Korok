@@ -1,6 +1,8 @@
 package engi
 
-import "testing"
+import (
+	"testing"
+)
 
 func TestEntityCreate(t *testing.T) {
 	em := NewEntityManager()

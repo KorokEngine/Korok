@@ -1,4 +1,4 @@
-package particle
+package effect
 
 import (
 	"github.com/go-gl/mathgl/mgl32"
@@ -8,6 +8,12 @@ import (
 // 计算通道定义：
 // 此处定了 3 中类型的计算通道：float32/Vec2/Vec4
 // 定义了 10 个左右的基本算法: random/const/add/sub/mul/integrate
+type ChanType uint8
+const (
+	ChanF32 ChanType = iota
+	ChanV2
+	ChanV4
+)
 
 type channel_f32 []float32
 
@@ -105,10 +111,8 @@ func (ch channel_v2) tangentIntegrate(n int32, xy channel_v2, m channel_f32, dt 
 	}
 }
 
-type channel_v3 []mgl32.Vec3
-
 // maybe only color will use it
-type channel_v4 []mgl32.Mat4
+type channel_v4 []mgl32.Vec4
 
 func (ch channel_v4) SetConst(n int32, x, y, z, w float32) {
 	for i := int32(0); i < n; i ++ {

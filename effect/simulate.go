@@ -1,4 +1,4 @@
-package particle
+package effect
 
 
 /**
@@ -20,4 +20,21 @@ type Simulator interface {
 	Simulate(dt float32)
 
 	Visualize()
+}
+
+// ps-comp simulate
+// 在仿真系统中，直接读取 PSTable 的 Comp 进行模拟仿真
+type ParticleSimSystem struct {
+	et *ParticleSystemTable
+}
+
+func NewSimulationSystem () *ParticleSimSystem {
+	return &ParticleSimSystem{}
+}
+
+func (ss *ParticleSimSystem) Update(dt float32) {
+	et := ss.et
+	for i, n := 0, et.index; i < n; i++ {
+		et.comps[i].sim.Simulate(dt)
+	}
 }
