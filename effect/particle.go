@@ -3,6 +3,14 @@ package effect
 import (
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx"
+	"korok.io/korok/gfx/bk"
+	"korok.io/korok/gfx/dbg"
+
+	"github.com/go-gl/mathgl/mgl32"
+
+	"unsafe"
+	"fmt"
+	"log"
 )
 
 // particle component
@@ -54,7 +62,7 @@ type ParticleSystemTable struct {
 	index, cap int
 }
 
-func NewEffectTable(cap int) *ParticleSystemTable {
+func NewParticleSystemTable(cap int) *ParticleSystemTable {
 	return &ParticleSystemTable{
 		_map:make(map[uint32]int),
 		cap:cap,
@@ -124,52 +132,174 @@ type ParticleRenderFeature struct {
 
 	et *ParticleSystemTable
 	xt *gfx.TransformTable
+
+	bigBuffer struct{
+		vertex uint16
+		index  uint16
+	}
+	BufferContext
 }
 
-
 // 此处初始化所有的依赖
-func (erf *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
+func (prf *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
 	// init render
 	for _, r := range rs.RenderList {
 		switch mr := r.(type) {
 		case *gfx.MeshRender:
-			erf.mr = mr; break
+			prf.mr = mr; break
 		}
 	}
 	// init table
 	for _, t := range rs.TableList {
 		switch table := t.(type){
 		case *ParticleSystemTable:
-			erf.et = table
+			prf.et = table
 		case *gfx.TransformTable:
-			erf.xt = table
+			prf.xt = table
 		}
 	}
 	// add new feature
-	rs.Accept(erf)
+	rs.Accept(prf)
 }
+var mat = mgl32.Ident4()
 
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
-func (erf *ParticleRenderFeature) Draw(filter []engi.Entity) {
-	//xt, mt, n := erf.xt, erf.et, erf.et.index
-	//mr := erf.mr
-	//
-	//for i := 0; i < n; i++ {
-	//	mesh := &mt.comps[i]
-	//	entity := mesh.Entity
-	//	xform  := xt.Comp(entity)
-	//
-	//	// TODO transform!!
-	//	mat4.Set(0, 3, xform.world.Position[0])
-	//	mat4.Set(1, 3, xform.world.Position[1])
-	//
-	//	mr.Draw(&mesh.Mesh, &mat4)
-	//}
+func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
+	xt, mt, n := prf.xt, prf.et, prf.et.index
+	mr := prf.mr
+
+	var requireVertexSize int
+	var requireIndexSize int
+	for i := 0; i < n; i++ {
+		_, cap := mt.comps[i].sim.Size()
+		requireVertexSize += cap * 4
+		if cap > requireIndexSize {
+			requireIndexSize = cap
+		}
+	}
+	prf.AllocBuffer(requireVertexSize, requireIndexSize)
+
+	vertex := prf.BufferContext.vertex
+	renderObjs := make([]renderObject, n)
+	vertexOffset := int(0)
+
+	for i := 0; i < n; i++ {
+		comp := &mt.comps[i]
+		entity := comp.Entity
+		xform  := xt.Comp(entity)
+
+		ro := &renderObjs[i]
+		ro.Transform = xform
+		live, _ := comp.sim.Size()
+		vn, in := live * 4, live * 6
+
+		// write vertex
+		buf := vertex[vertexOffset:vertexOffset+vn]
+		comp.sim.Visualize(buf)
+
+		ro.Mesh = gfx.Mesh{
+			TextureId:comp.tex.TexId,
+			IndexId:prf.BufferContext.indexId,
+			VertexId:prf.BufferContext.vertexId,
+			FirstVertex:uint16(vertexOffset),
+			NumVertex:uint16(vn),
+			FirstIndex:0,
+			NumIndex:uint16(in),
+		}
+		vertexOffset += vn
+	}
+
+	updateSize := uint32(requireVertexSize * 20)
+
+	dbg.Move(10, 300)
+	dbg.DrawStrScaled(fmt.Sprintf("lives: %d", vertexOffset>>2), .6)
+
+	if (vertexOffset>>2) == 500 {
+		log.Println("vertex:", vertex[:vertexOffset])
+	}
+
+	prf.vb.Update(0, updateSize, unsafe.Pointer(&vertex[0]), false)
+
+	for i := range renderObjs {
+		ro := &renderObjs[i]
+		mr.Draw(&ro.Mesh, &mat)
+	}
 }
 
-//
-type EffectRenderContext struct {
-
+type renderObject struct {
+	gfx.Mesh
+	*gfx.Transform
 }
 
+// 目前所有的粒子都会使用一个VBO进行渲染 TODO
+// 这么做同时可渲染的例子数量会受限于VBO的大小，需要一些经验数据支持
+type BufferContext struct {
+	vertexId uint16
+	indexId uint16
+
+	vertexSize int
+	indexSize int
+
+	// 目前我们使用 MeshRender 来渲染粒子
+	// 所以必须支持如下的数据结构
+	vertex []gfx.PosTexColorVertex
+	index  []uint16
+
+	vb *bk.VertexBuffer
+}
+
+func (ctx *BufferContext) AllocBuffer(vertexSize, indexSize int) {
+	if vertexSize > ctx.vertexSize {
+		bk.R.Free(ctx.vertexId)
+		{
+			vertexSize--
+			vertexSize |= vertexSize >> 1
+			vertexSize |= vertexSize >> 2
+			vertexSize |= vertexSize >> 3
+			vertexSize |= vertexSize >> 8
+			vertexSize |= vertexSize >> 16
+			vertexSize++
+		}
+
+		ctx.vertexSize = vertexSize
+		ctx.vertex = make([]gfx.PosTexColorVertex, vertexSize)
+		if id, vb := bk.R.AllocVertexBuffer(bk.Memory{nil,uint32(vertexSize) * 20}, 20); id != bk.InvalidId {
+			ctx.vertexId = id
+			ctx.vb = vb
+		}
+	}
+
+	if indexSize > ctx.indexSize {
+		bk.R.Free(ctx.indexId)
+		{
+			indexSize--
+			indexSize |= indexSize >> 1
+			indexSize |= indexSize >> 2
+			indexSize |= indexSize >> 3
+			indexSize |= indexSize >> 8
+			indexSize |= indexSize >> 16
+			indexSize++
+		}
+		ctx.indexSize = indexSize
+		ctx.index = make([]uint16, indexSize)
+
+		iFormat := [6]uint16 {3, 0, 1, 3, 1, 2}
+		for i := 0; i < indexSize; i += 6 {
+			copy(ctx.index[i:], iFormat[:])
+			iFormat[0] += 4
+			iFormat[1] += 4
+			iFormat[2] += 4
+			iFormat[3] += 4
+			iFormat[4] += 4
+			iFormat[5] += 4
+		}
+		if id, _ := bk.R.AllocIndexBuffer(bk.Memory{unsafe.Pointer(&ctx.index[0]), uint32(indexSize) * 2}); id != bk.InvalidId {
+			ctx.indexId = id
+		}
+	}
+}
+
+func (ctx *BufferContext) Release() {
+
+}

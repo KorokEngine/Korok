@@ -92,8 +92,8 @@ func (mr *MeshRender) Draw(m *Mesh, mat4 *mgl32.Mat4) {
 	bk.SetUniform(mr.umh_M, unsafe.Pointer(&mat4[0]))
 
 	// set vertex
-	bk.SetVertexBuffer(0, m.VertexId, 0, 4)
-	bk.SetIndexBuffer(m.IndexId, 0, 6)
+	bk.SetVertexBuffer(0, m.VertexId, uint32(m.FirstVertex), uint32(m.NumVertex))
+	bk.SetIndexBuffer(m.IndexId, uint32(m.FirstIndex), uint32(m.NumIndex))
 	//
 	bk.Submit(0, mr.program, 0)
 }

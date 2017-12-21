@@ -83,3 +83,7 @@ func (p *Pool) Field(t ChanFiled) (array interface{}) {
 	return
 }
 
+// TODO
+func (p *Pool) Swap(src, dst int) {
+
+}

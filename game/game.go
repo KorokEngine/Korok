@@ -17,10 +17,13 @@ import (
 
 const (
 	MaxScriptSize = 1024
+
 	MaxSpriteSize = 64 << 10
 	MaxTransformSize = 64 << 10
 	MaxTextSize = 64 << 10
 	MaxMeshSize = 64 << 10
+
+	MaxParticleSize = 1024
 )
 
 type Table interface{}
@@ -41,7 +44,7 @@ type Game struct {
 
 	*gfx.RenderSystem
 	*input.InputSystem
-	*effect.ParticleSimSystem
+	*effect.ParticleSimulateSystem
 	*ScriptSystem
 }
 
@@ -112,7 +115,16 @@ func (g *Game) Create() {
 
 	/// input system
 	g.InputSystem = input.NewInputSystem()
-	g.ParticleSimSystem = effect.NewSimulationSystem()
+
+	/// particle-simulation system
+	pss := effect.NewSimulationSystem()
+	pss.RequireTable(g.DB.Tables)
+	g.ParticleSimulateSystem = pss
+	// set feature
+	prf := &effect.ParticleRenderFeature{}
+	prf.Register(rs)
+
+	/// script system
 	g.ScriptSystem = NewScriptSystem()
 	g.ScriptSystem.RequireTable(g.DB.Tables)
 
@@ -148,7 +160,7 @@ func (g *Game) loadTables() {
 
 	g.DB.Tables = append(g.DB.Tables, spriteTable, meshTable, xfTable, textTable)
 
-	psTable := &effect.ParticleSystemTable{}
+	psTable := effect.NewParticleSystemTable(MaxParticleSize)
 	g.DB.Tables = append(g.DB.Tables, psTable)
 
 	skTable := &anim.SkeletonTable{}
@@ -188,7 +200,7 @@ func (g *Game) Update() {
 	// g.CollisionSystem.Update(dt)
 
 	// 粒子系统更新
-	g.ParticleSimSystem.Update(dt)
+	g.ParticleSimulateSystem.Update(dt)
 
 	// Render
 	g.RenderSystem.Update(dt)

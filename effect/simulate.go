@@ -1,5 +1,8 @@
 package effect
 
+import (
+	"korok.io/korok/gfx"
+)
 
 /**
 	需要解决两个问题：
@@ -19,21 +22,63 @@ type Simulator interface {
 
 	Simulate(dt float32)
 
-	Visualize()
+	Visualize(buf []gfx.PosTexColorVertex)
+
+	Size() (live, cap int)
 }
+
+// Emitter的概念可以提供一种可能：
+// 在这里可以通过各种各样的Emitter实现，生成不同的初始粒子位置
+// 这样可以实现更丰富的例子形状
+// 之前要么认为粒子都是从一个点发射出来的，要么是全屏发射的，这只是hardcode了特殊情况
+// 同时通过配置多个Emitter还可以实现交叉堆叠的形状
+type Emitter interface {
+}
+
+// 基于上面的想法，还可以设计出 Updater 的概念，不同的 Updater 对粒子执行不同的
+// 行走路径，这会极大的增加粒子弹性
+type Updater interface {
+
+}
+
+
+
+
 
 // ps-comp simulate
 // 在仿真系统中，直接读取 PSTable 的 Comp 进行模拟仿真
-type ParticleSimSystem struct {
-	et *ParticleSystemTable
+type ParticleSimulateSystem struct {
+	pst *ParticleSystemTable
+	init bool
 }
 
-func NewSimulationSystem () *ParticleSimSystem {
-	return &ParticleSimSystem{}
+func NewSimulationSystem () *ParticleSimulateSystem {
+	return &ParticleSimulateSystem{}
 }
 
-func (ss *ParticleSimSystem) Update(dt float32) {
-	et := ss.et
+func (pss *ParticleSimulateSystem) RequireTable(tables []interface{}) {
+	for _, t := range tables {
+		switch table := t.(type) {
+		case *ParticleSystemTable:
+			pss.pst = table
+		}
+	}
+}
+
+// System 的生命周期中，应该安排一个 Initialize 的阶段
+func (pss *ParticleSimulateSystem) Initialize() {
+	et := pss.pst
+	for i, n := 0, et.index; i < n; i++ {
+		et.comps[i].sim.Initialize()
+	}
+}
+
+func (pss *ParticleSimulateSystem) Update(dt float32) {
+	if !pss.init {
+		pss.Initialize()
+		pss.init = true
+	}
+	et := pss.pst
 	for i, n := 0, et.index; i < n; i++ {
 		et.comps[i].sim.Simulate(dt)
 	}

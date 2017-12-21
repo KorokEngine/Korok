@@ -117,11 +117,13 @@ func (br *BatchRender) Flush() (num int) {
 	return
 }
 
+// 目前采用提前申请好大块空间的方式，会导致大量的内存浪费
+// 之后可以把vbo管理起来，按需使用
 
-
-const MAX_BATCH_QUAD_SIZE   uint32 = 1000
-const MAX_BATCH_INDEX_SIZE  uint32 = 6 * 1000
-const MAX_BATCH_VERTEX_SIZE uint32 = 4 * 1000
+// ~ 640k per-batch, 32k vertex, 8k quad
+const MAX_BATCH_QUAD_SIZE   = uint32(8<<10)
+const MAX_BATCH_INDEX_SIZE  = 6 * MAX_BATCH_QUAD_SIZE
+const MAX_BATCH_VERTEX_SIZE = 4 * MAX_BATCH_QUAD_SIZE
 
 // 管理一或多个Batch实例
 // 最多可以生成 128 个 Batch 分组

@@ -134,7 +134,7 @@ func (ch channel_v4) Add(n int32, x, y, z, w float32) {
 		ch[i][0] += x
 		ch[i][1] += y
 		ch[i][2] += z
-		ch[i][2] += w
+		ch[i][3] += w
 	}
 }
 
@@ -143,7 +143,7 @@ func (ch channel_v4) Sub(n int32, x, y, z, w float32) {
 		ch[i][0] -= x
 		ch[i][1] -= y
 		ch[i][2] -= z
-		ch[i][2] -= w
+		ch[i][3] -= w
 	}
 }
 

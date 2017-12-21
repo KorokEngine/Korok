@@ -8,7 +8,7 @@ import (
 // Test CRUD operation for MeshTable
 func TestMeshTable(t *testing.T) {
 	em := &engi.EntityManager{}
-	et := NewEffectTable(1024)
+	et := NewParticleSystemTable(1024)
 
 	e1 := em.New()
 	xf1 := et.NewComp(e1)
@@ -68,7 +68,7 @@ func TestMeshTable(t *testing.T) {
 // step=64
 func TestMeshTableResize(t *testing.T) {
 	em := &engi.EntityManager{}
-	et := NewEffectTable(1024)
+	et := NewParticleSystemTable(1024)
 
 	list30 := make([]engi.Entity, 30)
 	for i := 0; i < 30; i++ {

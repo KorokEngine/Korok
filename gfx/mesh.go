@@ -19,8 +19,16 @@ type Mesh struct {
 
 	// res handle
 	TextureId uint16
+	padding   uint16
+
 	IndexId   uint16
 	VertexId  uint16
+
+	FirstVertex uint16
+	NumVertex   uint16
+
+	FirstIndex uint16
+	NumIndex   uint16
 }
 
 type MeshComp struct {
