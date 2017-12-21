@@ -105,3 +105,12 @@ Shader的渲染工具，Feature是具体的渲染类型，比如SpriteComp/TextC
 重新组织了包名和域名，现在可以使用 `go get korok.io/korok` 来下载引擎了(还没有启用HTTPS，需要加`-insecure`标记).
 
 -- 2017/12/12
+
+设计了粒子系统的初步版本，粒子系统通过 ParticleComp 提供，每个 ParticleComp 都可以设置一个仿真器 - Simulator, 它的实现决定了
+具体的粒子效果。仿真部分采用 Pool + Channel + Simulator 组合实现，渲染部分参考 Xenko 的实现申请一个足够容纳所有粒子的VBO来渲染粒子
+(注意：大部分引擎是每个系统对应一个VBO)，具体渲染使用的是 MeshRender，当前的代码仅仅验证了想法和一个可以工作的仿真器，接下来会优化接口。
+
+-- 冬至
+
+
+
