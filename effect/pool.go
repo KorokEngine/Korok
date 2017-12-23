@@ -14,15 +14,26 @@ type ChanFiled struct {
 var (
 	Life = ChanFiled{Type:ChanF32, Name:"life"}
 	Size = ChanFiled{Type:ChanF32, Name:"size"}
+	SizeDelta = ChanFiled{Type:ChanF32, Name:"size-delta"}
 
 	Color = ChanFiled{Type:ChanV4, Name:"color"}
+	ColorDelta = ChanFiled{Type:ChanV4, Name:"color-delta"}
 
 	Position = ChanFiled{Type:ChanV2, Name:"position"}
+	PositionStart = ChanFiled{Type:ChanV2, Name:"position-start"}
 	Velocity = ChanFiled{Type:ChanV2, Name:"velocity"}
 
-	Direction = ChanFiled{Type:ChanV2}
-	Rotation = ChanFiled{Type:ChanF32}
-	// and todo more
+	Direction = ChanFiled{Type:ChanV2, Name:"direction"}
+	RadialAcc = ChanFiled{Type:ChanF32, Name:"radial-acc"}
+	TangentialAcc = ChanFiled{Type:ChanF32, Name:"tangent-acc"}
+
+	Rotation = ChanFiled{Type:ChanF32, Name:"rotation"}
+	RotationDelta = ChanFiled{Type:ChanF32, Name:"rotation-delta"}
+
+	Angle = ChanFiled{Type:ChanF32, Name:"angle"}
+	AngleDelta = ChanFiled{Type:ChanF32, Name:"angle-delta"}
+	Radius = ChanFiled{Type:ChanF32, Name:"radius"}
+	RadiusDelta = ChanFiled{Type:ChanF32, Name:"radius-delta"}
 )
 
 // A Pool represent a particle-pool

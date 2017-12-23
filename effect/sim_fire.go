@@ -4,8 +4,6 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 	"korok.io/korok/gfx"
 	"log"
-	"korok.io/korok/gfx/dbg"
-	"fmt"
 )
 
 type FireSimulator struct {
@@ -25,6 +23,13 @@ type FireSimulator struct {
 	// live particle count
 	live int32
 
+	Config struct{
+		Life Var
+		Size Var
+		Color mgl32.Vec4
+		Position mgl32.Vec2
+		Velocity [2]Var
+	}
 }
 
 // TODO
@@ -33,6 +38,14 @@ func NewFireSimulator(cap int) Simulator {
 	sim.AddChan(Life, Size)
 	sim.AddChan(Position, Velocity)
 	sim.AddChan(Color)
+	// config
+	sim.Config.Life = Var{3, 4}
+	sim.Config.Color = mgl32.Vec4{1, 1, 1, 1}
+	sim.Config.Size = Var{5, 10}
+	sim.Config.Position = mgl32.Vec2{240, 50}
+	sim.Config.Velocity[0] = Var{10, 70}
+	sim.Config.Velocity[1] = Var{10, 40}
+
 	return &sim
 }
 
@@ -51,12 +64,12 @@ func (f *FireSimulator) Initialize() {
 
 	cap := int32(f.cap)
 	// init life 10 ,20
-	f.life.SetRandom(cap, Range{10, 12})
+	f.life.SetRandom(cap, Var{10, 12})
 
 	log.Println("set life:", f.life[0])
 
 	// init size
-	f.size.SetRandom(cap, Range{5, 10})
+	f.size.SetRandom(cap, Var{5, 10})
 	f.color.SetConst(cap, 1, 1, 1, 1)
 
 	// init position = {50, 50} , velocity = {20, 20}
@@ -100,8 +113,6 @@ func (f *FireSimulator) SwapErase(i, j int32) {
 	}
 }
 
-var vcount int32
-
 func (f *FireSimulator) NewParticle(new int32) {
 	if (f.live + new) > int32(f.cap) {
 		log.Println("pool overflow...")
@@ -111,21 +122,14 @@ func (f *FireSimulator) NewParticle(new int32) {
 	f.live += new
 
 	for i := start; i < f.live; i++ {
-		f.life[i] = random(3, 4)
-		f.color[i] = mgl32.Vec4{1, 1, 1, 1}
-		f.size[i] = random(5, 20)
-		f.position[i] = mgl32.Vec2{240, 50}
-		dx := random(10, 70)
-		dy := random(10, 40)
-
+		f.life[i] = f.Config.Life.Random()
+		f.color[i] = f.Config.Color
+		f.size[i] = f.Config.Size.Random()
+		f.position[i] = f.Config.Position
+		dx := f.Config.Velocity[0].Random()
+		dy := f.Config.Velocity[1].Random()
 		v := mgl32.Vec2{dx-40, float32(30+dy)}
 		f.velocity[i] = v
-	}
-
-	vcount += new
-
-	if vcount == 5000 {
-
 	}
 }
 
@@ -169,21 +173,13 @@ func (f *FireSimulator) Visualize(buf []gfx.PosTexColorVertex) {
 	pose := f.position
 	live := int(f.live)
 
-	var zcc int
-	var lcc int
 	// compute vbo
 	for i := 0; i < live; i ++ {
 		vi := i << 2
 		h_size := size[i] / 2
-		h_size = 10
 		alpha := f.color[i][3]
 		if alpha <= 0 {
 			alpha = 0
-			zcc ++
-		}
-
-		if f.life[i] <= 0 {
-			lcc ++
 		}
 		//alpha = 1
 		c := 0x00ffffff + (uint32(0xff * alpha) << 24)
@@ -216,8 +212,5 @@ func (f *FireSimulator) Visualize(buf []gfx.PosTexColorVertex) {
 		buf[vi+3].V = 1
 		buf[vi+3].RGBA = c
 	}
-
-	dbg.Move(10, 280)
-	dbg.DrawStrScaled(fmt.Sprintf("zcc: %d lcc: %d", zcc, lcc), 0.6)
 }
 

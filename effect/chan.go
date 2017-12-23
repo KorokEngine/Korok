@@ -23,9 +23,9 @@ func (ch channel_f32) SetConst(n int32, v float32) {
 	}
 }
 
-func (ch channel_f32) SetRandom(n int32, r Range) {
+func (ch channel_f32) SetRandom(n int32, v Var) {
 	for i := int32(0); i < n; i++ {
-		ch[i] = math.Random(r[0], r[1])
+		ch[i] = math.Random(v.Base, v.Base+v.Var)
 	}
 }
 
@@ -120,12 +120,12 @@ func (ch channel_v4) SetConst(n int32, x, y, z, w float32) {
 	}
 }
 
-func (ch channel_v4) SetRandom(n int32, x, y, z, w Range) {
+func (ch channel_v4) SetRandom(n int32, x, y, z, v [4]Var) {
 	for i := int32(0); i < n; i ++ {
-		ch[i][0] = math.Random(x[0], x[1])
-		ch[i][1] = math.Random(y[0], y[1])
-		ch[i][2] = math.Random(z[0], z[1])
-		ch[i][3] = math.Random(w[0], w[1])
+		ch[i][0] = math.Random(v[0].Base, v[0].Base+v[0].Var)
+		ch[i][1] = math.Random(v[1].Base, v[1].Base+v[1].Var)
+		ch[i][2] = math.Random(v[2].Base, v[2].Base+v[2].Var)
+		ch[i][3] = math.Random(v[3].Base, v[3].Base+v[3].Var)
 	}
 }
 

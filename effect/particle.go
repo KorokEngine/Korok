@@ -10,7 +10,6 @@ import (
 
 	"unsafe"
 	"fmt"
-	"log"
 )
 
 // particle component
@@ -215,14 +214,13 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 	dbg.Move(10, 300)
 	dbg.DrawStrScaled(fmt.Sprintf("lives: %d", vertexOffset>>2), .6)
 
-	if (vertexOffset>>2) == 500 {
-		log.Println("vertex:", vertex[:vertexOffset])
-	}
-
 	prf.vb.Update(0, updateSize, unsafe.Pointer(&vertex[0]), false)
 
 	for i := range renderObjs {
 		ro := &renderObjs[i]
+		p := ro.Transform.Position()
+		mat.Set(0, 3, p[0])
+		mat.Set(1, 3, p[1])
 		mr.Draw(&ro.Mesh, &mat)
 	}
 }
@@ -244,7 +242,6 @@ type BufferContext struct {
 	// 目前我们使用 MeshRender 来渲染粒子
 	// 所以必须支持如下的数据结构
 	vertex []gfx.PosTexColorVertex
-	index  []uint16
 
 	vb *bk.VertexBuffer
 }
@@ -272,31 +269,7 @@ func (ctx *BufferContext) AllocBuffer(vertexSize, indexSize int) {
 
 	if indexSize > ctx.indexSize {
 		bk.R.Free(ctx.indexId)
-		{
-			indexSize--
-			indexSize |= indexSize >> 1
-			indexSize |= indexSize >> 2
-			indexSize |= indexSize >> 3
-			indexSize |= indexSize >> 8
-			indexSize |= indexSize >> 16
-			indexSize++
-		}
-		ctx.indexSize = indexSize
-		ctx.index = make([]uint16, indexSize)
-
-		iFormat := [6]uint16 {3, 0, 1, 3, 1, 2}
-		for i := 0; i < indexSize; i += 6 {
-			copy(ctx.index[i:], iFormat[:])
-			iFormat[0] += 4
-			iFormat[1] += 4
-			iFormat[2] += 4
-			iFormat[3] += 4
-			iFormat[4] += 4
-			iFormat[5] += 4
-		}
-		if id, _ := bk.R.AllocIndexBuffer(bk.Memory{unsafe.Pointer(&ctx.index[0]), uint32(indexSize) * 2}); id != bk.InvalidId {
-			ctx.indexId = id
-		}
+		ctx.indexId, ctx.indexSize = gfx.Context.SharedIndexBuffer()
 	}
 }
 

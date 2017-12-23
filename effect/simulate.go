@@ -2,6 +2,7 @@ package effect
 
 import (
 	"korok.io/korok/gfx"
+	"korok.io/korok/engi/math"
 )
 
 /**
@@ -15,7 +16,74 @@ import (
 		- 暂时无法实现动态化，构建大而全的系统会牺牲一部分的性能和内存
  */
 
+
+/**
+	显示一个粒子最终只需要：Position/Rotation/Scale
+
+	但是对粒子进行建模需要更多的属性：
+	1. 粒子发射频率
+	2. 重力/重力模式
+	3. 方向
+	4. 速度/加速度
+	5. 切线速度/微分
+	6. 角速度
+	7. 放射模式
+	8. 开始放射半径/微分
+	9. 结束放射半径/微分
+	10. 旋转
+	11. 共有的属性
+		1. 生命/微分
+		2. 初始/结束旋转/微分
+		3. 初始/结束大小/微分
+		4. 初始/结束颜色/微分
+		5. 混合方程
+		6. 纹理
+
+	ParticleDesigner 提供了两种模式：
+	1. Radius  - 基于极坐标建模的仿真，需要把极坐标转化为笛卡尔坐标绘制
+	2. Gravity - 基于笛卡尔坐标建模的仿真，也提供了切线/法线加速度的支持
+
+	以上基于配置的建模方式，在实现的时候需要提前申请好所有需要的变量，通常仿真
+	可能只需要很少的属性配置，而大部分没有使用，这是很浪费的。
+*/
+
+
 //// 算子定义操作：赋值， 相加，积分
+
+
+type EmitterMode int32
+
+// 发射模式
+const (
+	ModeGravity EmitterMode = iota
+	ModeRadius
+)
+
+// base value + var value
+type Var struct {
+	Base, Var float32
+}
+
+func (v Var) Used() bool {
+	return v.Base != 0 || v.Var != 0
+}
+
+func (v Var) Random() float32{
+	return math.Random(v.Base, v.Base + v.Var)
+}
+
+// range [start, end]
+type Range struct {
+	Start, End Var
+}
+
+func (r Range) Used() bool {
+	return r.Start.Used() || r.End.Used()
+}
+
+func (r Range) HasRange() bool {
+	return r.Start != r.End
+}
 
 type Simulator interface {
 	Initialize()
