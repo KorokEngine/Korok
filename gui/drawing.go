@@ -346,6 +346,17 @@ func (dl *DrawList) PathArcToFast(centre mgl32.Vec2, radius float32, min12, max1
 }
 
 func (dl *DrawList) PathArcTo(centre mgl32.Vec2, radius float32, min, max float32, segments int) {
+	if radius == 0 {
+		dl.path[dl.pathUsed] = centre; dl.pathUsed++
+		return
+	}
+	for i := 0; i <= segments; i++ {
+		a := float64(min + (float32(i)/float32(segments)) * (max-min))
+		x := centre[0] + float32(geo.Cos(a)) * radius
+		y := centre[1] + float32(geo.Sin(a)) * radius
+		dl.path[dl.pathUsed] = mgl32.Vec2{x, y}
+		dl.pathUsed ++
+	}
 
 }
 
@@ -439,7 +450,7 @@ func (dl *DrawList) AddTriangleFilled(a, b, c mgl32.Vec2, color uint32) {
 func (dl *DrawList) AddCircle(centre mgl32.Vec2, radius float32, color uint32, segments int, thickness float32) {
 	max := PI * 2 * float32(segments-1)/float32(segments)
 	dl.PathArcTo(centre, radius, 0.0, max, segments)
-	dl.PathFillConvex(color)
+	dl.PathStroke(color, thickness, true)
 }
 
 func (dl *DrawList) AddCircleFilled(centre mgl32.Vec2, radius float32, color uint32, segments int) {
