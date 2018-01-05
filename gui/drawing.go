@@ -70,6 +70,8 @@ type DrawList struct {
 	FullScreen mgl32.Vec4
 	TexUVWhitePixel mgl32.Vec2
 	CircleVtx12 [12]mgl32.Vec2
+	Font gfx.FontSystem
+	FontSize float32
 
 	Flags DrawListFlags
 }
@@ -247,11 +249,43 @@ func (dl *DrawList) PrimRect(min, max mgl32.Vec2, color uint32) {
 }
 
 func (dl *DrawList) PrimRectUV(a, c mgl32.Vec2, uva, uvc mgl32.Vec2, color uint32) {
+	b, d := mgl32.Vec2{c[0], a[1]}, mgl32.Vec2{a[0], c[1]}
+	uvb, uvd := mgl32.Vec2{uvc[0], uva[1]}, mgl32.Vec2{uva[0], uvc[1]}
 
+	dl.VtxWriter[0] = DrawVert{a, uva, color}
+	dl.VtxWriter[1] = DrawVert{b, uvb, color}
+	dl.VtxWriter[2] = DrawVert{c, uvc, color}
+	dl.VtxWriter[3] = DrawVert{d, uvd, color}
+
+	ii := dl.vtxIndex
+	dl.IdxWriter[0] = DrawIdx(ii+0)
+	dl.IdxWriter[1] = DrawIdx(ii+1)
+	dl.IdxWriter[2] = DrawIdx(ii+2)
+	dl.IdxWriter[3] = DrawIdx(ii+0)
+	dl.IdxWriter[4] = DrawIdx(ii+2)
+	dl.IdxWriter[5] = DrawIdx(ii+3)
+
+	dl.idxIndex += 6
+	dl.vtxIndex += 4
 }
 
 func (dl *DrawList) PrimQuadUV(a, b, c, d mgl32.Vec2, uva, uvb,uvc, uvd mgl32.Vec2, color uint32) {
+	// vertex
+	dl.VtxWriter[0] = DrawVert{a, uva, color}
+	dl.VtxWriter[1] = DrawVert{b, uvb, color}
+	dl.VtxWriter[2] = DrawVert{c, uvc, color}
+	dl.VtxWriter[3] = DrawVert{d, uvd, color}
 
+	ii := dl.vtxIndex
+	dl.IdxWriter[0] = DrawIdx(ii+0)
+	dl.IdxWriter[1] = DrawIdx(ii+1)
+	dl.IdxWriter[2] = DrawIdx(ii+2)
+	dl.IdxWriter[3] = DrawIdx(ii+0)
+	dl.IdxWriter[4] = DrawIdx(ii+2)
+	dl.IdxWriter[5] = DrawIdx(ii+3)
+
+	dl.vtxIndex += 4
+	dl.idxIndex += 6
 }
 
 // 此处生成最终的顶点数据和索引数据
@@ -425,7 +459,7 @@ func (dl *DrawList) AddQuad(a, b, c, d mgl32.Vec2, color uint32, thickness float
 	dl.PathStroke(color, thickness, true)
 }
 
-func (dl *DrawList) AddQuadFilled(a, b, c, d, vec2 mgl32.Vec2, color uint32) {
+func (dl *DrawList) AddQuadFilled(a, b, c, d mgl32.Vec2, color uint32) {
 	dl.PathLineTo(a)
 	dl.PathLineTo(b)
 	dl.PathLineTo(c)
@@ -435,7 +469,7 @@ func (dl *DrawList) AddQuadFilled(a, b, c, d, vec2 mgl32.Vec2, color uint32) {
 
 func (dl *DrawList) AddTriangle(a, b, c mgl32.Vec2, color uint32, thickness float32) {
 	dl.PathLineTo(a)
-	dl.PathLineTo(a)
+	dl.PathLineTo(b)
 	dl.PathLineTo(c)
 	dl.PathStroke(color, thickness, true)
 }
@@ -466,8 +500,19 @@ func (dl *DrawList) AddBezierCurve(pos0 mgl32.Vec2, cp0, cp1 mgl32.Vec2, pos1 mg
 	dl.PathStroke(color, thickness, false)
 }
 
-func (dl *DrawList) AddText(text string, font gfx.FontSystem, fontSize float32, color uint32, width float32) {
+func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) {
+	if text == "" {
+		return
+	}
+	if font == nil {
+		font = dl.Font
+	}
+	if fontSize == 0 {
+		fontSize = dl.FontSize
+	}
 
+	// TODO ClipRect
+	// font.RenderText(this, fontSize, pos, color, clipRect, text, wrapWidth, cpu_fine_clip_rect != nil)
 }
 
 func (dl *DrawList) AddImage(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.Vec2, color uint32) {
@@ -499,7 +544,26 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 		defer dl.PopTextureId()
 	}
 
-	// TODO
+	dl.PathRect(a, b, rounding, corners)
+	dl.PathFillConvex(color)
+
+	// map uv to vertex - linear scale
+	xySize, uvSize := b.Sub(a), uvb.Sub(uva)
+	var scale mgl32.Vec2
+	if xySize[0] != 0 {
+		scale[0] = uvSize[0]/xySize[0]
+	}
+	if xySize[1] != 0 {
+		scale[1] = uvSize[1]/xySize[1]
+	}
+
+	// clamp??
+	for i  := range dl.VtxWriter {
+		vertex := &dl.VtxWriter[i]
+		dx := (vertex.xy[0] - a[0]) * scale[0]
+		dy := (vertex.xy[1] - a[1]) * scale[1]
+		vertex.uv = mgl32.Vec2{uva[0]+dx, uva[1]+dy}
+	}
 }
 
 func (dl *DrawList) AddDrawCmd() {
