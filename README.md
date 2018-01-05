@@ -6,6 +6,7 @@ inspired by [bitsquid blog](http://bitsquid.blogspot.com/).
 Homepage: [korok.io](http://korok.io)      Twitter: [ntop](https://twitter.com/ntoooop)
 
 The latest release is alpha-version which is not stable and will have breaking changes in the future.
+About the state and progress of the project, see [Devlogs](https://github.com/KorokEngine/Korok/blob/master/dev_log.md)
 
 ## Getting Started
 

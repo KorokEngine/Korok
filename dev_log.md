@@ -115,7 +115,7 @@ Shader的渲染工具，Feature是具体的渲染类型，比如SpriteComp/TextC
 现在正在一步一步的实现GUI系统，现在的GUI系统主要参考了 dear-imgui 的设计，比如形状的绘制算法，文字渲染等。区别于 imgui 是
 我们的设计是分层的：drawing/ui2d/window， drawing 模块负责最底层的UI元素渲染，并生成顶点数组，这样可以使用 gfx 模块的 api
 把顶点渲染到屏幕，ui2d模块负责提供ui元素，比如:button/text/image 组件，window 模块在最上层用来实现窗口系统。当然这是一个比较
-理想的设计。
+理想的设计（这个设计也受到了 [OurMachinery](http://ourmachinery.com/)的影响）。
 
 -- 2018/01/05
 
