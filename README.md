@@ -5,6 +5,8 @@ inspired by [bitsquid blog](http://bitsquid.blogspot.com/).
 
 Homepage: [korok.io](http://korok.io)      Twitter: [ntop](https://twitter.com/ntoooop)
 
+The latest release is alpha-version which is not stable and will have breaking changes in the future.
+
 ## Getting Started
 
 `go get -insecure korok.io/korok`
