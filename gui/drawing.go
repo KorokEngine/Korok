@@ -28,6 +28,16 @@ const (
 	FlagCornerAll                    = 0x000F
 )
 
+type Align uint32
+
+const (
+	AlignCenter Align = iota
+	AlignLeft		  = 1 << iota
+	AlignRight		  = 1 << iota
+	AlignTop 		  = 1 << iota
+	AlignBottom		  = 1 << iota
+)
+
 // DrawList provide method to write primitives to buffer
 type DrawCmd struct {
 	ElemCount int
@@ -84,8 +94,8 @@ func NewDrawList() *DrawList {
 
 func (dl *DrawList) Initialize() {
 	dl.CmdBuffer = make([]DrawCmd, 1024)
-	dl.IdxBuffer = make([]DrawIdx, 1024)
-	dl.VtxBuffer = make([]DrawVert, 1024)
+	dl.IdxBuffer = make([]DrawIdx, 2024)
+	dl.VtxBuffer = make([]DrawVert, 2024)
 
 	// TODO
 	dl.TexUVWhitePixel = mgl32.Vec2{0.5, .5}
@@ -221,9 +231,6 @@ func (dl *DrawList) PopTextureId() {
 
 // primitive operation
 func (dl *DrawList) PrimReserve(idxCount, vtxCount int) {
-	cmd := &dl.CmdBuffer[dl.cmdIndex]
-	cmd.ElemCount += idxCount
-
 	dl.VtxWriter = dl.VtxBuffer[dl.vtxIndex:dl.vtxIndex+vtxCount]
 	dl.IdxWriter = dl.IdxBuffer[dl.idxIndex:dl.idxIndex+idxCount]
 }
@@ -336,6 +343,7 @@ func (dl *DrawList) AddPolyLine(points []mgl32.Vec2, color uint32, thickness flo
 		dl.vtxIndex += 4
 		dl.idxIndex += 6
 	}
+	dl.AddCommand(idxCount)
 }
 
 // Non Anti-aliased Fill
@@ -358,6 +366,7 @@ func (dl *DrawList) AddConvexPolyFilled(points []mgl32.Vec2, color uint32) {
 
 	dl.vtxIndex += vtxCount
 	dl.idxIndex += idxCount
+	dl.AddCommand(idxCount)
 }
 
 // 此处圆角的算法：
@@ -500,21 +509,6 @@ func (dl *DrawList) AddBezierCurve(pos0 mgl32.Vec2, cp0, cp1 mgl32.Vec2, pos1 mg
 	dl.PathStroke(color, thickness, false)
 }
 
-func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) {
-	if text == "" {
-		return
-	}
-	if font == nil {
-		font = dl.Font
-	}
-	if fontSize == 0 {
-		fontSize = dl.FontSize
-	}
-
-	// TODO ClipRect
-	// font.RenderText(this, fontSize, pos, color, clipRect, text, wrapWidth, cpu_fine_clip_rect != nil)
-}
-
 func (dl *DrawList) AddImage(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.Vec2, color uint32) {
 	if n := len(dl.TextureIdStack); n == 0 || texId != dl.TextureIdStack[n-1]  {
 		dl.PushTextureId(texId)
@@ -523,6 +517,7 @@ func (dl *DrawList) AddImage(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.Vec2,
 
 	dl.PrimReserve(6, 4)
 	dl.PrimRectUV(a, b, uva, uvb, color)
+	dl.AddCommand(6)
 }
 
 func (dl *DrawList) AddImageQuad(texId uint16, a, b, c, d mgl32.Vec2, uva, uvb, uvc, uvd mgl32.Vec2, color uint32) {
@@ -532,6 +527,7 @@ func (dl *DrawList) AddImageQuad(texId uint16, a, b, c, d mgl32.Vec2, uva, uvb, 
 	}
 	dl.PrimReserve(6, 4)
 	dl.PrimQuadUV(a, b, c, d, uva, uvb, uvc, uvd, color)
+	dl.AddCommand(6)
 }
 
 func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.Vec2, color uint32, rounding float32, corners FlagCorner) {
@@ -566,12 +562,53 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 	}
 }
 
-func (dl *DrawList) AddDrawCmd() {
-	drawCmd := DrawCmd{
-		ClipRect:dl.CurrentClipRect(),
-		TextureId:dl.CurrentTextureId(),
+func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) {
+	if text == "" {
+		return
 	}
-	dl.CmdBuffer = append(dl.CmdBuffer, drawCmd)
+	if font == nil {
+		font = dl.Font
+	}
+	if fontSize == 0 {
+		fontSize = dl.FontSize
+	}
+
+	fr := &FontRender{
+		DrawList:dl,
+		fontSize:fontSize,
+		font:font,
+		color:color,
+	}
+
+	if wrapWidth > 0 {
+		fr.RenderWrapped(pos, text, wrapWidth)
+	} else {
+		fr.RenderText1(pos, text)
+	}
 }
+
+// 每次绘制都会产生一个 Command （可能会造成内存浪费! 1k cmd = 1000 * 6 * 4 = 24k）
+// 为了减少内存可以一边添加一边尝试向前合并
+func (dl *DrawList) AddCommand(elemCount int) {
+	clip := dl.CurrentClipRect()
+	tex  := dl.CurrentTextureId()
+
+	if ii := dl.cmdIndex; ii == 0 {
+		dl.CmdBuffer[ii] = DrawCmd{elemCount, clip, tex}
+		dl.cmdIndex += 1
+	} else {
+		if prev  := &dl.CmdBuffer[ii-1]; prev.ClipRect == clip && prev.TextureId == tex {
+			prev.ElemCount += elemCount
+		} else {
+			dl.CmdBuffer[ii] = DrawCmd{elemCount,clip,tex}
+			dl.cmdIndex += 1
+		}
+	}
+}
+
+func (dl *DrawList) Commands() []DrawCmd {
+	return dl.CmdBuffer[:dl.cmdIndex]
+}
+
 
 

@@ -6,6 +6,7 @@ import (
 	"korok.io/korok/gfx"
 	"korok.io/korok/engi/math"
 	//"log"
+	//"log"
 )
 
 // 工具结构，负责把字符串转化为顶点..
@@ -15,6 +16,7 @@ type FontRender struct {
 	fontSize float32
 	font gfx.FontSystem
 	color uint32
+	lineSpace float32
 
 	// Glyphs->AdvanceX in a directly way (more cache-friendly, for calcTextSize functions which are often bottleneck in large UI)
 	IndexAdvanceX []float32
@@ -40,6 +42,11 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) {
 	scale := fr.fontSize/float32(glyphA.Height)
 	lineHeight := fr.fontSize
 
+	lineSpace := fr.lineSpace
+	if lineSpace == 0 {
+		lineSpace = 0.4 * lineHeight
+	}
+
 	bufferUsed := 0
 
 	for i, w := 0, 0; i < len(text); i += w {
@@ -51,7 +58,7 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) {
 				maxWidth = dx
 			}
 
-			dy -= lineHeight
+			dy -= lineHeight + lineSpace
 			dx = pos[0]
 			continue
 		}
@@ -60,9 +67,8 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) {
 
 		// Add kerning todo
 		// dx += getKerning(preglyph, g)
-
-		x1, y1 := dx, dy
-		x2, y2 := dx + float32(g.Width) * scale, dy + float32(g.Height) * scale
+		x1, y1 := dx, dy - float32(g.Height+g.YOffset) * scale
+		x2, y2 := x1 + float32(g.Width) * scale, y1 + float32(g.Height) * scale
 		u1, v1 := float32(g.X)/ texWidth, float32(g.Y)/ texHeight
 		u2, v2 := float32(g.X+g.Width)/ texWidth, float32(g.Y+g.Height)/ texHeight
 
@@ -92,12 +98,15 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) {
 	if bufferUsed < len(text) {
 		// ..
 	}
+	fr.DrawList.AddCommand(bufferUsed*6)
 }
 
 func (fr *FontRender) RenderWrapped(pos mgl32.Vec2, text string, wrapWidth float32) {
 	wrap  := math.Max(wrapWidth, 0)
-	// wrap text 
+	// wrap text
 	_, lines := fr.wrap(text, wrap)
+	//log.Println(lines)
+
 	fr.RenderText1(pos, lines)
 }
 
