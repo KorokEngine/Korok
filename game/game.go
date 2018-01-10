@@ -13,6 +13,7 @@ import (
 	"log"
 	"reflect"
 	"fmt"
+	"korok.io/korok/gui"
 )
 
 const (
@@ -43,6 +44,7 @@ type Game struct {
 	DB
 
 	*gfx.RenderSystem
+	*gui.UISystem
 	*input.InputSystem
 	*effect.ParticleSimulateSystem
 	*ScriptSystem
@@ -109,6 +111,10 @@ func (g *Game) Create() {
 	for i, v := range rs.FeatureList {
 		log.Println(i, " feature - ", reflect.TypeOf(v))
 	}
+
+	// gui system
+	g.UISystem = gui.NewUISystem(meshRender)
+	g.UISystem.RegisterContext(gui.DefaultContext())
 
 	/// init debug
 	dbg.Init()
@@ -204,6 +210,9 @@ func (g *Game) Update() {
 
 	// Render
 	g.RenderSystem.Update(dt)
+
+	// GUI
+	g.UISystem.Draw(dt)
 
 	// fps & profile
 	g.DrawProfile()
