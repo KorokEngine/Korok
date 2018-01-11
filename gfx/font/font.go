@@ -3,6 +3,7 @@ package font
 import (
 	"image"
 	"korok.io/korok/gfx/bk"
+	"image/color"
 )
 
 // A Font allows rendering ofg text to an OpenGL context
@@ -29,6 +30,9 @@ func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
 	// Resize image to enxt power-of-two.
 	img = Pow2Image(img).(*image.RGBA)
 	ib := img.Bounds()
+
+	// add a white pixel at (0, 0)
+	img.Set(0,0, color.White)
 
 	f.TexWidth = float32(ib.Dx())
 	f.TexHeight = float32(ib.Dy())
