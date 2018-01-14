@@ -20,11 +20,6 @@ type Padding struct {
 	Left, Right, Top, Bottom float32
 }
 
-type Layout struct {
-	Width, Height float32
-	Padding
-}
-
 type TextStyle struct {
 	Font gfx.FontSystem
 	Visibility

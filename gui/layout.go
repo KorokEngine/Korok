@@ -1,5 +1,7 @@
 package gui
 
+import "github.com/go-gl/mathgl/mgl32"
+
 // GUI coordinate system
 // (0, 0)
 //  +-------------------------+ (w, 0)
@@ -27,6 +29,16 @@ const (
 type Bound struct{
 	X, Y float32
 	W, H float32
+}
+
+func (b *Bound) InRange(p mgl32.Vec2) bool{
+	if p[0] < b.X || p[0] > (b.X + b.W) {
+		return false
+	}
+	if p[1] < b.Y || p[1] > (b.Y + b.H) {
+		return false
+	}
+	return true
 }
 
 type Layout struct {

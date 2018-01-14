@@ -77,6 +77,18 @@ func CreateWindow(option *WindowOptions)  {
 		}
 	})
 
+	window.SetMouseButtonCallback(func(w *glfw.Window, button glfw.MouseButton, action glfw.Action, mod glfw.ModifierKey) {
+		if inputCallback != nil {
+			x, y := w.GetCursorPos()
+			pb := int(button)
+			if action == glfw.Press {
+				inputCallback.OnPointEvent(pb, true, float32(x), float32(y))
+			} else {
+				inputCallback.OnPointEvent(pb, false, float32(x), float32(y))
+			}
+		}
+	})
+
 	// init openGL
 	// golang 版本必须调用此init方法来加载本地OpenGL指针，C原声不需要
 	// 见go-gl文档:https://github.com/go-gl/gl

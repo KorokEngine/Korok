@@ -5,8 +5,6 @@ import (
 	"unicode/utf8"
 	"korok.io/korok/gfx"
 	"korok.io/korok/engi/math"
-	//"log"
-	//"log"
 )
 
 // 工具结构，负责把字符串转化为顶点..
@@ -24,7 +22,7 @@ type FontRender struct {
 }
 
 // 当前的实现中，不考虑裁切优化，全部绘制所有字符
-func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) {
+func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) (size mgl32.Vec2){
 	dx, dy := pos[0], pos[1]
 	maxWidth := float32(0)
 
@@ -94,20 +92,20 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) {
 		// character space & line spacing todo
 		// 处理 < 32 的控制符号!!
 	}
-
-	if bufferUsed < len(text) {
-		// ..
-	}
+	size[0] = pos[0]-maxWidth
+	size[1] = pos[1]-dy+fr.fontSize
 	fr.DrawList.AddCommand(bufferUsed*6)
+	return
 }
 
-func (fr *FontRender) RenderWrapped(pos mgl32.Vec2, text string, wrapWidth float32) {
+func (fr *FontRender) RenderWrapped(pos mgl32.Vec2, text string, wrapWidth float32) (size mgl32.Vec2){
 	wrap  := math.Max(wrapWidth, 0)
 	// wrap text
 	_, lines := fr.wrap(text, wrap)
 	//log.Println(lines)
 
-	fr.RenderText1(pos, lines)
+	size = fr.RenderText1(pos, lines)
+	return
 }
 
 // 计算分行后的字符串, 算法其实很简单：
@@ -178,7 +176,21 @@ func (fr *FontRender) wrap(text string, wrap float32) (n int, lines string) {
 	return n, string(buff)
 }
 
+func (fr *FontRender) CalculateTextSize1(text string) mgl32.Vec2{
+	glyphA := fr.font.Glyph('A')
+	scale := fr.fontSize/float32(glyphA.Height)
+	size := mgl32.Vec2{0, fr.fontSize}
 
+	for i, w := 0, 0; i < len(text); i += w {
+		r, width := utf8.DecodeRuneInString(text[i:])
+		w = width
+		g := fr.font.Glyph(r)
+		if r >= 32 {
+			size[0] += float32(g.Advance) * scale
+		}
+	}
+	return size
+}
 
 
 

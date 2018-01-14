@@ -61,6 +61,10 @@ func (ui *UISystem) Draw(dt float32) {
 			ui.MeshRender.Draw(&ui.mesh, &mat4)
 		}
 
+		//log.Println("cmds:", dl.Commands())
+		//log.Println("vbuffer:", vBuffer)
+		//log.Println("ibuffer:", iBuffer)
+
 		// reset drawlist
 		dl.Clear()
 	}

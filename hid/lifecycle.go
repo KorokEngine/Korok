@@ -15,6 +15,5 @@ type WindowCallback interface {
 // 输入系统
 type InputCallback interface {
 	OnKeyEvent(key int, pressed bool)
+	OnPointEvent(key int, pressed bool, x, y float32)
 }
-
-

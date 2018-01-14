@@ -76,10 +76,6 @@ func (ctx *Context) Text(text string, style *TextStyle) (id int){
 	return
 }
 
-func (ctx *Context) Label(text string) {
-
-}
-
 func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) mgl32.Vec2 {
 	fr := &FontRender{
 		font: font,
@@ -195,20 +191,6 @@ func (ctx *Context) ImageButton(texId uint16, lyt Layout, style *ImageButtonStyl
 	return EventNone
 }
 
-func (ctx *Context) CheckBox(text string, lyt Layout, style *CheckBoxStyle) bool {
-	return false
-}
-
-// Widget: ProgressBar
-func (ctx *Context) ProgressBar(fraction float32, lyt Layout, style *ProgressBarStyle) {
-
-}
-
-// Widget: ListView TODO
-func (ctx *Context) ListView() {
-
-}
-
 func (ctx *Context) Rect(w, h float32, style *RectStyle) (id int){
 	bb := ctx.Bound
 
@@ -256,28 +238,11 @@ func (ctx *Context) renderFrame(x, y, w, h float32, fill uint32, rounding float3
 }
 
 // Container: Window/PopupWindow/
-func (ctx *Context) OpenPopup(id string) {
-
-}
-
-func (ctx *Context) DismissPopup(id string) {
-
-}
-
 func (ctx *Context) BeginGroup() {
 
 }
 
 func (ctx *Context) EndGroup() {
-
-}
-
-// Layout: 方便坐标计算的布局系统
-func (ctx *Context) BeginLayout() {
-
-}
-
-func (ctx *Context) EndLayout() {
 
 }
 
@@ -291,17 +256,9 @@ func (ctx *Context) PushClipRect(minClip, maxClip mgl32.Vec2, intersectCurrent b
 
 }
 
-func (ctx *Context) Popup() {
-
-}
-
 // Theme:
 func (ctx *Context) UseTheme(style *Style) {
 	ctx.Style = style
-}
-
-type Window struct {
-
 }
 
 func Gui2Game(x, y float32) (x1, y1 float32) {

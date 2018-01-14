@@ -98,7 +98,7 @@ func (dl *DrawList) Initialize() {
 	dl.VtxBuffer = make([]DrawVert, 2024)
 
 	// TODO
-	dl.TexUVWhitePixel = mgl32.Vec2{0.5, .5}
+	dl.TexUVWhitePixel = mgl32.Vec2{0, 0}
 
 	// TODO bake circle vertex!!
 	for i := 0; i < 12; i++ {
@@ -446,13 +446,14 @@ func (dl *DrawList) AddRect(a, b mgl32.Vec2, color uint32, rounding float32, rou
 	dl.PathStroke(color, thickness, true)
 }
 
-func (dl *DrawList) AddRectFilled(min, max mgl32.Vec2, color uint32, rounding float32, roundFlags FlagCorner) {
-	if rounding > 0 {
-		dl.PathRect(min, max, rounding, roundFlags)
+func (dl *DrawList) AddRectFilled(min, max mgl32.Vec2, color uint32, rounding float32, corner FlagCorner) {
+	if rounding > 0 && corner != FlagCornerNone {
+		dl.PathRect(min, max, rounding, corner)
 		dl.PathFillConvex(color)
 	} else {
 		dl.PrimReserve(6, 4)
 		dl.PrimRect(min, max, color)
+		dl.AddCommand(6)
 	}
 }
 
@@ -562,7 +563,7 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 	}
 }
 
-func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) {
+func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) (size mgl32.Vec2){
 	if text == "" {
 		return
 	}
@@ -581,10 +582,11 @@ func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fo
 	}
 
 	if wrapWidth > 0 {
-		fr.RenderWrapped(pos, text, wrapWidth)
+		size = fr.RenderWrapped(pos, text, wrapWidth)
 	} else {
-		fr.RenderText1(pos, text)
+		size = fr.RenderText1(pos, text)
 	}
+	return
 }
 
 // 每次绘制都会产生一个 Command （可能会造成内存浪费! 1k cmd = 1000 * 6 * 4 = 24k）
