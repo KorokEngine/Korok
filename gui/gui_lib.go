@@ -5,6 +5,7 @@ import (
 
 	"korok.io/korok/gfx"
 	"korok.io/korok/gfx/bk"
+	"korok.io/korok/hid/input"
 )
 
 type EventType uint8
@@ -133,12 +134,13 @@ func (ctx *Context) Button(text string, style *ButtonStyle) (id int, event Event
 	textSize := ctx.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
 	bound    := ctx.Layout.Bound
 
-	// Check Event
-	event = ctx.CheckButtonEvent(&bound)
-
-	// Render Frame
 	x, y := bound.X, bound.Y
 	w, h := textSize[0]+20, textSize[1]+20
+
+	// Check Event
+	event = ctx.CheckEvent(&Bound{x, y, w, h})
+
+	// Render Frame
 	ctx.renderFrame(x, y, w, h, color, rounding)
 
 	// Render Text
@@ -162,8 +164,31 @@ func (ctx *Context) renderTextClipped(text string, bb *Bound, style *TextStyle) 
 	}
 }
 
-func (ctx *Context) CheckButtonEvent(bound *Bound) EventType {
-	return EventNone
+// 偷师 flat-ui 中的设计，把空间的前景和背景分离，背景单独根据事件来变化..
+// 在 Android 中，Widget的前景和背景都可以根据控件状态发生变化
+// 但是在大部分UI中，比如 Text/Image 只会改变背景的状态
+// 偷懒的自定义UI，不做任何状态的改变... 所以说呢, 我们也采用偷懒的做法呗。。
+func (ctx *Context) EventBackground(event EventType) {
+
+}
+
+// 现在只检测一个点, 通常是鼠标的左键或者是多点触控时的第一个手指的位置
+// 这样可以记录当前控件的状态...
+// 如何根据状态绘制？？
+func (ctx *Context) CheckEvent(bound *Bound) EventType {
+	event := EventNone
+	if p := input.PointerPosition(0); bound.InRange(p.MousePos) {
+		btn := input.PointerButton(0)
+		id := int(0) // // todo 设计ID系统，记录每个按键的位置..
+		if btn.JustPressed() {
+			ctx.state.active = id
+			event = EventDown
+		}
+		if btn.JustReleased() && ctx.state.active == id {
+			event = EventUp
+		}
+	}
+	return event
 }
 
 func (ctx *Context) ImageButton(texId uint16, lyt Layout, style *ImageButtonStyle) EventType{
@@ -238,28 +263,6 @@ func (ctx *Context) OpenPopup(id string) {
 func (ctx *Context) DismissPopup(id string) {
 
 }
-
-func (ctx *Context) BeginWindow(name string) {
-	// Find or create
-	window := ctx.findWindow(name)
-	if window == nil {
-		window = ctx.createWindow(name, mgl32.Vec2{0, 0})
-	}
-
-}
-
-func (ctx *Context) findWindow(name string) *Window {
-	return nil
-}
-
-func (ctx *Context) createWindow(name string, size mgl32.Vec2) *Window {
-	return nil
-}
-
-func (ctx *Context) EndWindow() {
-
-}
-
 
 func (ctx *Context) BeginGroup() {
 
