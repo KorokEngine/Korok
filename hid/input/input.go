@@ -3,6 +3,7 @@ package input
 import (
 	"sync"
 	"github.com/go-gl/glfw/v3.2/glfw"
+	"github.com/go-gl/mathgl/mgl32"
 )
 
 // 记录一帧之内的按键，一帧时间做多支持同时按6个按键
@@ -45,6 +46,12 @@ type InputSystem struct {
 	// 按照button排序，这样同一个Button的绑定按键是
 	// 是连续的。
 	binds []KeyBind
+
+	// 触摸/鼠标, 最多支持10个手指头同时触摸
+	// 通常情况下，active < 1
+	active int
+	pointerButton [10]button
+	pointers [10]PointerInput
 }
 
 func NewInputSystem() *InputSystem {
@@ -105,12 +112,26 @@ func (in *InputSystem) Reset() {
 	for _, v := range in.buttons {
 		v.Reset()
 	}
+	for i := 0; i <= in.active; i++ {
+		in.pointerButton[i].Reset()
+	}
 }
 
 // 更新 key 的状态
 func (in *InputSystem) SetKeyEvent(key int, pressed bool) {
 	in.mutex.Lock()
 	in.dirty.Put(Key(key), pressed)
+	in.mutex.Unlock()
+}
+
+// 更新 Mouse/Touch 状态
+func (in *InputSystem) SetPointerEvent(key int, pressed bool, x, y float32) {
+	in.mutex.Lock()
+	in.pointerButton[key].Update(pressed)
+	in.pointers[key].MousePos = mgl32.Vec2{x, y}
+	if key > in.active {
+		in.active = key
+	}
 	in.mutex.Unlock()
 }
 
@@ -121,13 +142,37 @@ type KeyBind struct {
 	btn *button
 }
 
-/// short API
+// short API
 func Button(name string) *button {
 	return Input.Button(name)
 }
 
 func RegisterButton(name string, keys...Key) {
 	Input.RegisterButton(name, keys...)
+}
+
+func PointerButton(pb KeyPoint) *button {
+	return &Input.pointerButton[pb]
+}
+
+func PointerPosition(pb KeyPoint) PointerInput {
+	return Input.pointers[pb]
+}
+
+// Touch event
+func Touch(fi FingerId) (btn *button, pos, delta mgl32.Vec2) {
+	btn = &Input.pointerButton[fi]
+	p := Input.pointers[fi]
+	pos, delta = p.MousePos, p.MouseDelta
+	return
+}
+
+// Mouse event
+func Mouse(key int) (btn *button, pos, delta mgl32.Vec2) {
+	btn = &Input.pointerButton[key]
+	p := Input.pointers[key]
+	pos, delta = p.MousePos, p.MouseDelta
+	return
 }
 
 var Input *InputSystem
@@ -236,5 +281,20 @@ const (
 	NumNine = Key(glfw.KeyKP9)
 	NumDecimal = Key(glfw.KeyKPDecimal)
 	NumEnter = Key(glfw.KeyKPEnter)
+)
+
+// mouse or finger button
+type KeyPoint int
+const (
+	KeyPoint1 KeyPoint = iota
+	KeyPoint2
+	KeyPoint3
+	KeyPoint4
+	KeyPoint5
+	KeyPoint6
+	KeyPoint7
+	KeyPoint8
+	KeyPoint9
+	KeyPointX
 )
 
