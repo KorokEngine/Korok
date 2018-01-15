@@ -5,6 +5,7 @@ import (
 	"korok.io/korok/engi/math"
 	"korok.io/korok/gfx"
 	geo "math"
+	"korok.io/korok/gfx/bk"
 )
 
 type DrawListFlags uint32
@@ -561,6 +562,86 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 		dy := (vertex.xy[1] - a[1]) * scale[1]
 		vertex.uv = mgl32.Vec2{uva[0]+dx, uva[1]+dy}
 	}
+}
+
+// NinePatch Algorithm
+//  12   13   14   15
+//       x1   x2     max
+//  +----+----+----+
+//  |    |    |    |
+//  |    |    |p1  |
+//  +----+----+----+ y2
+//  |    |    |    |
+//  |    |p0  |    |
+//  +----+----+----+ y1
+//  |    |    |    |
+//  |    |    |    |
+//  +----+----+----+
+//min
+//  0    1    2    3
+//path = {x1, x2, y1, y2} % TextureSize
+func (dl *DrawList) AddImageNinePatch(texId uint16, min, max mgl32.Vec2, uva, uvb mgl32.Vec2, patch mgl32.Vec4, color uint32) {
+	if n := len(dl.TextureIdStack); n == 0 || texId != dl.TextureIdStack[n-1]  {
+		dl.PushTextureId(texId)
+		defer dl.PopTextureId()
+	}
+
+	_, tex := bk.R.Texture(texId)
+	texSize := mgl32.Vec2{tex.Width, tex.Height}
+
+	idxCount, vtxCount := 9 * 6, 16
+	dl.PrimReserve(idxCount, vtxCount)
+
+	x1, x2, y1, y2 := min[0]+patch[0]*texSize[0], max[0]-patch[1]*texSize[0], min[1]+patch[2]*texSize[1], max[1]-patch[3]*texSize[1]
+	uvw, uvh := uvb[0]-uva[0], uvb[1]-uva[1]
+	u1, u2, v1, v2 := uva[0]+patch[0]*uvw, uvb[0]-patch[1]*uvw, uva[1]+patch[2]*uvh, uvb[1]-patch[3]*uvh
+
+	if x2 < x1 {
+		x1 = (min[0] + max[0])/2; x2 = x1
+	}
+	if y2 < y1 {
+		y1 = (min[1] + max[1])/2; y2 = y1
+	}
+
+	vtxWriter := dl.VtxWriter
+	idxWriter := dl.IdxWriter
+
+	// fill vertex
+	vtxWriter[0] = DrawVert{min, uva, color}
+	vtxWriter[1] = DrawVert{mgl32.Vec2{x1, min[1]}, mgl32.Vec2{u1, uva[1]}, color}
+	vtxWriter[2] = DrawVert{mgl32.Vec2{x2, min[1]}, mgl32.Vec2{u2, uva[1]}, color}
+	vtxWriter[3] = DrawVert{mgl32.Vec2{max[0], min[1]}, mgl32.Vec2{uvb[0], uva[1]}, color}
+
+	vtxWriter[4] = DrawVert{mgl32.Vec2{min[0], y1}, mgl32.Vec2{uva[0], v1}, color}
+	vtxWriter[5] = DrawVert{mgl32.Vec2{x1, y1}, mgl32.Vec2{u1, v1}, color}
+	vtxWriter[6] = DrawVert{mgl32.Vec2{x2, y1}, mgl32.Vec2{u2, v1}, color}
+	vtxWriter[7] = DrawVert{mgl32.Vec2{max[0], y1}, mgl32.Vec2{uvb[0], v1}, color}
+
+	vtxWriter[8] = DrawVert{mgl32.Vec2{min[0], y2}, mgl32.Vec2{uva[0], v2}, color}
+	vtxWriter[9] = DrawVert{mgl32.Vec2{x1, y2}, mgl32.Vec2{u1, v2}, color}
+	vtxWriter[10] = DrawVert{mgl32.Vec2{x2, y2}, mgl32.Vec2{u2, v2}, color}
+	vtxWriter[11] = DrawVert{mgl32.Vec2{max[0], y2}, mgl32.Vec2{uvb[0], v2}, color}
+
+	vtxWriter[12] = DrawVert{mgl32.Vec2{min[0], max[1]}, mgl32.Vec2{uva[0], uvb[1]}, color}
+	vtxWriter[13] = DrawVert{mgl32.Vec2{x1, max[1]}, mgl32.Vec2{u1, uvb[1]}, color}
+	vtxWriter[14] = DrawVert{mgl32.Vec2{x2, max[1]}, mgl32.Vec2{u2, uvb[1]}, color}
+	vtxWriter[15] = DrawVert{max, uvb, color}
+
+	// fill index
+	ii := uint16(dl.vtxIndex)
+	for i, v := range ninePatchIndex {
+		idxWriter[i] = DrawIdx(ii+v)
+	}
+	dl.idxIndex += idxCount
+	dl.vtxIndex += vtxCount
+
+	dl.AddCommand(idxCount)
+}
+
+var ninePatchIndex = [54]uint16 {
+	0, 1, 5,  0, 5,  4,   1, 2,  6,  1, 6,  5,   2,  3, 7,  2,  7,  6,
+	4, 5, 9,  4, 9,  8,   5, 6,  10, 5, 10, 9,   6,  7, 11, 6,  11, 10,
+	8, 9, 13, 8, 13, 12,  9, 10, 14, 9, 14, 13,  10, 11,15, 10, 15, 14,
 }
 
 func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) (size mgl32.Vec2){
