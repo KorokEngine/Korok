@@ -66,7 +66,7 @@ func NewContext(style *Style) *Context {
 // Draw:   ^ ^ ^ ^ ....
 // 布局阶段仅计算出大小
 //
-func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Bound {
+func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Element {
 	lm := &ctx.Layout
 	if bb, ok := lm.Element(id); ok {
 		g := lm.hGroup
@@ -75,7 +75,7 @@ func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Bound {
 		// x, y = margin + group + group-offset
 		// todo 暂时不处理 margin 的问题，现在 只能在 bound 的xy字段记录
 		// todo top/left margin 无法记录 bottom/right 的margin
-		x,y := Gui2Game(g.X + lm.Bound.X, g.Y + lm.Bound.Y)
+		x,y := Gui2Game(g.X + lm.Cursor.X, g.Y + lm.Cursor.Y)
 
 
 		var (
@@ -98,25 +98,81 @@ func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Bound {
 		// 加入 Cursor的偏移位置
 		// 这样不太好
 		bb.W, bb.H = size[0], size[1]
-		bb.X, bb.Y = lm.Bound.Offset.X, lm.Bound.Offset.Y
+		bb.X, bb.Y = lm.Cursor.Margin.Left, lm.Cursor.Margin.Top
 
 		lm.Extend(bb)
 		return bb
 	}
 }
 
-// 1. LayoutManager pass - 计算出各个控件的大小..
-func (ctx *Context) TextLayout(id ID, text string, style *TextStyle) {
 
-	// 计算大小
-	size := ctx.CalcTextSize(text,0, style.Font, style.Size)
-	bb := ctx.Layout.Bound
-	bb.W, bb.H = size[0], size[1]
+func (ctx *Context) NewTextDraw(id ID, text string, style *TextStyle) {
+	var (
+		elem, ready = ctx.BeginElement(id)
+		size mgl32.Vec2
+	)
 
-	// 计算绝对位置
-	//g := ctx.Layout.Group()
-	//bb.X, bb.Y = g.X, g.Y
+	// draw text 最好返回最新的大小..
+	// todo drawText 返回的宽度是错误的，暂时不做每帧更新..
+	if ready {
+		// size = ctx.DrawText(elem, text, style)
+		ctx.DrawText(elem, text, style)
+	} else {
+		size = ctx.CalcTextSize(text, 0, style.Font, style.Size)
+
+		// Cache Size
+		elem.Bound.W = size[0]
+		elem.Bound.H = size[1]
+	}
+
+	ctx.EndElement(elem)
 }
+
+// 计算单个UI元素
+// 如果有大小则记录出偏移和Margin
+// 否则只返回元素
+func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
+	lm := &ctx.Layout
+	if elem, ok = lm.Element(id); !ok {
+		elem = lm.NewElement(id)
+	} else {
+		// 计算 Margin
+		elem.Margin = lm.Cursor.Margin
+
+		// 计算偏移
+		elem.X = lm.Cursor.X + elem.Left
+		elem.Y = lm.Cursor.Y + elem.Top
+
+		// 如果有 Gravity 还需要计算 Gravity... TODO
+	}
+	return
+}
+
+// 绘制元素, bb 存储相对于父容器的相对坐标..
+// Group 目前是绝对坐标
+// Group + Offset = 当前绝对坐标..
+func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size mgl32.Vec2) {
+	// 1. 取出布局
+	group := ctx.Layout.hGroup
+	x, y := Gui2Game(group.X+bb.X, group.Y+bb.Y)
+
+	// 2. 开始绘制
+	var (
+		font= style.Font
+		fontSize= style.Size
+		color= style.Color
+		wrapWidth= bb.W + 10
+	)
+	size = ctx.DrawList.AddText(mgl32.Vec2{x, y}, text, font, fontSize, color, wrapWidth)
+	return
+}
+
+// 结束绘制, 每绘制完一个元素都要偏移一下光标
+func (ctx *Context) EndElement(elem *Element) {
+	ctx.Layout.Advance(elem)
+	ctx.Layout.Extend(elem)
+}
+
 
 func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) mgl32.Vec2 {
 	fr := &FontRender{
@@ -133,7 +189,7 @@ func (ctx *Context) InputText(hint string, lyt LayoutManager, style *InputStyle)
 
 // Widget: Image
 func (ctx *Context) Image(texId uint16, uv mgl32.Vec4, style *ImageStyle) (id int) {
-	bound := ctx.Layout.Bound
+	bound := ctx.Layout.Cursor
 	min := mgl32.Vec2{bound.X, bound.Y}
 	if bound.W == 0 {
 		if ok, tex := bk.R.Texture(texId); ok {
@@ -169,13 +225,13 @@ func (ctx *Context) Button(text string, style *ButtonStyle) (id int, event Event
 
 	textStyle := ctx.Style.Text
 	textSize := ctx.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
-	bound    := ctx.Layout.Bound
+	bound    := ctx.Layout.Cursor
 
 	x, y := bound.X, bound.Y
 	w, h := textSize[0]+20, textSize[1]+20
 
 	// Check Event
-	event = ctx.CheckEvent(&Bound{0, x, y, w, h}, false)
+	event = ctx.CheckEvent(&Bound{x, y, w, h}, false)
 
 	// Render Frame
 	ctx.renderFrame(x, y, w, h, color, rounding)
@@ -183,7 +239,7 @@ func (ctx *Context) Button(text string, style *ButtonStyle) (id int, event Event
 	// Render Text
 	x = bound.X + w/2 - textSize[0]/2
 	y = bound.Y + h/2 - textSize[1]/2
-	ctx.renderTextClipped(text, &Bound{0, x, y, 0, 0}, &style.TextStyle)
+	ctx.renderTextClipped(text, &Bound{x, y, 0, 0}, &style.TextStyle)
 
 	// push bound todo refactor button bounds
 	//bound.W, bound.H = w, h
@@ -259,7 +315,7 @@ func (ctx *Context) CheckEvent(bound *Bound, checkDragOnly bool) EventType {
 			if btn.Down() && bound.InRange(ctx.state.draggingStart) {
 				startPosition := ctx.state.draggingStart
 				dragThreshHold := float32(10)
-				bb := Bound{0,startPosition[0]-dragThreshHold, startPosition[1]-dragThreshHold, 8, 8}
+				bb := Bound{startPosition[0]-dragThreshHold, startPosition[1]-dragThreshHold, 8, 8}
 				//
 				if !bb.InRange(p.MousePos) {
 					event = EventStartDrag
@@ -284,7 +340,7 @@ func (ctx *Context) ImageButton(texId uint16, lyt LayoutManager, style *ImageBut
 }
 
 func (ctx *Context) Rect(w, h float32, style *RectStyle) (id int){
-	bb := ctx.Layout.Bound
+	bb := ctx.Layout.Cursor
 
 	x, y := Gui2Game(bb.X, bb.Y)
 
@@ -343,7 +399,7 @@ func (ctx *Context) RenderBorder(x, y, w, h float32, color uint32) {
 // 分别绘制Bar和Knob
 // Slider 需要保存混动的结果，否则
 func (ctx *Context) Slider(value float32, style *SliderStyle) (v1 float32){
-	bb := ctx.Layout.Bound
+	bb := ctx.Layout.Cursor
 
 	x, y := Gui2Game(bb.X, bb.Y)
 	w, h := bb.W, bb.H
@@ -464,21 +520,19 @@ func (ctx *Context) EndGroup() {
 // Layout 的时候清空 offset，这样避免把上一个 Layout 的 offset 代入到下一个布局
 func (ctx *Context) BeginLayout(id ID, xtype LayoutType) {
 	lm := &ctx.Layout
-	lm.Bound.Offset.X = 0
-	lm.Bound.Offset.Y = 0
+	lm.Cursor.Margin.Top = 0
+	lm.Cursor.Margin.Left = 0
 
 	if bb, ok := lm.FindLayout(id); ok {
 		var (
-			x = lm.hGroup.X + ctx.Layout.Bound.X
-			y = lm.hGroup.Y + ctx.Layout.Bound.Y
+			x = lm.hGroup.X + ctx.Layout.Cursor.X
+			y = lm.hGroup.Y + ctx.Layout.Cursor.Y
 		)
 
 		// debug draw - render group frame
 		ctx.RenderBorder(x, y, bb.W, bb.H, 0xFF00FF00)
-		log.Println("render border:", x, y, bb.W, bb.H)
 
-
-		bb.X, bb.Y = lm.Bound.X, lm.Bound.Y
+		bb.X, bb.Y = lm.Cursor.X, lm.Cursor.Y
 		lm.PushLayout(xtype, bb)
 	} else {
 		lm.NewLayout(id, xtype)
