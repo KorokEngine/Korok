@@ -67,46 +67,6 @@ func NewContext(style *Style) *Context {
 // 布局阶段仅计算出大小
 //
 func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Element {
-	lm := &ctx.Layout
-	if bb, ok := lm.Element(id); ok {
-		g := lm.hGroup
-
-
-		// x, y = margin + group + group-offset
-		// todo 暂时不处理 margin 的问题，现在 只能在 bound 的xy字段记录
-		// todo top/left margin 无法记录 bottom/right 的margin
-		x,y := Gui2Game(g.X + lm.Cursor.X, g.Y + lm.Cursor.Y)
-
-
-		var (
-			font = style.Font
-			fontSize = style.Size
-			color = style.Color
-			wrapWidth = bb.W + 10
-		)
-		ctx.DrawList.AddText(mgl32.Vec2{x, y}, text, font, fontSize, color, wrapWidth)
-
-		// 每绘制完一个元素都要偏移一下光标
-		ctx.Layout.Advance(bb)
-		lm.Extend(bb)
-
-		return bb
-	} else {
-		bb := lm.NewElement(id)
-		size := ctx.CalcTextSize(text,0, style.Font, style.Size)
-
-		// 加入 Cursor的偏移位置
-		// 这样不太好
-		bb.W, bb.H = size[0], size[1]
-		bb.X, bb.Y = lm.Cursor.Margin.Left, lm.Cursor.Margin.Top
-
-		lm.Extend(bb)
-		return bb
-	}
-}
-
-
-func (ctx *Context) NewTextDraw(id ID, text string, style *TextStyle) {
 	var (
 		elem, ready = ctx.BeginElement(id)
 		size mgl32.Vec2
@@ -126,26 +86,7 @@ func (ctx *Context) NewTextDraw(id ID, text string, style *TextStyle) {
 	}
 
 	ctx.EndElement(elem)
-}
-
-// 计算单个UI元素
-// 如果有大小则记录出偏移和Margin
-// 否则只返回元素
-func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
-	lm := &ctx.Layout
-	if elem, ok = lm.Element(id); !ok {
-		elem = lm.NewElement(id)
-	} else {
-		// 计算 Margin
-		elem.Margin = lm.Cursor.Margin
-
-		// 计算偏移
-		elem.X = lm.Cursor.X + elem.Left
-		elem.Y = lm.Cursor.Y + elem.Top
-
-		// 如果有 Gravity 还需要计算 Gravity... TODO
-	}
-	return
+	return nil
 }
 
 // 绘制元素, bb 存储相对于父容器的相对坐标..
@@ -167,13 +108,6 @@ func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size m
 	return
 }
 
-// 结束绘制, 每绘制完一个元素都要偏移一下光标
-func (ctx *Context) EndElement(elem *Element) {
-	ctx.Layout.Advance(elem)
-	ctx.Layout.Extend(elem)
-}
-
-
 func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) mgl32.Vec2 {
 	fr := &FontRender{
 		font: font,
@@ -188,9 +122,25 @@ func (ctx *Context) InputText(hint string, lyt LayoutManager, style *InputStyle)
 }
 
 // Widget: Image
-func (ctx *Context) Image(texId uint16, uv mgl32.Vec4, style *ImageStyle) (id int) {
-	bound := ctx.Layout.Cursor
-	min := mgl32.Vec2{bound.X, bound.Y}
+func (ctx *Context) Image(id ID, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
+	var (
+		elem, ready = ctx.BeginElement(id)
+	)
+
+	if ready {
+		ctx.DrawImage(&elem.Bound, texId, uv, style)
+	} else {
+		size := ctx.Layout.Cursor.Bound
+		elem.W = size.W
+		elem.H = size.H
+	}
+
+	ctx.EndElement(elem)
+}
+
+func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
+	g := ctx.Layout.hGroup
+	min := mgl32.Vec2{g.X+bound.X, g.Y+bound.Y}
 	if bound.W == 0 {
 		if ok, tex := bk.R.Texture(texId); ok {
 			bound.W, bound.H = tex.Width, tex.Height
@@ -206,11 +156,10 @@ func (ctx *Context) Image(texId uint16, uv mgl32.Vec4, style *ImageStyle) (id in
 	min[0], min[1] = Gui2Game(min[0], min[1])
 	max[0], max[1] = Gui2Game(max[0], max[1])
 	ctx.DrawList.AddImage(texId, min, max, mgl32.Vec2{uv[0], uv[1]}, mgl32.Vec2{uv[2], uv[3]}, color)
-	return
 }
 
 // Widget: Button
-func (ctx *Context) Button(text string, style *ButtonStyle) (id int, event EventType) {
+func (ctx *Context) Button(id ID, text string, style *ButtonStyle) (event EventType) {
 	// Render Button
 	var color uint32
 	var rounding float32
@@ -246,6 +195,34 @@ func (ctx *Context) Button(text string, style *ButtonStyle) (id int, event Event
 	// id = ctx.Layout.Push(&bound)
 	return
 }
+
+func (ctx *Context) NewButton(id ID, text string, style *ButtonStyle) (event EventType) {
+	var (
+		elem, ready = ctx.BeginElement(id)
+
+		color = ctx.Style.Button.Color
+		rounding = ctx.Style.Button.Rounding
+	)
+
+	if ready {
+		bb, g := elem.Bound, ctx.Layout.hGroup
+		// Check Event
+		event = ctx.CheckEvent(&Bound{g.X+bb.X, g.Y+bb.Y, bb.W, bb.H}, false)
+
+		// Render Frame
+		ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, color, rounding)
+
+		// Render Text
+		ctx.DrawText(elem, text, &style.TextStyle)
+	} else {
+		textStyle := ctx.Style.Text
+		textSize := ctx.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
+		elem.W, elem.H = textSize[0]+20, textSize[1]+20
+	}
+	ctx.EndElement(elem)
+	return
+}
+
 
 func (ctx *Context) renderTextClipped(text string, bb *Bound, style *TextStyle) {
 	x, y := Gui2Game(bb.X, bb.Y)
@@ -507,13 +484,31 @@ func (ctx *Context) isLastEventPointerType() bool {
 	return true
 }
 
-// Container: Window/PopupWindow/
-func (ctx *Context) BeginGroup() {
 
+// 计算单个UI元素
+// 如果有大小则记录出偏移和Margin
+// 否则只返回元素
+func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
+	lm := &ctx.Layout
+	if elem, ok = lm.Element(id); !ok {
+		elem = lm.NewElement(id)
+	} else {
+		// 计算 Margin
+		elem.Margin = lm.Cursor.Margin
+
+		// 计算偏移
+		elem.X = lm.Cursor.X + elem.Left
+		elem.Y = lm.Cursor.Y + elem.Top
+
+		// 如果有 Gravity 还需要计算 Gravity... TODO
+	}
+	return
 }
 
-func (ctx *Context) EndGroup() {
-
+// 结束绘制, 每绘制完一个元素都要偏移一下光标
+func (ctx *Context) EndElement(elem *Element) {
+	ctx.Layout.Advance(elem)
+	ctx.Layout.Extend(elem)
 }
 
 // Layout
