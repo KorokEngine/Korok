@@ -443,7 +443,9 @@ func (dl *DrawList) AddLine(a, b mgl32.Vec2, color uint32, thickness float32) {
 
 // 所有非填充图形看来都是使用路径实现的
 func (dl *DrawList) AddRect(a, b mgl32.Vec2, color uint32, rounding float32, roundFlags FlagCorner, thickness float32) {
-	dl.PathRect(a.Add(mgl32.Vec2{5, .5}), b.Sub(mgl32.Vec2{.5, .5}), rounding, roundFlags)
+	//dl.PathRect(a.Add(mgl32.Vec2{5, .5}), b.Sub(mgl32.Vec2{.5, .5}), rounding, roundFlags)
+	// TODO
+	dl.PathRect(a, b, rounding, roundFlags)
 	dl.PathStroke(color, thickness, true)
 }
 
@@ -579,7 +581,7 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 //  +----+----+----+
 //min
 //  0    1    2    3
-//path = {x1, x2, y1, y2} % TextureSize
+//patch = {x1, x2, y1, y2} % TextureSize
 func (dl *DrawList) AddImageNinePatch(texId uint16, min, max mgl32.Vec2, uva, uvb mgl32.Vec2, patch mgl32.Vec4, color uint32) {
 	if n := len(dl.TextureIdStack); n == 0 || texId != dl.TextureIdStack[n-1]  {
 		dl.PushTextureId(texId)

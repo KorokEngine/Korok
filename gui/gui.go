@@ -71,49 +71,56 @@ import (
 type LayoutType int
 
 const (
-	LayoutLinearVertical LayoutType = iota
-	LayoutLinearHorizontal
+	LinearVertical LayoutType = iota
+	LinearHorizontal
+	LinearOverLay
 )
 
+var layout bool
+
 // Widgets: Text
-func Text(text string, style *TextStyle) (id int){
-	return gContext.Text(text, style)
+func Text(id ID, text string, style *TextStyle) {
+	if style == nil {
+		style = &gContext.Style.Text
+	}
+	gContext.Text(id, text, style)
+	return
 }
 
 func TextSizeColored(text string, color uint32, size float32) {
 
 }
 
-func Label(text string) {
-
-}
-
 // Widgets: InputEditor
-func InputText(hint string, lyt Layout, style *InputStyle) {
+func InputText(hint string, lyt LayoutManager, style *InputStyle) {
 
 }
 
 // Widget: Image
-func Image(texId uint16, uv mgl32.Vec4, style *ImageStyle) int{
-	return gContext.Image(texId, uv, style)
+func Image(id ID, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
+	gContext.Image(id, texId, uv, style)
 }
 
 // Widget: Button
-func Button(text string, style *ButtonStyle) (id int, event EventType) {
-	return gContext.Button(text, style)
+func Button(id ID, text string, style *ButtonStyle) (event EventType) {
+	return gContext.Button(id, text, style)
 }
 
-func ImageButton(texId uint16, lyt Layout, style *ImageButtonStyle) EventType{
+func ImageButton(texId uint16, lyt LayoutManager, style *ImageButtonStyle) EventType{
 	return EventNone
 }
 
-func CheckBox(text string, lyt Layout, style *CheckBoxStyle) bool {
+func CheckBox(text string, lyt LayoutManager, style *CheckBoxStyle) bool {
 	return false
 }
 
-// Widget: ProgressBar
-func ProgressBar(fraction float32, lyt Layout, style *ProgressBarStyle) {
+// Widget: ProgressBar, Slider
+func ProgressBar(fraction float32, lyt LayoutManager, style *ProgressBarStyle) {
 
+}
+
+func Slider(value float32, style *SliderStyle) (v float32){
+	return gContext.Slider(value, style)
 }
 
 // Frame: Rect
@@ -126,48 +133,55 @@ func ListView() {
 
 }
 
-// Container: Window/PopupWindow/
-func OpenPopup(id string) {
+// 基于当前 Group 移动光标
+func Offset(x, y float32) {
+	gContext.Layout.Offset(x, y)
+}
+
+func Move(x, y float32) {
+	gContext.Layout.Move(x, y)
+}
+
+func SetGravity(x, y float32) {
+	gContext.Layout.SetGravity(x, y)
+}
+
+func SetPadding(x, y, z, w float32) {
 
 }
 
-func DismissPopup(id string) {
-
+func SetSize(w, h float32) {
+	gContext.Layout.SetSize(w, h)
 }
 
-// 受管理的窗口对象,
-// 窗口的状态会被系统记录!
-func BeginWindow(name string) {
-
+func Cursor() *cursor {
+	return &gContext.Layout.Cursor
 }
 
-func EndWindow() {
-
+func BeginHorizontal(id ID) {
+	gContext.BeginLayout(id, LinearHorizontal)
 }
 
-// Layout: 方便坐标计算的布局系统
-func BeginLayout(bb *Bound) (lyt *Layout) {
-	lyt = &gContext.Layout
-	lyt.Begin(bb)
-	return
+func EndHorizontal() {
+	gContext.EndLayout()
 }
 
-func EndLayout() {
-	gContext.Layout.Reset()
+func BeginVertical(id ID) {
+	gContext.BeginLayout(id, LinearVertical)
 }
 
-// Reference System: VirtualBounds
-func PushVBounds(bounds mgl32.Vec4) {
-
+func EndVertical() {
+	gContext.EndLayout()
 }
 
-// Clip:
-func PushClipRect(minClip, maxClip mgl32.Vec2, intersectCurrent bool) {
-
+// 参数需要一个 Rect，暂时用 Cursor 代替
+func BeginDock(id ID, w, h float32) {
+	gContext.BeginLayout(id, LinearOverLay)
+	gContext.Layout.SetSize(w, h)
 }
 
-func Popup() {
-
+func EndDock() {
+	gContext.EndLayout()
 }
 
 // Theme:
@@ -177,6 +191,7 @@ func UseTheme(style *Style) {
 
 func SetFont(font gfx.FontSystem) {
 	gContext.Style.Text.Font = font
+	gContext.Style.Button.Font = font
 	texFont, _ := font.Tex()
 	gContext.DrawList.PushTextureId(texFont)
 }
@@ -217,8 +232,3 @@ func init() {
 	// default context
 	gContext = NewContext(ThemeLight)
 }
-
-
-
-
-

@@ -14,6 +14,13 @@ type Style struct {
 	Button ButtonStyle
 	Image ImageStyle
 	Rect RectStyle
+	Slider SliderStyle
+
+	// global config..
+	ColorNormal uint32
+	ColorPressed uint32
+	// item 之间的空隙
+	Spacing float32
 }
 
 type Padding struct {
@@ -21,11 +28,27 @@ type Padding struct {
 }
 
 type TextStyle struct {
+	Padding
 	Font gfx.FontSystem
 	Visibility
 	Color uint32
 	Size float32
 	Lines int
+}
+
+func (text *TextStyle) SetFont(fs gfx.FontSystem) *TextStyle {
+	text.Font = fs
+	return text
+}
+
+func (text *TextStyle) SetColor(color uint32) *TextStyle {
+	text.Color = color
+	return text
+}
+
+func (text *TextStyle) SetSize(size float32) *TextStyle {
+	text.Size = size
+	return text
 }
 
 type InputStyle struct {
@@ -42,6 +65,7 @@ type ButtonStyle struct {
 }
 
 type ImageButtonStyle struct {
+	ImageStyle
 	Visibility
 }
 
@@ -57,6 +81,10 @@ type CheckBoxStyle struct {
 
 type ProgressBarStyle struct {
 
+}
+
+type SliderStyle struct {
+	Bar, Knob uint16
 }
 
 type RectStyle struct {
@@ -76,7 +104,7 @@ func newLightTheme() *Style {
 			Size:12,
 		},
 		ButtonStyle{
-			TextStyle{Visibility:Visible, Color:0xFF000000, Size:12},
+			TextStyle{Visibility:Visible, Color:0xFF000000, Size:12, Padding:Padding{10, 10, 10, 10}},
 			Visible,
 			0xFFCDCDCD,
 			5,
@@ -93,6 +121,12 @@ func newLightTheme() *Style {
 			5,
 			FlagCornerNone,
 		},
+		SliderStyle{
+			0, 0,
+		},
+		0xFFCDCDCD,
+		0xFFABABAB,
+		0,
 	}
 }
 

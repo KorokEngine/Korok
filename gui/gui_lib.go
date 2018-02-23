@@ -73,13 +73,32 @@ func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Element {
 	)
 
 	// draw text 最好返回最新的大小..
+	if ready {
+		size = ctx.DrawText(elem, text, style)
+	} else {
+		size = ctx.CalcTextSize(text, 0, style.Font, style.Size)
+	}
+
+	elem.Bound.W = size[0]
+	elem.Bound.H = size[1]
+
+	ctx.EndElement(elem)
+	return nil
+}
+
+func (ctx *Context) NewText(id ID, text string, p *Property, style *TextStyle)  *Element {
+	var (
+		elem, ready = ctx.BeginElement(id)
+		size mgl32.Vec2
+	)
+
+	// draw text 最好返回最新的大小..
 	// todo drawText 返回的宽度是错误的，暂时不做每帧更新..
 	if ready {
 		// size = ctx.DrawText(elem, text, style)
 		ctx.DrawText(elem, text, style)
 	} else {
 		size = ctx.CalcTextSize(text, 0, style.Font, style.Size)
-
 		// Cache Size
 		elem.Bound.W = size[0]
 		elem.Bound.H = size[1]
@@ -89,32 +108,6 @@ func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Element {
 	return nil
 }
 
-// 绘制元素, bb 存储相对于父容器的相对坐标..
-// Group 目前是绝对坐标
-// Group + Offset = 当前绝对坐标..
-func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size mgl32.Vec2) {
-	// 1. 取出布局
-	group := ctx.Layout.hGroup
-	x, y := Gui2Game(group.X+bb.X, group.Y+bb.Y)
-
-	// 2. 开始绘制
-	var (
-		font= style.Font
-		fontSize= style.Size
-		color= style.Color
-		wrapWidth= bb.W + 10
-	)
-	size = ctx.DrawList.AddText(mgl32.Vec2{x, y}, text, font, fontSize, color, wrapWidth)
-	return
-}
-
-func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) mgl32.Vec2 {
-	fr := &FontRender{
-		font: font,
-		fontSize:fontSize,
-	}
-	return fr.CalculateTextSize1(text)
-}
 
 // Widgets: InputEditor
 func (ctx *Context) InputText(hint string, lyt LayoutManager, style *InputStyle) {
@@ -138,86 +131,34 @@ func (ctx *Context) Image(id ID, texId uint16, uv mgl32.Vec4, style *ImageStyle)
 	ctx.EndElement(elem)
 }
 
-func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
-	g := ctx.Layout.hGroup
-	min := mgl32.Vec2{g.X+bound.X, g.Y+bound.Y}
-	if bound.W == 0 {
-		if ok, tex := bk.R.Texture(texId); ok {
-			bound.W, bound.H = tex.Width, tex.Height
-		}
-	}
-	max := min.Add(mgl32.Vec2{bound.W, bound.H})
-	var color uint32
-	if style != nil {
-		color = style.TintColor
-	} else {
-		color = ctx.Style.Image.TintColor
-	}
-	min[0], min[1] = Gui2Game(min[0], min[1])
-	max[0], max[1] = Gui2Game(max[0], max[1])
-	ctx.DrawList.AddImage(texId, min, max, mgl32.Vec2{uv[0], uv[1]}, mgl32.Vec2{uv[2], uv[3]}, color)
-}
-
 // Widget: Button
 func (ctx *Context) Button(id ID, text string, style *ButtonStyle) (event EventType) {
-	// Render Button
-	var color uint32
-	var rounding float32
 	if style == nil {
-		style = &ctx.Style.Button
-		color = ctx.Style.Button.Color
-		rounding = ctx.Style.Button.Rounding
-	} else {
-		color = style.Color
-		rounding = style.Rounding
+		style = &ThemeLight.Button
 	}
 
-	textStyle := ctx.Style.Text
-	textSize := ctx.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
-	bound    := ctx.Layout.Cursor
-
-	x, y := bound.X, bound.Y
-	w, h := textSize[0]+20, textSize[1]+20
-
-	// Check Event
-	event = ctx.CheckEvent(&Bound{x, y, w, h}, false)
-
-	// Render Frame
-	ctx.renderFrame(x, y, w, h, color, rounding)
-
-	// Render Text
-	x = bound.X + w/2 - textSize[0]/2
-	y = bound.Y + h/2 - textSize[1]/2
-	ctx.renderTextClipped(text, &Bound{x, y, 0, 0}, &style.TextStyle)
-
-	// push bound todo refactor button bounds
-	//bound.W, bound.H = w, h
-	// id = ctx.Layout.Push(&bound)
-	return
-}
-
-func (ctx *Context) NewButton(id ID, text string, style *ButtonStyle) (event EventType) {
 	var (
 		elem, ready = ctx.BeginElement(id)
-
-		color = ctx.Style.Button.Color
-		rounding = ctx.Style.Button.Rounding
+		round = ctx.Style.Button.Rounding
 	)
 
 	if ready {
-		bb, g := elem.Bound, ctx.Layout.hGroup
+		bb, g := &elem.Bound, ctx.Layout.hGroup
 		// Check Event
 		event = ctx.CheckEvent(&Bound{g.X+bb.X, g.Y+bb.Y, bb.W, bb.H}, false)
 
 		// Render Frame
-		ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, color, rounding)
+		// ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, color, rounding)
+		ctx.ColorBackground(event, bb, round)
 
 		// Render Text
 		ctx.DrawText(elem, text, &style.TextStyle)
 	} else {
 		textStyle := ctx.Style.Text
 		textSize := ctx.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
-		elem.W, elem.H = textSize[0]+20, textSize[1]+20
+		extW := style.Padding.Left+style.Padding.Right
+		extH := style.Padding.Top+style.Padding.Bottom
+		elem.W, elem.H = textSize[0]+extW, textSize[1]+extH
 	}
 	ctx.EndElement(elem)
 	return
@@ -234,11 +175,9 @@ func (ctx *Context) renderTextClipped(text string, bb *Bound, style *TextStyle) 
 	}
 }
 
-// 偷师 flat-ui 中的设计，把空间的前景和背景分离，背景单独根据事件来变化..
-// 在 Android 中，Widget的前景和背景都可以根据控件状态发生变化
-// 但是在大部分UI中，比如 Text/Image 只会改变背景的状态
-// 偷懒的自定义UI，不做任何状态的改变... 所以说呢, 我们也采用偷懒的做法呗。。
-func (ctx *Context) EventBackground(event EventType) {
+
+
+func (ctx *Context) ImageBackground(eventType EventType) {
 
 }
 
@@ -317,6 +256,9 @@ func (ctx *Context) ImageButton(texId uint16, lyt LayoutManager, style *ImageBut
 }
 
 func (ctx *Context) Rect(w, h float32, style *RectStyle) (id int){
+	if style == nil {
+		style = &ThemeLight.Rect
+	}
 	bb := ctx.Layout.Cursor
 
 	x, y := Gui2Game(bb.X, bb.Y)
@@ -484,6 +426,67 @@ func (ctx *Context) isLastEventPointerType() bool {
 	return true
 }
 
+func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
+	g := ctx.Layout.hGroup
+	min := mgl32.Vec2{g.X+bound.X, g.Y+bound.Y}
+	if bound.W == 0 {
+		if ok, tex := bk.R.Texture(texId); ok {
+			bound.W, bound.H = tex.Width, tex.Height
+		}
+	}
+	max := min.Add(mgl32.Vec2{bound.W, bound.H})
+	var color uint32
+	if style != nil {
+		color = style.TintColor
+	} else {
+		color = ctx.Style.Image.TintColor
+	}
+	min[0], min[1] = Gui2Game(min[0], min[1])
+	max[0], max[1] = Gui2Game(max[0], max[1])
+	ctx.DrawList.AddImage(texId, min, max, mgl32.Vec2{uv[0], uv[1]}, mgl32.Vec2{uv[2], uv[3]}, color)
+}
+
+// 绘制元素, bb 存储相对于父容器的相对坐标..
+// Group 目前是绝对坐标
+// Group + Offset = 当前绝对坐标..
+func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size mgl32.Vec2) {
+	// 1. 取出布局
+	group := ctx.Layout.hGroup
+	x, y := Gui2Game(group.X+bb.X+style.Left, group.Y+bb.Y+style.Top)
+
+	// 2. 开始绘制
+	var (
+		font = style.Font
+		fontSize = style.Size
+		color = style.Color
+		wrapWidth = bb.W + 10
+		pos = mgl32.Vec2{x, y}
+	)
+	size = ctx.DrawList.AddText(pos, text, font, fontSize, color, wrapWidth)
+	return
+}
+
+func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) mgl32.Vec2 {
+	fr := &FontRender{
+		font: font,
+		fontSize:fontSize,
+	}
+	return fr.CalculateTextSize1(text)
+}
+
+// 偷师 flat-ui 中的设计，把空间的前景和背景分离，背景单独根据事件来变化..
+// 在 Android 中，Widget的前景和背景都可以根据控件状态发生变化
+// 但是在大部分UI中，比如 Text/Image 只会改变背景的状态
+// 偷懒的自定义UI，不做任何状态的改变... 所以说呢, 我们也采用偷懒的做法呗。。
+func (ctx *Context) ColorBackground(event EventType, bb *Bound, round float32) {
+	g := ctx.Layout.hGroup
+	if event == EventDragging {
+		ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, ThemeLight.ColorPressed, round)
+	} else {
+		ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, ThemeLight.ColorNormal, round)
+	}
+}
+
 
 // 计算单个UI元素
 // 如果有大小则记录出偏移和Margin
@@ -493,14 +496,49 @@ func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
 	if elem, ok = lm.Element(id); !ok {
 		elem = lm.NewElement(id)
 	} else {
-		// 计算 Margin
-		elem.Margin = lm.Cursor.Margin
-
 		// 计算偏移
-		elem.X = lm.Cursor.X + elem.Left
-		elem.Y = lm.Cursor.Y + elem.Top
+		elem.X = lm.Cursor.X
+		elem.Y = lm.Cursor.Y
 
-		// 如果有 Gravity 还需要计算 Gravity... TODO
+		// Gravity
+		var (
+			group = lm.hGroup
+			gravity = group.Gravity
+		)
+
+		// Overlap group's gravity
+		if lm.Cursor.owner == id && (lm.Cursor.Flag & FlagGravity != 0) {
+			gravity = lm.Cursor.Gravity
+		}
+		switch group.LayoutType {
+		case LinearHorizontal:
+			elem.Y += (group.H - elem.H) * gravity.Y
+		case LinearVertical:
+			elem.X += (group.W - elem.W) * gravity.X
+		case LinearOverLay:
+			elem.Y += (group.H - elem.H) * gravity.Y
+			elem.X += (group.W - elem.W) * gravity.X
+		}
+
+		// Each element's property
+		if lm.Cursor.owner == id {
+			// 计算 Margin 和 偏移
+			if lm.Cursor.Flag & FlagMargin != 0 {
+				elem.Margin = lm.Cursor.Margin
+				elem.X += elem.Left
+				elem.Y += elem.Top
+			}
+
+			// 计算大小
+			if lm.Cursor.Flag & FlagSize != 0 {
+				elem.Bound.W = lm.Cursor.W
+				elem.Bound.H = lm.Cursor.H
+			}
+
+			// 清空标记
+			lm.Cursor.owner = -1
+			lm.Cursor.Flag = FlagNone
+		}
 	}
 	return
 }
@@ -512,32 +550,30 @@ func (ctx *Context) EndElement(elem *Element) {
 }
 
 // Layout
-// Layout 的时候清空 offset，这样避免把上一个 Layout 的 offset 代入到下一个布局
 func (ctx *Context) BeginLayout(id ID, xtype LayoutType) {
-	lm := &ctx.Layout
-	lm.Cursor.Margin.Top = 0
-	lm.Cursor.Margin.Left = 0
+	var (
+		lm = &ctx.Layout;
+		ly, ok = lm.FindLayout(id)
+	)
 
-	if bb, ok := lm.FindLayout(id); ok {
+	if !ok {
+		ly = lm.NewLayout(id, xtype)
+	}
+
+	// debug draw - render group frame
+	if ok {
 		var (
 			x = lm.hGroup.X + ctx.Layout.Cursor.X
 			y = lm.hGroup.Y + ctx.Layout.Cursor.Y
 		)
-
-		// debug draw - render group frame
-		ctx.RenderBorder(x, y, bb.W, bb.H, 0xFF00FF00)
-
-		bb.X, bb.Y = lm.Cursor.X, lm.Cursor.Y
-		lm.PushLayout(xtype, bb)
-	} else {
-		lm.NewLayout(id, xtype)
+		ctx.RenderBorder(x, y, ly.W, ly.H, 0xFF00FF00)
 	}
+
+	lm.PushLayout(xtype, ly)
 }
 
 func (ctx *Context) EndLayout() {
 	ctx.Layout.EndLayout()
-
-	//log.Println("end layout:", len(ctx.Layout.groupStack))
 }
 
 // Reference System: VirtualBounds

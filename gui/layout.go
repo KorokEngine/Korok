@@ -39,6 +39,22 @@ type Element struct{
 	Margin
 }
 
+type Property struct {
+	// margin
+	MarginLeft float32
+	MarginRight float32
+	MarginTop float32
+	MarginBottom float32
+
+	// Gravity
+	GravityH float32
+	GravityV float32
+
+	// Element Size
+	Width float32
+	Height float32
+}
+
 // UI绘制边界
 type Bound struct {
 	X, Y float32
@@ -49,11 +65,55 @@ type Margin struct {
 	Top, Left, Bottom, Right float32
 }
 
+type Gravity struct {
+	X, Y float32
+}
+
+type DirtyFlag uint32
+
+const (
+	FlagNone DirtyFlag = 0x00
+	FlagSize DirtyFlag = 0x01
+	FlagMargin DirtyFlag = 0x02
+	FlagGravity DirtyFlag = 0x04
+)
+
 // Shadow of current ui-element
-type Cursor struct {
+type cursor struct {
 	Bound
 	Margin
-	Flag uint32 // dirty flag
+	Gravity Gravity
+	owner ID
+	Flag DirtyFlag // dirty flag
+}
+
+func (c *cursor) Reset()  {
+	c.Margin = Margin{}
+}
+
+// set flag
+func (c *cursor) SetMargin(top, left, right, bottom float32) *cursor{
+	c.Flag |= FlagMargin
+	c.Margin = Margin{top, left, right, bottom}
+	return c
+}
+
+func (c *cursor) SetSize(w, h float32) *cursor{
+	c.Flag |= FlagSize
+	c.Bound.W = w
+	c.Bound.H = h
+	return c
+}
+
+func (c *cursor) SetGravity(x, y float32) *cursor{
+	c.Flag |= FlagGravity
+	c.Gravity.X = x
+	c.Gravity.Y = y
+	return c
+}
+
+func (c *cursor) To(id ID) {
+	c.owner = id
 }
 
 func (b *Bound) Offset(x, y float32) *Bound {
@@ -81,7 +141,7 @@ func (b *Bound) InRange(p mgl32.Vec2) bool{
 
 type LayoutManager struct {
 	Horizontal, Vertical Direction
-	Cursor               Cursor
+	Cursor               cursor
 	Align
 	// ui bound 是一直存储的，记录一些持久化的数据
 	uiElements           []Element // element uiElements
@@ -156,180 +216,128 @@ func (lyt *LayoutManager) BoundOf(id ID) (bb Element, ok bool) {
 func (lyt *LayoutManager) Offset(dx, dy float32) *LayoutManager {
 	lyt.Cursor.X += dx
 	lyt.Cursor.Y += dy
-
-	lyt.Cursor.Margin.Left = dx
-	lyt.Cursor.Margin.Top  = dy
 	return lyt
 }
 
-func (lyt *LayoutManager) Size(w, h float32) *LayoutManager {
-	lyt.Cursor.W, lyt.Cursor.H = w, h
+func (lyt *LayoutManager) SetGravity(x, y float32) *LayoutManager {
+	lyt.hGroup.Gravity.X = math.F32Clamp(x, 0, 1)
+	lyt.hGroup.Gravity.Y = math.F32Clamp(y, 0, 1)
 	return lyt
 }
 
-func (lyt *LayoutManager) SizeAuto() *LayoutManager {
-	lyt.Cursor.W, lyt.Cursor.H = 0, 0
+func (lyt *LayoutManager) SetSize(w, h float32) *LayoutManager {
+	lyt.hGroup.Bound.W = w
+	lyt.hGroup.Bound.H = h
+	lyt.hGroup.hasSize = true
 	return lyt
-}
-
-func (lyt *LayoutManager) Flow(h, v Direction) {
-	lyt.Horizontal, lyt.Vertical = h, v
 }
 
 // AutoLayout System
-func (lyt *LayoutManager) NewLayout(id ID, xtype LayoutType) {
-	bb := lyt.NewElement(id)
-	ii := len(lyt.groupStack)
-	// 默认的布局没有 parent
-	parent := &lyt.groupStack[ii-1]
-
-	lyt.groupStack = append(lyt.groupStack, Group{LayoutType:xtype, Element: bb})
-	lyt.hGroup = &lyt.groupStack[ii]
-
-	// 启动布局之后，应该重置光标, 此时光标的位置全部相对于布局
-	// 保存父容器的当前光标位置， 当前好像没设计这个变量
-	parent.Cursor.X = lyt.Cursor.X
-	parent.Cursor.Y = lyt.Cursor.Y
-
-	if parent.id == 0 {
-		log.Println("parent cursor:", parent.Cursor)
-	}
-
-	// 在 EndLayout的时候再恢复Cursor位置
-
-	// 此时已经可以得出 当前Layout的位置了
-	// 好像光标的位置就是 Group 的位置
-	// 那么其实完全不需要 Cursor的存在！！
-	//
-	// Q. 目前的布局使计算父容器的坐标的时候，仅仅考虑父容器的坐标
-	// 其实父容器还有自己的父容器，需要把所有父容器的本身相对其父容器的偏移加起来才是对的！！
-	g := lyt.hGroup
-
-	// 先加上父父容器
-	g.X, g.Y = parent.X, parent.Y
-	// 再加上当前父容器的偏移, 这样得到的容器坐标就是绝对的坐标
-	g.X, g.Y = g.X+lyt.Cursor.X , g.Y+lyt.Cursor.Y
-
-	// 记录光标的偏移...
-	// EndLayout的时候还需要这个数据..
-	g.Offset.X = lyt.Cursor.Left
-	g.Offset.Y = lyt.Cursor.Top
-
-	lyt.Cursor.X, lyt.Cursor.Y = 0, 0
+func (lyt *LayoutManager) NewLayout(id ID, xtype LayoutType) *Element {
+	return lyt.NewElement(id)
 }
 
 func (lyt *LayoutManager) FindLayout(id ID) (bb *Element, ok bool) {
 	return lyt.Element(id)
 }
 
-// set as current layout
-// 这个方法的逻辑和 NewLayout 都是重复的
+// Set as current layout
 func (lyt *LayoutManager) PushLayout(xtype LayoutType, bb *Element) {
 	ii := len(lyt.groupStack)
-	// 默认的布局没有 parent
-	// 此处可以安全的取出 parent，因为初始化的时候会先创建出 parent 布局..
+
+	// group-stack has a default parent
+	// so it's safe to index
 	parent := &lyt.groupStack[ii-1]
 	lyt.groupStack = append(lyt.groupStack, Group{LayoutType:xtype, Element: bb})
 	lyt.hGroup = &lyt.groupStack[ii]
 
-	// 启动布局之后，应该重置光标, 此时光标的位置全部相对于布局
-	// 保存父容器的当前光标位置， 当前好像没设计这个变量
+	// stash cursor state
 	parent.Cursor.X = lyt.Cursor.X
 	parent.Cursor.Y = lyt.Cursor.Y
 
-	// 在 EndLayout的时候再恢复Cursor位置
-
-	// 此时已经可以得出 当前Layout的位置了
-	// 好像光标的位置就是 Group 的位置
-	// 那么其实完全不需要 Cursor的存在！！
-	//
-	// Q. 目前的布局使计算父容器的坐标的时候，仅仅考虑父容器的坐标
-	// 其实父容器还有自己的父容器，需要把所有父容器的本身相对其父容器的偏移加起来才是对的！！
+	// group's (x, y) is absolute coordinate
+	// f(x, y) = group(x, y) + cursor(x, y)
 	g := lyt.hGroup
-
-	// 先加上父父容器
 	g.X, g.Y = parent.X, parent.Y
-
-	// 再加上当前父容器的偏移, 这样得到的容器坐标就是绝对的坐标
 	g.X, g.Y = g.X+lyt.Cursor.X , g.Y+lyt.Cursor.Y
 
-
+	// reset cursor
 	lyt.Cursor.X, lyt.Cursor.Y = 0, 0
 }
 
-// 重新计算父容器的大小
-// size + margin = BoundingBox
-func (lyt *LayoutManager) Extend(elem *Element) {
-	if g := lyt.hGroup; g != nil {
-		switch g.LayoutType {
-		case LinearHorizontal:
-			// 水平加之，高度取最大
-			g.Size.W += elem.W + elem.Left
-			g.Size.H = math.Max(g.Size.H, elem.H+elem.Top)
-		case LinearVertical:
-			// 高度加之，水平取最大
-			g.Size.W = math.Max(g.Size.W, elem.W+elem.Left)
-			g.Size.H += elem.H + elem.Left
-		case LinearOverLay:
-			// 重叠, 取高或者宽的最大值
-			g.Size.W = math.Max(g.Size.W, elem.W+elem.Left)
-			g.Size.H = math.Max(g.Size.H, elem.H+elem.Top)
-		}
-	}
-}
-
-// 重新计算父容器的光标位置
-func (lyt *LayoutManager) Advance(elem *Element) {
-	if g := lyt.hGroup; g != nil  {
-		cursor := &lyt.Cursor
-		switch g.LayoutType {
-		case LinearHorizontal:
-			// 水平步进，前进一个控件宽度
-			cursor.X += elem.W
-		case LinearVertical:
-			// 垂直步进，前进一个控件高度
-			cursor.Y += elem.H
-		case LinearOverLay:
-			// 保持原来的位置不变..
-		}
-	}
-}
-
-func (lyt *LayoutManager) NextBound(sq int) Element {
-	return lyt.uiElements[sq]
-}
-
-// 需要重新调整光标位置，
-// 如果上一层有 Layout，则应该按照该Layout的布局方式移动光标
-// 如果没有，则回到Group开始的位置
-// 可以在 Group 里面插入一个 默认的 Group 这样永远有一个 Group 存在
+// PopLayout, resume parent's state
 func (lyt *LayoutManager) EndLayout() {
-	// 1. 计算并更新Layout的大小
-	// g := lyt.hGroup
-	// 在计算 UIElement 的时候已经计算过了（或许应该放在此处计算）
+	// 1. Set size if not set explicitly
 	size := lyt.hGroup.Size
-	// 记录这一帧的值，清空计数器
-	// 或者应该把计数器和帧值区分开来
-	lyt.hGroup.W = size.W
-	lyt.hGroup.H = size.H
+	if !lyt.hGroup.hasSize || lyt.hGroup.W == 0 {
+		lyt.hGroup.W = size.W
+	}
+	if !lyt.hGroup.hasSize || lyt.hGroup.H == 0 {
+		lyt.hGroup.H = size.H
+	}
 
-	// 2. Layout出栈, 此时可以保证此处总是大于1，否则应该报错
+	// 2. return to parent
 	if size := len(lyt.groupStack); size > 1 {
 		lyt.groupStack = lyt.groupStack[:size-1]
 		lyt.hGroup = &lyt.groupStack[size-2]
 	}
 
-	// 3. 处理父容器的布局,
-	// 先回到 Group 的位置（因为进入子容器的时候重置了Cursor，所以要先回复）, 然后才可以布局
 	g := lyt.hGroup
 	lyt.Cursor.X, lyt.Cursor.Y = g.Cursor.X, g.Cursor.Y
 
+	// 3. end layout
 	elem := &Element{Bound:Bound{0, 0, size.W, size.H}}
-	// 2. 扩展父容器大小
-	lyt.Extend(elem)
 
-	// 2. 接下来直接用 Advance 步进光标
+	lyt.Extend(elem)
 	lyt.Advance(elem)
+
+	// 3. 清除当前布局的参数
+	lyt.Cursor.Reset()
+}
+
+// 重新计算父容器的大小
+// size + margin = BoundingBox
+func (lyt *LayoutManager) Extend(elem *Element) {
+	var (
+		g  = lyt.hGroup
+		dx = elem.W + elem.Left + elem.Right
+		dy = elem.H + elem.Top + elem.Bottom
+	)
+
+	switch g.LayoutType {
+	case LinearHorizontal:
+		// 水平加之，高度取最大
+		g.Size.W += dx
+		g.Size.H = math.Max(g.Size.H, dy)
+	case LinearVertical:
+		// 高度加之，水平取最大
+		g.Size.W = math.Max(g.Size.W, dx)
+		g.Size.H += dy
+	case LinearOverLay:
+		// 重叠, 取高或者宽的最大值
+		g.Size.W = math.Max(g.Size.W, dx)
+		g.Size.H = math.Max(g.Size.H, dy)
+	}
+}
+
+// 重新计算父容器的光标位置
+func (lyt *LayoutManager) Advance(elem *Element) {
+	var (
+		g, c  = lyt.hGroup, &lyt.Cursor
+		dx = elem.W + elem.Left + elem.Right
+		dy = elem.H + elem.Top + elem.Bottom
+	)
+
+	switch g.LayoutType {
+	case LinearHorizontal:
+		// 水平步进，前进一个控件宽度
+		c.X += dx
+	case LinearVertical:
+		// 垂直步进，前进一个控件高度
+		c.Y += dy
+	case LinearOverLay:
+		// 保持原来的位置不变..
+	}
 }
 
 // Q. 当前 Group 的 X，Y, W, H 应该和 Group 的Cursor区分开来
@@ -345,12 +353,8 @@ type Group struct {
 
 	// 当前帧布局的计算变量
 	Size struct{W, H float32}
-}
+	Gravity struct{X, Y float32}
 
-// 布局算法：
-// 开始布局, 查找 UIElement 的大小，如果
-// 有大小则计算布局
-//    布局Group + Cursor + Layout-Weight
-// 否则创建一个新的UIElement, 如果是 Group
-// 则在EndLayout的时候计算出代销，如果Element
-// 则直接算出Layout
+	// true if group has a predefined size
+	hasSize bool
+}
