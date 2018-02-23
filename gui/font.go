@@ -92,8 +92,13 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) (size mgl32.Vec2)
 		// character space & line spacing todo
 		// 处理 < 32 的控制符号!!
 	}
-	size[0] = pos[0]-maxWidth
+
+	if dx > maxWidth {
+		maxWidth = dx
+	}
+	size[0] = maxWidth - pos[0]
 	size[1] = pos[1]-dy+fr.fontSize
+
 	fr.DrawList.AddCommand(bufferUsed*6)
 	return
 }
