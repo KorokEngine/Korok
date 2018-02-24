@@ -109,6 +109,10 @@ func (dl *DrawList) Initialize() {
 	}
 }
 
+func (dl *DrawList) Empty() bool {
+	return dl.vtxIndex == 0 || dl.idxIndex == 0
+}
+
 func (dl *DrawList) Size() (idx, vdx int) {
 	idx = dl.idxIndex
 	vdx = dl.vtxIndex

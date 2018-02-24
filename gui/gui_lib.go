@@ -90,29 +90,6 @@ func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Element {
 	return nil
 }
 
-func (ctx *Context) NewText(id ID, text string, p *Property, style *TextStyle)  *Element {
-	var (
-		elem, ready = ctx.BeginElement(id)
-		size mgl32.Vec2
-	)
-
-	// draw text 最好返回最新的大小..
-	// todo drawText 返回的宽度是错误的，暂时不做每帧更新..
-	if ready {
-		// size = ctx.DrawText(elem, text, style)
-		ctx.DrawText(elem, text, style)
-	} else {
-		size = ctx.CalcTextSize(text, 0, style.Font, style.Size)
-		// Cache Size
-		elem.Bound.W = size[0]
-		elem.Bound.H = size[1]
-	}
-
-	ctx.EndElement(elem)
-	return nil
-}
-
-
 // Widgets: InputEditor
 func (ctx *Context) InputText(hint string, lyt LayoutManager, style *InputStyle) {
 
@@ -152,7 +129,6 @@ func (ctx *Context) Button(id ID, text string, style *ButtonStyle) (event EventT
 		event = ctx.CheckEvent(id, bb, false)
 
 		// Render Frame
-		// ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, color, rounding)
 		ctx.ColorBackground(event, bb, round)
 
 		// Render Text
@@ -185,56 +161,30 @@ func (ctx *Context) ImageBackground(eventType EventType) {
 
 }
 
-func (ctx *Context) ImageButton(texId uint16, lyt LayoutManager, style *ImageButtonStyle) EventType{
-	return EventNone
-}
-
-func (ctx *Context) Rect(w, h float32, style *RectStyle) (id int){
+func (ctx *Context) ImageButton(id ID, normal, pressed *gfx.SubTex, style *ImageButtonStyle) ( event EventType) {
 	if style == nil {
-		style = &ThemeLight.Rect
+		style = &ctx.Style.ImageButton
 	}
-	bb := ctx.Layout.Cursor
-
-	x, y := Gui2Game(bb.X, bb.Y)
-
-	var min, max mgl32.Vec2
-
-	if ctx.Layout.Horizontal == Left2Right {
-		min[0], max[0] = x, x+w
+	var (
+		elem, ready = ctx.BeginElement(id)
+		bb = &elem.Bound
+	)
+	if ready {
+		event = ctx.CheckEvent(id, bb, false)
+		var tex *gfx.SubTex
+		if event & EventDown != 0 {
+			tex = pressed
+		} else {
+			tex = normal
+		}
+		ctx.DrawImage(bb, tex.TexId, mgl32.Vec4{tex.X1, tex.Y1, tex.X2, tex.Y2}, &style.ImageStyle)
 	} else {
-		min[0], max[0] = x-w, x
+		size := ctx.Layout.Cursor.Bound
+		elem.W = size.W
+		elem.H = size.H
 	}
-
-	if ctx.Layout.Vertical == Top2Bottom {
-		min[1], max[1] = y-h, y
-	} else {
-		min[1], max[1] = y, y+h
-	}
-
-	bb.W, bb.H = w, h
-
-	if style == nil {
-		style = &ctx.Style.Rect
-	} // todo
-	if style.FillColor > 0 {
-		ctx.DrawList.AddRectFilled(min, max, style.FillColor, style.Rounding, style.Corner)
-	} else {
-		ctx.DrawList.AddRect(min, max, style.StrokeColor, style.Rounding, style.Corner, style.Stroke)
-	}
+	ctx.EndElement(elem)
 	return
-}
-
-// Render a rectangle shaped with optional rounding and borders(no border!) TODO
-func (ctx *Context) renderFrame(x, y, w, h float32, fill uint32, rounding float32) {
-	x, y = Gui2Game(x, y)
-	min := mgl32.Vec2{x, y-h}
-	max := mgl32.Vec2{x+w, y}
-
-	// draw a filled rect
-	ctx.DrawList.AddRectFilled(min, max, fill, rounding, FlagCornerAll)
-	// border ? I don't think it's a good idea
-
-	//log.Println("renderFrame:",min, max, fill, rounding)
 }
 
 // Slider 的绘制很简单，分别绘制滑动条和把手即可

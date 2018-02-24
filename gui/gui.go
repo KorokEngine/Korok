@@ -106,8 +106,8 @@ func Button(id ID, text string, style *ButtonStyle) (event EventType) {
 	return gContext.Button(id, text, style)
 }
 
-func ImageButton(texId uint16, lyt LayoutManager, style *ImageButtonStyle) EventType{
-	return EventNone
+func ImageButton(id ID, normal, pressed *gfx.SubTex, style *ImageButtonStyle) EventType{
+	return gContext.ImageButton(id, normal, pressed, style)
 }
 
 func CheckBox(text string, lyt LayoutManager, style *CheckBoxStyle) bool {
@@ -124,8 +124,11 @@ func Slider(id ID, value *float32, style *SliderStyle) (v EventType){
 }
 
 // Frame: Rect
-func Rect(w, h float32, style *RectStyle) (id int) {
-	return gContext.Rect(w, h, style)
+func Rect(w, h float32, style *RectStyle) {
+	if style == nil {
+		style = &gContext.Style.Rect
+	}
+	gContext.DrawRect(&Bound{0, 0, w,h}, style.FillColor, style.Rounding)
 }
 
 // Widget: ListView TODO

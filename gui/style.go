@@ -13,6 +13,7 @@ type Style struct {
 	Text TextStyle
 	Button ButtonStyle
 	Image ImageStyle
+	ImageButton ImageButtonStyle
 	Rect RectStyle
 	Slider SliderStyle
 
@@ -98,35 +99,43 @@ type RectStyle struct {
 //// 这样
 func newLightTheme() *Style {
 	return &Style{
-		TextStyle{
+		Text:TextStyle{
 			Visibility:Visible,
 			Color:0xFF000000,
 			Size:12,
 		},
-		ButtonStyle{
+		Button:ButtonStyle{
 			TextStyle{Visibility:Visible, Color:0xFF000000, Size:12, Padding:Padding{10, 10, 10, 10}},
 			Visible,
 			0xFFCDCDCD,
 			5,
 		},
-		ImageStyle{
+		Image:ImageStyle{
 			Visible,
 			Padding{0, 0, 0, 0},
 			0xFFFFFFFF,
 		},
-		RectStyle{
+		ImageButton:ImageButtonStyle{
+			ImageStyle{
+				Visibility:Visible,
+				Padding: Padding{0, 0, 0, 0},
+				TintColor:0xFFFFFFFF,
+			},
+			Visible,
+		},
+		Rect:RectStyle{
 			2,
 			0xFFCDCDCD,
 			0xFF000000,
 			5,
 			FlagCornerNone,
 		},
-		SliderStyle{
+		Slider:SliderStyle{
 			0, 0,
 		},
-		0xFFCDCDCD,
-		0xFFABABAB,
-		0,
+		ColorNormal:0xFFCDCDCD,
+		ColorPressed:0xFFABABAB,
+		Spacing:2,
 	}
 }
 

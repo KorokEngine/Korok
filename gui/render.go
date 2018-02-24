@@ -39,6 +39,10 @@ func (ui *UISystem) Draw(dt float32) {
 	for _, c := range ui.context {
 		dl := &c.DrawList
 
+		if dl.Empty() {
+			continue
+		}
+
 		// 1. update buffer
 		iSize, vSize := dl.Size()
 		vBuffer := (*[4*10000]gfx.PosTexColorVertex)(unsafe.Pointer(&dl.VtxBuffer[0]))[:vSize]
