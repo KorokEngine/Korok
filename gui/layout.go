@@ -93,7 +93,7 @@ func (c *cursor) Reset()  {
 // set flag
 func (c *cursor) SetMargin(top, left, right, bottom float32) *cursor{
 	c.Flag |= FlagMargin
-	c.Margin = Margin{top, left, right, bottom}
+	c.Margin = Margin{top, left, bottom, right}
 	return c
 }
 
@@ -150,12 +150,16 @@ type LayoutManager struct {
 
 	// header of group stack
 	hGroup *Group
+
+	// default ui-element spacing
+	spacing float32
 }
 
 func (lyt *LayoutManager) Initialize() {
 	// init size, todo resize 会导致指针错误
 	lyt.uiElements = make([]Element, 0, 32)
 	lyt.groupStack = make([]Group, 0, 8)
+	lyt.spacing = 4
 
 	// Create a default layout
 	bb := lyt.NewElement(0)
@@ -231,6 +235,11 @@ func (lyt *LayoutManager) SetSize(w, h float32) *LayoutManager {
 	return lyt
 }
 
+func (lyt *LayoutManager) SetPadding(top, left, right, bottom float32) *LayoutManager{
+	lyt.hGroup.Padding = Padding{left, right, top, bottom}
+	return lyt
+}
+
 // AutoLayout System
 func (lyt *LayoutManager) NewLayout(id ID, xtype LayoutType) *Element {
 	return lyt.NewElement(id)
@@ -284,8 +293,8 @@ func (lyt *LayoutManager) EndLayout() {
 	g := lyt.hGroup
 	lyt.Cursor.X, lyt.Cursor.Y = g.Cursor.X, g.Cursor.Y
 
-	// 3. end layout
-	elem := &Element{Bound:Bound{0, 0, size.W, size.H}}
+	// 3. end layout, remove default spacing
+	elem := &Element{Bound:Bound{0, 0, size.W-lyt.spacing*2, size.H-lyt.spacing*2}}
 
 	lyt.Extend(elem)
 	lyt.Advance(elem)
@@ -299,8 +308,8 @@ func (lyt *LayoutManager) EndLayout() {
 func (lyt *LayoutManager) Extend(elem *Element) {
 	var (
 		g  = lyt.hGroup
-		dx = elem.W + elem.Left + elem.Right
-		dy = elem.H + elem.Top + elem.Bottom
+		dx = elem.W + elem.Left + elem.Right + lyt.spacing + lyt.spacing
+		dy = elem.H + elem.Top + elem.Bottom + lyt.spacing + lyt.spacing
 	)
 
 	switch g.LayoutType {
@@ -323,8 +332,8 @@ func (lyt *LayoutManager) Extend(elem *Element) {
 func (lyt *LayoutManager) Advance(elem *Element) {
 	var (
 		g, c  = lyt.hGroup, &lyt.Cursor
-		dx = elem.W + elem.Left + elem.Right
-		dy = elem.H + elem.Top + elem.Bottom
+		dx = elem.W + elem.Left + elem.Right + lyt.spacing + lyt.spacing
+		dy = elem.H + elem.Top + elem.Bottom + lyt.spacing + lyt.spacing
 	)
 
 	switch g.LayoutType {
@@ -349,6 +358,7 @@ type Group struct {
 	// 仅用来缓存...
 	Cursor struct{X, Y float32}
 	Offset struct{X, Y float32}
+	Padding
 
 	// 当前帧布局的计算变量
 	Size struct{W, H float32}

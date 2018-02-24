@@ -492,28 +492,8 @@ func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
 		elem = lm.NewElement(id)
 	} else {
 		// 计算偏移
-		elem.X = lm.Cursor.X
-		elem.Y = lm.Cursor.Y
-
-		// Gravity
-		var (
-			group = lm.hGroup
-			gravity = group.Gravity
-		)
-
-		// Overlap group's gravity
-		if lm.Cursor.owner == id && (lm.Cursor.Flag & FlagGravity != 0) {
-			gravity = lm.Cursor.Gravity
-		}
-		switch group.LayoutType {
-		case LinearHorizontal:
-			elem.Y += (group.H - elem.H) * gravity.Y
-		case LinearVertical:
-			elem.X += (group.W - elem.W) * gravity.X
-		case LinearOverLay:
-			elem.Y += (group.H - elem.H) * gravity.Y
-			elem.X += (group.W - elem.W) * gravity.X
-		}
+		elem.X = lm.Cursor.X + ctx.Layout.spacing
+		elem.Y = lm.Cursor.Y + ctx.Layout.spacing
 
 		// Each element's property
 		if lm.Cursor.owner == id {
@@ -533,6 +513,26 @@ func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
 			// 清空标记
 			lm.Cursor.owner = -1
 			lm.Cursor.Flag = 0
+		}
+
+		// Gravity
+		var (
+			group = lm.hGroup
+			gravity = group.Gravity
+		)
+
+		// Overlap group's gravity
+		if lm.Cursor.owner == id && (lm.Cursor.Flag & FlagGravity != 0) {
+			gravity = lm.Cursor.Gravity
+		}
+		switch group.LayoutType {
+		case LinearHorizontal:
+			elem.Y += (group.H - elem.H) * gravity.Y
+		case LinearVertical:
+			elem.X += (group.W - elem.W) * gravity.X
+		case LinearOverLay:
+			elem.Y += (group.H - elem.H) * gravity.Y
+			elem.X += (group.W - elem.W) * gravity.X
 		}
 	}
 	return

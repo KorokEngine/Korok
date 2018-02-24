@@ -92,7 +92,7 @@ func TextSizeColored(text string, color uint32, size float32) {
 }
 
 // Widgets: InputEditor
-func InputText(hint string, lyt LayoutManager, style *InputStyle) {
+func InputText(hint string, style *InputStyle) {
 
 }
 
@@ -110,12 +110,12 @@ func ImageButton(id ID, normal, pressed *gfx.SubTex, style *ImageButtonStyle) Ev
 	return gContext.ImageButton(id, normal, pressed, style)
 }
 
-func CheckBox(text string, lyt LayoutManager, style *CheckBoxStyle) bool {
+func CheckBox(text string, style *CheckBoxStyle) bool {
 	return false
 }
 
 // Widget: ProgressBar, Slider
-func ProgressBar(fraction float32, lyt LayoutManager, style *ProgressBarStyle) {
+func ProgressBar(fraction float32, style *ProgressBarStyle) {
 
 }
 
@@ -149,8 +149,8 @@ func SetGravity(x, y float32) {
 	gContext.Layout.SetGravity(x, y)
 }
 
-func SetPadding(x, y, z, w float32) {
-
+func SetPadding(top, left, right, bottom float32) {
+	gContext.Layout.SetPadding(top, left, right, bottom)
 }
 
 func SetSize(w, h float32) {
