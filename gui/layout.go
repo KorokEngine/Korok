@@ -72,10 +72,9 @@ type Gravity struct {
 type DirtyFlag uint32
 
 const (
-	FlagNone DirtyFlag = 0x00
-	FlagSize DirtyFlag = 0x01
-	FlagMargin DirtyFlag = 0x02
-	FlagGravity DirtyFlag = 0x04
+	FlagSize DirtyFlag = 1 << iota
+	FlagMargin
+	FlagGravity
 )
 
 // Shadow of current ui-element
