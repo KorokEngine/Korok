@@ -119,7 +119,7 @@ func ProgressBar(fraction float32, lyt LayoutManager, style *ProgressBarStyle) {
 
 }
 
-func Slider(id ID, value float32, style *SliderStyle) (v float32){
+func Slider(id ID, value *float32, style *SliderStyle) (v EventType){
 	return gContext.Slider(id, value, style)
 }
 

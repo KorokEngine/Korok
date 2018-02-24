@@ -237,15 +237,6 @@ func (ctx *Context) renderFrame(x, y, w, h float32, fill uint32, rounding float3
 	//log.Println("renderFrame:",min, max, fill, rounding)
 }
 
-// draw line rect
-func (ctx *Context) RenderBorder(x, y, w, h float32, color uint32) {
-	x, y = Gui2Game(x, y)
-	min := mgl32.Vec2{x, y-h}
-	max := mgl32.Vec2{x+w, y}
-
-	ctx.DrawList.AddRect(min, max, color, 0, 0, 0.5)
-}
-
 // Slider 的绘制很简单，分别绘制滑动条和把手即可
 // 难点在于跟踪把手的滑动距离
 // Slider的风格，没有想好怎么控制，暂时使用两张图片
@@ -265,7 +256,7 @@ func (ctx *Context) RenderBorder(x, y, w, h float32, color uint32) {
 //ctx.DrawList.AddImage()
 // Slider 需要设定一些自定义的属性，目前没有想好如何实现，先把逻辑实现了
 // 用两种颜色来绘制
-func (ctx *Context) Slider(id ID, value float32, style *SliderStyle) (v1 float32){
+func (ctx *Context) Slider(id ID, value *float32, style *SliderStyle) (e EventType){
 	if style == nil {
 		style = &ctx.Style.Slider
 	}
@@ -277,13 +268,13 @@ func (ctx *Context) Slider(id ID, value float32, style *SliderStyle) (v1 float32
 
 	if ready {
 		// 说明滑动了，那么应该使用最新的值，而不是传入的值
-		if v := ctx.checkSlider(id, bb); v != 0 {
-			value = v
-			v1 = v
+		if v, event := ctx.checkSlider(id, bb); event & EventDragging != 0 {
+			*value = v
+			e = event
 		}
 
 		ctx.DrawRect(bb, 0xFFCDCDCD, 5)
-		ctx.DrawCircle(bb.X+bb.W*value, bb.Y+bb.H/2, 10, 0xFFABABAB)
+		ctx.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, 0xFFABABAB)
 	} else {
 		// 设置默认的宽高
 		if elem.W == 0 {
@@ -319,11 +310,10 @@ func (ctx *Context) EndScroll() {
 
 // 这里的实现基于拖拽的实现，所以
 // 只要正确的实现了拖拽，这里的就可以很容易的实现
-func (ctx *Context) checkSlider(id ID, bound *Bound) (v float32){
+func (ctx *Context) checkSlider(id ID, bound *Bound) (v float32, e EventType) {
 	event := ctx.CheckEvent(id, bound, false)
 	if (event & EventStartDrag) != 0 {
 		ctx.state.pointerCapture = id
-
 		log.Println("start drag..")
 	}
 
@@ -353,12 +343,8 @@ func (ctx *Context) checkSlider(id ID, bound *Bound) (v float32){
 			v = 0
 		}
 	}
-
+	e = event
 	return
-}
-
-func (ctx *Context) endSlider() {
-
 }
 
 func (ctx *Context) capturePoint() {
@@ -473,6 +459,12 @@ func (ctx *Context) DrawBorder(bb *Bound, color uint32, round, thick float32) {
 	ctx.DrawList.AddRect(min, max, color, round, FlagCornerAll, thick)
 }
 
+func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {
+	x, y = Gui2Game(x, y)
+	min, max := mgl32.Vec2{x, y-h}, mgl32.Vec2{x+w, y}
+	ctx.DrawList.AddRect(min, max, color, 0, FlagCornerNone, 1)
+}
+
 // default segment = 12 TODO
 func (ctx *Context) DrawCircle(x, y, radius float32, color uint32) {
 	g := ctx.Layout.hGroup
@@ -533,11 +525,10 @@ func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSy
 // 但是在大部分UI中，比如 Text/Image 只会改变背景的状态
 // 偷懒的自定义UI，不做任何状态的改变... 所以说呢, 我们也采用偷懒的做法呗。。
 func (ctx *Context) ColorBackground(event EventType, bb *Bound, round float32) {
-	g := ctx.Layout.hGroup
 	if event == EventDown {
-		ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, ThemeLight.ColorPressed, round)
+		ctx.DrawRect(bb, ThemeLight.ColorPressed, round)
 	} else {
-		ctx.renderFrame(g.X+bb.X, g.Y+bb.Y, bb.W, bb.H, ThemeLight.ColorNormal, round)
+		ctx.DrawRect(bb, ThemeLight.ColorNormal, round)
 	}
 }
 
@@ -620,7 +611,7 @@ func (ctx *Context) BeginLayout(id ID, xtype LayoutType) {
 			x = lm.hGroup.X + ctx.Layout.Cursor.X
 			y = lm.hGroup.Y + ctx.Layout.Cursor.Y
 		)
-		ctx.RenderBorder(x, y, ly.W, ly.H, 0xFF00FF00)
+		ctx.DrawDebugBorder(x, y, ly.W, ly.H, 0xFF00FF00)
 	}
 
 	lm.PushLayout(xtype, ly)
