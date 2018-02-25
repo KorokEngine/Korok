@@ -40,8 +40,7 @@ var scenes = make(map[string]Scene)
 var current Scene
 
 type Game struct {
-	FPS
-	DB
+	FPS; DB
 
 	*gfx.RenderSystem
 	*gui.UISystem
@@ -66,6 +65,10 @@ func (g *Game) OnDestroy() {
 /// input callback
 func (g *Game) OnKeyEvent(key int, pressed bool) {
 	g.InputSystem.SetKeyEvent(key, pressed)
+}
+
+func (g *Game) OnPointEvent(key int, pressed bool, x, y float32) {
+	g.InputSystem.SetPointerEvent(key, pressed, x, y)
 }
 
 func AddScene(scene Scene) {
