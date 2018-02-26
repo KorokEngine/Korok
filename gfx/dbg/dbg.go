@@ -143,6 +143,9 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 }
 
 func (dr *DebugRender) Draw() {
+	//p := mgl32.Ortho2D(0, 480, 0, 320)
+	//bk.SetUniform(dr.umh_P, unsafe.Pointer(&p[0]))
+
 	bk.SetState(dr.stateFlags, dr.rgba)
 	bk.SetTexture(0, dr.umh_S0, uint16(dr.Buffer.fontTexId), 0)
 

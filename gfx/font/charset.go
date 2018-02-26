@@ -13,6 +13,8 @@ type Glyph struct {
 	Y      int `json:"y,string"`      // The y location of the glyph on a sprite sheet.
 	Width  int `json:"width,string"`  // The width of the glyph on a sprite sheet.
 	Height int `json:"height,string"` // The height of the glyph on a sprite sheet.
+	XOffset int `json:"xoffset,string"`
+	YOffset int `json:"yoffset,string"`
 
 	// Advance determines the distance to the next glyph.
 	// This is used to properly align non-monospaced fonts.

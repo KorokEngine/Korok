@@ -49,6 +49,10 @@ type Game struct {
 	*ScriptSystem
 }
 
+func (g *Game) Camera() *gfx.Camera {
+	return &g.RenderSystem.MainCamera
+}
+
 /// window callback
 func (g *Game) OnCreate() {
 	g.Create()

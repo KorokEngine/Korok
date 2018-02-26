@@ -24,8 +24,6 @@ type BatchRender struct {
 	umh_PJ uint16 	// Projection
 	umh_S0 uint16 	// Sampler0
 
-	// Camera
-	Camera
 	// batch context
 	BatchContext
 }
@@ -65,8 +63,17 @@ func NewBatchRender(vsh, fsh string) *BatchRender {
 	return br
 }
 
-func (br *BatchRender) SetCamera(camera Camera) {
-	br.Camera = camera
+func (br *BatchRender) SetCamera(camera *Camera) {
+	left := camera.pos.x - camera.view.w/2
+	right := camera.pos.x + camera.view.w/2
+	bottom := camera.pos.y - camera.view.h/2
+	top := camera.pos.y + camera.view.h/2
+
+	p := mgl32.Ortho2D(left, right, bottom, top)
+
+	// setup uniform
+	bk.SetUniform(br.umh_PJ, unsafe.Pointer(&p[0]))
+	bk.Submit(0, br.program, 0)
 }
 
 // submit all batched group

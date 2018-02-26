@@ -4,12 +4,14 @@ import (
 	"github.com/go-gl/mathgl/mgl32"
 
 	"korok.io/korok/engi"
+	"korok.io/korok/gfx/dbg"
+	"fmt"
 )
 
 type RenderType int32
 
 type Render interface {
-	SetCamera(camera Camera)
+	SetCamera(camera *Camera)
 }
 
 // 适合于渲染系统访问的表达方式.
@@ -43,6 +45,9 @@ type RenderFeature interface {
 type RenderSystem struct {
 	MainCamera Camera
 
+	// shortcut for TransformTable
+	xfs *TransformTable
+
 	// visibility test
 	V VisibilitySystem
 
@@ -58,6 +63,11 @@ type RenderSystem struct {
 
 func (th *RenderSystem) RequireTable(tables []interface{}) {
 	th.TableList = tables
+	for _, table := range tables {
+		if t, ok := table.(*TransformTable); ok {
+			th.xfs = t; break
+		}
+	}
 }
 
 func (th *RenderSystem) Accept(rf RenderFeature) {
@@ -78,9 +88,20 @@ func (th *RenderSystem) RegisterRender(t RenderType, render Render) {
 }
 
 func (th *RenderSystem) Update(dt float32) {
+	// update camera todo default invalid should be zero
+	if c := &th.MainCamera; c.follow != 1000000 {
+		xf := th.xfs.Comp(c.follow)
+		p  := xf.Position()
+		c.MoveTo(p[0], p[1])
+
+		// debug draw camera
+		dbg.Move(10, 280)
+		dbg.DrawStrScaled(fmt.Sprintf("camera: %v", c.pos), .6)
+	}
+
 	// main camera
 	for _, r := range th.RenderList {
-		r.SetCamera(th.MainCamera)
+		r.SetCamera(&th.MainCamera)
 	}
 
 	// draw

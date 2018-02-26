@@ -22,9 +22,6 @@ type MeshRender struct {
 	umh_P  uint16 // Projection
 	umh_M  uint16 // Model
 	umh_S0 uint16 // Sampler0
-
-	// camera
-	Camera
 }
 
 func NewMeshRender(vsh, fsh string) *MeshRender {
@@ -68,8 +65,17 @@ func NewMeshRender(vsh, fsh string) *MeshRender {
 	return mr
 }
 
-func (mr *MeshRender) SetCamera(camera Camera) {
-	mr.Camera = camera
+func (mr *MeshRender) SetCamera(camera *Camera) {
+	left := camera.pos.x - camera.view.w/2
+	right := camera.pos.x + camera.view.w/2
+	bottom := camera.pos.y - camera.view.h/2
+	top := camera.pos.y + camera.view.h/2
+
+	p := mgl32.Ortho2D(left, right, bottom, top)
+
+	// setup uniform
+	bk.SetUniform(mr.umh_P, unsafe.Pointer(&p[0]))
+	bk.Submit(0, mr.program, 0)
 }
 
 type RenderMesh struct {

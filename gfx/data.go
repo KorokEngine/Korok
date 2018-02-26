@@ -29,6 +29,7 @@ type PosTexColorVertex struct {
 
 //
 var PosTexColorVertexSize = unsafe.Sizeof(PosTexColorVertex{})
+var UInt16Size = unsafe.Sizeof(uint16(0))
 
 
 

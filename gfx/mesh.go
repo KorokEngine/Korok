@@ -71,11 +71,11 @@ func (m*Mesh) SetIndex(v []uint16) {
 
 func (m *Mesh) Update() {
 	if ok, ib := bk.R.IndexBuffer(m.IndexId); ok {
-		ib.Update(0, uint32(len(m.index)) * 4, unsafe.Pointer(&m.index[0]), false)
+		ib.Update(0, uint32(len(m.index)) * uint32(UInt16Size), unsafe.Pointer(&m.index[0]), false)
 	}
 
 	if ok, vb := bk.R.VertexBuffer(m.VertexId); ok {
-		vb.Update(0, uint32(len(m.vertex)) * 4, unsafe.Pointer(&m.vertex[0]), false)
+		vb.Update(0, uint32(len(m.vertex)) * uint32(PosTexColorVertexSize), unsafe.Pointer(&m.vertex[0]), false)
 	}
 }
 
