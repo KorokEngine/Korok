@@ -4,6 +4,8 @@ import (
 	"korok.io/korok/engi"
 
 	"sort"
+	"korok.io/korok/gfx/dbg"
+	"fmt"
 )
 
 /// SpriteComp & SpriteTable
@@ -176,7 +178,14 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 		sprite := &st.comps[i]
 		entity := sprite.Entity
 		xform  := xt.Comp(entity)
+
+		// sortId =  order << 16 + batch
+		sortId := uint32(int32(sprite.zOrder) + 0xFFFF>>1)
+		sortId = sortId << 16
+		sortId += uint32(sprite.batchId)
+
 		bList[i] = spriteBatchObject{
+			sortId,
 			sprite.batchId,
 			sprite,
 			xform,
@@ -185,7 +194,7 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 
 	// sort
 	sort.Slice(bList, func(i, j int) bool {
-		return bList[i].batchId < bList[j].batchId
+		return bList[i].sortId < bList[j].sortId
 	})
 
 	var batchId int16 = 0x0FFF
@@ -213,10 +222,15 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 		render.End()
 	}
 
-	render.Flush()
+	num := render.Flush()
+
+	dbg.Move(10, 300)
+	dbg.DrawStrScaled(fmt.Sprintf("Batch num: %d", num), .6)
 }
 
+// TODO uint32 = (z-order << 16 + batch-id)
 type spriteBatchObject struct {
+	sortId uint32
 	batchId int16
 	*SpriteComp
 	*Transform
