@@ -126,13 +126,19 @@ func (in *InputSystem) SetKeyEvent(key int, pressed bool) {
 
 // 更新 Mouse/Touch 状态
 func (in *InputSystem) SetPointerEvent(key int, pressed bool, x, y float32) {
-	in.mutex.Lock()
-	in.pointerButton[key].Update(pressed)
-	in.pointers[key].MousePos = mgl32.Vec2{x, y}
-	if key > in.active {
-		in.active = key
+	if key != -1000 {
+		in.mutex.Lock()
+		in.pointerButton[key].Update(pressed)
+		in.pointers[key].MousePos = mgl32.Vec2{x, y}
+		if key > in.active {
+			in.active = key
+		}
+		in.mutex.Unlock()
+	} else {
+		// 如果是鼠标总是记录在 0 的位置
+		// 如果是手指... 这就尴尬了..需要特殊处理
+		in.pointers[0].MousePos = mgl32.Vec2{x, y}
 	}
-	in.mutex.Unlock()
 }
 
 type Key int

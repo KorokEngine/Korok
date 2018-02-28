@@ -128,6 +128,12 @@ func CreateWindow(option *WindowOptions)  {
 
 		// poll event
 		glfw.PollEvents()
+
+		// cursor should be update every frame!!
+		if inputCallback != nil {
+			x, y := window.GetCursorPos()
+			inputCallback.OnPointEvent(-1000, false, float32(x), float32(y))
+		}
 	}
 }
 
