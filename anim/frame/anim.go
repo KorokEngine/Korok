@@ -3,6 +3,7 @@ package frame
 import (
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx"
+	//"log"
 )
 
 // implement frame-animation system
@@ -17,16 +18,17 @@ type SpriteAnimation struct {
 //
 type AnimationState struct {
 	engi.Entity
-	define, n int
+	define int
 	dt, rate float32
 	ii int
 	running bool
+	once bool
 }
 
 // 序列帧动画
 type SpriteAnimationSystem struct {
 	// 原始的帧地址
-	frames []*gfx.SubTex
+	frames []gfx.SubTex
 
 	// 动画定义
 	data []SpriteAnimation
@@ -42,6 +44,21 @@ type SpriteAnimationSystem struct {
 	_map map[engi.Entity]int
 }
 
+func NewSpriteAnimationSystem() *SpriteAnimationSystem{
+	return &SpriteAnimationSystem{
+		names:make(map[string]int),
+		_map:make(map[engi.Entity]int),
+	}
+}
+
+func (sas *SpriteAnimationSystem) RequireTable(tables []interface{}) {
+	for _, t := range tables {
+		if st, ok := t.(*gfx.SpriteTable); ok {
+			sas.st = st; break
+		}
+	}
+}
+
 // 创建新的动画数据
 // 现在 subText 还是指针，稍后会全部用 id 来索引。
 // 动画资源全部存储在一个大的buffer里面，在外部使用索引引用即可.
@@ -49,23 +66,23 @@ type SpriteAnimationSystem struct {
 // 或者说无法删除动画，只能全部删除或者完全重新加载...
 // 如何动画以组的形式存在，那么便可以避免很多问题
 //
-func (sas *SpriteAnimationSystem) NewAnimation(name string, frames []*gfx.SubTex, loop bool) {
+func (sas *SpriteAnimationSystem) NewAnimation(name string, frames []gfx.SubTex, loop bool) {
 	// copy frames
-	start := len(sas.frames)
+	start, size := len(sas.frames), len(frames)
 	sas.frames = append(sas.frames, frames...)
-	end := len(sas.frames)
 	// new animation
-	sas.data = append(sas.data, SpriteAnimation{name, start, end, loop})
+	sas.data = append(sas.data, SpriteAnimation{name, start, size, loop})
 	// keep mapping
 	sas.names[name] = len(sas.data)-1
 }
 
 // 返回动画定义 - 好像并没有太大的意义
-func (sas *SpriteAnimationSystem) Animation(name string) *SpriteAnimation {
+func (sas *SpriteAnimationSystem) Animation(name string) (anim *SpriteAnimation, seq []gfx.SubTex) {
 	if ii, ok := sas.names[name]; ok {
-		return &sas.data[ii]
+		anim = &sas.data[ii]
+		seq  = sas.frames[anim.Start:anim.Start+anim.Len]
 	}
-	return nil
+	return
 }
 
 func (sas *SpriteAnimationSystem) newAnimationState() int {
@@ -76,7 +93,7 @@ func (sas *SpriteAnimationSystem) newAnimationState() int {
 
 // 返回当前 Entity 绑定的动画状态
 // 新建一个动画执行器？？
-func (sas *SpriteAnimationSystem) With(entity engi.Entity) Animator {
+func (sas *SpriteAnimationSystem) Of(entity engi.Entity) Animator {
 	if ii, ok := sas._map[entity]; ok {
 		return Animator{sas, ii}
 	} else {
@@ -92,14 +109,24 @@ type Animator struct {
 
 
 // 返回一个动画的当前执行状态
-func (am *Animator) State(name string) int {
-	st := am.sas.states[am.index]
-	return st.n // todo 计算出当前的动画状态
-}
+//func (am *Animator) State(name string) int {
+//	st := am.sas.states[am.index]
+//	return st.n // todo 计算出当前的动画状态
+//}
 
 // 创建一个动画状态，并关联到 Entity
-func (am *Animator) Play(name string) {
+func (am Animator) Play(name string) {
+	am.sas.states[am.index].define = am.sas.names[name]
+}
 
+func (am Animator) Once() Animator {
+	am.sas.states[am.index].once = true
+	return am
+}
+
+func (am Animator) Rate(r float32) Animator {
+	am.sas.states[am.index].rate = r
+	return am
 }
 
 func (sas *SpriteAnimationSystem) Update(dt float32) {
@@ -119,9 +146,11 @@ func (sas *SpriteAnimationSystem) Update(dt float32) {
 		anim := sas.data[st.define]
 
 		ii := st.ii % anim.Len
-		comp.SubTex = sas.frames[anim.Start+ii]
+		comp.SubTex = &sas.frames[anim.Start+ii]
+
+		// log.Println("play subtex:", comp.SubTex)
 	}
 
 	// remove dead
-	
+
 }
