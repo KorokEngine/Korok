@@ -26,7 +26,7 @@ type AnimationState struct {
 }
 
 // 序列帧动画
-type SpriteAnimationSystem struct {
+type Engine struct {
 	// 原始的帧地址
 	frames []gfx.SubTex
 
@@ -44,17 +44,17 @@ type SpriteAnimationSystem struct {
 	_map map[engi.Entity]int
 }
 
-func NewSpriteAnimationSystem() *SpriteAnimationSystem{
-	return &SpriteAnimationSystem{
+func NewEngine() *Engine {
+	return &Engine{
 		names:make(map[string]int),
 		_map:make(map[engi.Entity]int),
 	}
 }
 
-func (sas *SpriteAnimationSystem) RequireTable(tables []interface{}) {
+func (eng *Engine) RequireTable(tables []interface{}) {
 	for _, t := range tables {
 		if st, ok := t.(*gfx.SpriteTable); ok {
-			sas.st = st; break
+			eng.st = st; break
 		}
 	}
 }
@@ -66,44 +66,44 @@ func (sas *SpriteAnimationSystem) RequireTable(tables []interface{}) {
 // 或者说无法删除动画，只能全部删除或者完全重新加载...
 // 如何动画以组的形式存在，那么便可以避免很多问题
 //
-func (sas *SpriteAnimationSystem) NewAnimation(name string, frames []gfx.SubTex, loop bool) {
+func (eng *Engine) NewAnimation(name string, frames []gfx.SubTex, loop bool) {
 	// copy frames
-	start, size := len(sas.frames), len(frames)
-	sas.frames = append(sas.frames, frames...)
+	start, size := len(eng.frames), len(frames)
+	eng.frames = append(eng.frames, frames...)
 	// new animation
-	sas.data = append(sas.data, SpriteAnimation{name, start, size, loop})
+	eng.data = append(eng.data, SpriteAnimation{name, start, size, loop})
 	// keep mapping
-	sas.names[name] = len(sas.data)-1
+	eng.names[name] = len(eng.data)-1
 }
 
 // 返回动画定义 - 好像并没有太大的意义
-func (sas *SpriteAnimationSystem) Animation(name string) (anim *SpriteAnimation, seq []gfx.SubTex) {
-	if ii, ok := sas.names[name]; ok {
-		anim = &sas.data[ii]
-		seq  = sas.frames[anim.Start:anim.Start+anim.Len]
+func (eng *Engine) Animation(name string) (anim *SpriteAnimation, seq []gfx.SubTex) {
+	if ii, ok := eng.names[name]; ok {
+		anim = &eng.data[ii]
+		seq  = eng.frames[anim.Start:anim.Start+anim.Len]
 	}
 	return
 }
 
-func (sas *SpriteAnimationSystem) newAnimationState() int {
-	id := len(sas.states)
-	sas.states = append(sas.states, AnimationState{})
+func (eng *Engine) newAnimationState() int {
+	id := len(eng.states)
+	eng.states = append(eng.states, AnimationState{})
 	return id
 }
 
 // 返回当前 Entity 绑定的动画状态
 // 新建一个动画执行器？？
-func (sas *SpriteAnimationSystem) Of(entity engi.Entity) Animator {
-	if ii, ok := sas._map[entity]; ok {
-		return Animator{sas, ii}
+func (eng *Engine) Of(entity engi.Entity) Animator {
+	if ii, ok := eng._map[entity]; ok {
+		return Animator{eng, ii}
 	} else {
-		return Animator{sas, sas.newAnimationState()}
+		return Animator{eng, eng.newAnimationState()}
 	}
 }
 
 // 指向当前动画状态的 Handle
 type Animator struct {
-	sas *SpriteAnimationSystem
+	sas *Engine
 	index int
 }
 
@@ -129,10 +129,10 @@ func (am Animator) Rate(r float32) Animator {
 	return am
 }
 
-func (sas *SpriteAnimationSystem) Update(dt float32) {
+func (eng *Engine) Update(dt float32) {
 	// update animation
-	for i := range sas.states {
-		seq := &sas.states[i]
+	for i := range eng.states {
+		seq := &eng.states[i]
 		seq.dt += dt
 		if seq.dt > seq.rate {
 			seq.ii = seq.ii + 1
@@ -141,12 +141,12 @@ func (sas *SpriteAnimationSystem) Update(dt float32) {
 	}
 
 	// update sprite-component
-	for _, st := range sas.states {
-		comp := sas.st.Comp(st.Entity)
-		anim := sas.data[st.define]
+	for _, st := range eng.states {
+		comp := eng.st.Comp(st.Entity)
+		anim := eng.data[st.define]
 
 		ii := st.ii % anim.Len
-		comp.SubTex = &sas.frames[anim.Start+ii]
+		comp.SubTex = &eng.frames[anim.Start+ii]
 
 		// log.Println("play subtex:", comp.SubTex)
 	}

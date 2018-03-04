@@ -7,8 +7,8 @@ type Animator struct {
 	index int
 }
 
-func (en *Engine) NewAnimator() Animator {
-	return Animator{en, en.NewAnimation()}
+func (eng *Engine) NewAnimator() Animator {
+	return Animator{eng, eng.NewAnimation()}
 }
 
 func (anim *Animator) SetDuration(d float32) *Animator{

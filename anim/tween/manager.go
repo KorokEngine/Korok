@@ -35,151 +35,151 @@ func NewEngine() *Engine {
 	}
 }
 
-func (en *Engine) NewAnimation() int {
-	index := en.active
-	en.active ++
-	anim := &en.anims[index];
+func (eng *Engine) NewAnimation() int {
+	index := eng.active
+	eng.active ++
+	anim := &eng.anims[index];
 	anim.Reset()
-	en.values[index] = Value{}
-	en.callbacks[index] = dummyCallback
-	en._map[index] = index
+	eng.values[index] = Value{}
+	eng.callbacks[index] = dummyCallback
+	eng._map[index] = index
 	return index
 }
 
-func (en *Engine) SetTimeScale(sk float32) {
-	en.scale = sk
+func (eng *Engine) SetTimeScale(sk float32) {
+	eng.scale = sk
 }
 
-func (en *Engine) Update(dt float32) {
-	size := en.active
+func (eng *Engine) Update(dt float32) {
+	size := eng.active
 
 	// 1. update
 	for i := 0; i < size; i++ {
 
-		anim := &en.anims[i]
+		anim := &eng.anims[i]
 
 		f, v, done := anim.Animate(dt)
-		en.values[i] = Value{f, v, done }
+		eng.values[i] = Value{f, v, done }
 	}
 
 	// 2. callback
 	for i := 0; i < size; i++ {
-		if v := en.values[i]; v.done {
-			en.callbacks[i].End(v.v)
+		if v := eng.values[i]; v.done {
+			eng.callbacks[i].End(v.v)
 		} else {
-			en.callbacks[i].Update(v.f, v.v)
+			eng.callbacks[i].Update(v.f, v.v)
 		}
 	}
 	// 3. delete dead
 	for i := 0; i < size; i++ {
-		if en.values[i].done {
+		if eng.values[i].done {
 			// find last live
 			j := size - 1
-			for ; j > i && en.values[j].done; j-- { size-- }
+			for ; j > i && eng.values[j].done; j-- { size-- }
 			if j > i {
-				en.erase(i, j)
+				eng.erase(i, j)
 			}
 			size -= 1
 		}
 	}
-	if en.active > size {
-		en.active = size
-		en.resize(size)
+	if eng.active > size {
+		eng.active = size
+		eng.resize(size)
 	}
 }
 
-func (en *Engine) erase(i, j int) {
-	en.anims[i] = en.anims[j]
-	en.values[i] = en.values[j]
-	en.callbacks[i] = en.callbacks[j]
+func (eng *Engine) erase(i, j int) {
+	eng.anims[i] = eng.anims[j]
+	eng.values[i] = eng.values[j]
+	eng.callbacks[i] = eng.callbacks[j]
 }
 
-func (en *Engine) resize(size int) {
-	en.anims = en.anims[:size]
-	en.values = en.values[:size]
-	en.callbacks = en.callbacks[:size]
+func (eng *Engine) resize(size int) {
+	eng.anims = eng.anims[:size]
+	eng.values = eng.values[:size]
+	eng.callbacks = eng.callbacks[:size]
 }
 
-func (en *Engine) Start(index int) {
-	en.anims[index].state = Running
-	if cb := en.callbacks[index].Start; cb != nil {
-		cb(en.values[index].v)
+func (eng *Engine) Start(index int) {
+	eng.anims[index].state = Running
+	if cb := eng.callbacks[index].Start; cb != nil {
+		cb(eng.values[index].v)
 	}
 }
 
-func (en *Engine) Stop(index int) {
+func (eng *Engine) Stop(index int) {
 
 }
 
-func (en *Engine) SetDuration(index int, d float32) {
-	if ii, ok := en._map[index]; ok {
-		en.anims[ii].duration = d
+func (eng *Engine) SetDuration(index int, d float32) {
+	if ii, ok := eng._map[index]; ok {
+		eng.anims[ii].duration = d
 	}
 }
 
-func (en *Engine) SetValue(index int, v0, v1 float32) {
-	if ii, ok := en._map[index]; ok {
-		en.anims[ii].start = v0
-		en.anims[ii].end = v1
-		en.anims[ii].delta = v1-v0
+func (eng *Engine) SetValue(index int, v0, v1 float32) {
+	if ii, ok := eng._map[index]; ok {
+		eng.anims[ii].start = v0
+		eng.anims[ii].end = v1
+		eng.anims[ii].delta = v1-v0
 	}
 }
 
-func (en *Engine) SetRepeat(index int, count int) {
-	if ii, ok := en._map[index]; ok {
-		en.anims[ii].repeatCount = count
+func (eng *Engine) SetRepeat(index int, count int) {
+	if ii, ok := eng._map[index]; ok {
+		eng.anims[ii].repeatCount = count
 	}
 }
 
-func (en *Engine) SetFunction(index int, fn ease.Function) {
-	if ii, ok := en._map[index]; ok {
+func (eng *Engine) SetFunction(index int, fn ease.Function) {
+	if ii, ok := eng._map[index]; ok {
 		if fn != nil {
-			en.anims[ii].interpolator = fn
+			eng.anims[ii].interpolator = fn
 		} else {
-			en.anims[ii].interpolator = ease.Linear
+			eng.anims[ii].interpolator = ease.Linear
 		}
 	}
 }
 
 
-func (en *Engine) SetStartCallback(index int, cb StartCallback) {
-	if ii, ok := en._map[index]; ok {
-		en.callbacks[ii].Start = cb
+func (eng *Engine) SetStartCallback(index int, cb StartCallback) {
+	if ii, ok := eng._map[index]; ok {
+		eng.callbacks[ii].Start = cb
 	}
 }
 
-func (en *Engine) SetUpdateCallback(index int, cb UpdateCallback) {
-	if ii, ok := en._map[index]; ok {
-		en.callbacks[ii].Update = cb
+func (eng *Engine) SetUpdateCallback(index int, cb UpdateCallback) {
+	if ii, ok := eng._map[index]; ok {
+		eng.callbacks[ii].Update = cb
 	}
 }
 
-func (en *Engine) SetCompleteCallback(index int, cb EndCallback) {
-	if ii, ok := en._map[index]; ok {
-		en.callbacks[ii].End = cb
+func (eng *Engine) SetCompleteCallback(index int, cb EndCallback) {
+	if ii, ok := eng._map[index]; ok {
+		eng.callbacks[ii].End = cb
 	}
 }
 
-func (en *Engine) Value(index int) (f, v float32) {
-	if ii, ok := en._map[index]; ok {
-		val := en.values[ii]
+func (eng *Engine) Value(index int) (f, v float32) {
+	if ii, ok := eng._map[index]; ok {
+		val := eng.values[ii]
 		f, v = val.f, val.v
 	}
 	return
 }
 
-func (en *Engine) Duration(index int) float32 {
-	if ii, ok := en._map[index]; ok {
-		return en.anims[ii].duration
+func (eng *Engine) Duration(index int) float32 {
+	if ii, ok := eng._map[index]; ok {
+		return eng.anims[ii].duration
 	} else {
 		return 0
 	}
 }
 
 
-func (en *Engine) Animation(index int) (anim *Animation, ok bool) {
-	if ii, ok := en._map[index]; ok {
-		anim = &en.anims[ii]
+func (eng *Engine) Animation(index int) (anim *Animation, ok bool) {
+	if ii, ok := eng._map[index]; ok {
+		anim = &eng.anims[ii]
 		ok = true
 	}
 	return
