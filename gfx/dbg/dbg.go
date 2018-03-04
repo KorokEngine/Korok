@@ -138,14 +138,11 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		bk.Submit(0, id, 0)
 	}
 	// setup buffer, we can draw 512 rect at most!!
-	dr.Buffer.init(512)
+	dr.Buffer.init(2048)
 	return dr
 }
 
 func (dr *DebugRender) Draw() {
-	//p := mgl32.Ortho2D(0, 480, 0, 320)
-	//bk.SetUniform(dr.umh_P, unsafe.Pointer(&p[0]))
-
 	bk.SetState(dr.stateFlags, dr.rgba)
 	bk.SetTexture(0, dr.umh_S0, uint16(dr.Buffer.fontTexId), 0)
 
