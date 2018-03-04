@@ -215,7 +215,7 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 
 	updateSize := uint32(requireVertexSize * 20)
 
-	dbg.Move(10, 300)
+	dbg.Move(400, 300)
 	dbg.DrawStrScaled(fmt.Sprintf("lives: %d", vertexOffset>>2), .6)
 
 	prf.vb.Update(0, updateSize, unsafe.Pointer(&vertex[0]), false)

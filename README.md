@@ -5,16 +5,40 @@ inspired by [bitsquid blog](http://bitsquid.blogspot.com/).
 
 Homepage: [korok.io](http://korok.io)      Twitter: [ntop](https://twitter.com/ntoooop)
 
-The latest release is alpha-version which is not stable and will have breaking changes in the future.
+The latest release is beta-version which is not stable and will have breaking changes in the future.
 About the state and progress of the project, see [Devlogs](https://github.com/KorokEngine/Korok/blob/master/dev_log.md)
 
 ## Getting Started
 
 `go get -insecure korok.io/korok`
 
-## Documentation and demos
+## Documentation and Demos
 
-Document and demo is in progress..
+Document is in progress... But we have a [DemoProject](https://github.com/KorokEngine/beta-demo)
+
+**Some ScreenShot**
+
+> Input Control - Show how to use `InputSystem`
+
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/alpha_input.gif" width="500">
+
+> Sprite Animation - Show how to use sprite animation system
+
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_frame.gif" width="500">
+
+> Tween Animation - Show how to use tween animation system
+
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_tween.gif" width="500">
+
+
+> ParticleSystem - Show how to use `ParticleComp`
+
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_particle.jpeg" width="500">
+
+
+> Gui - Show how to use korok's imgui-api
+
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_gui.gif" width="500">
 
 ## License
 
