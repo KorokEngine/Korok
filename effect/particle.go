@@ -168,6 +168,10 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 	xt, mt, n := prf.xt, prf.et, prf.et.index
 	mr := prf.mr
 
+	if n == 0 {
+		return
+	}
+
 	var requireVertexSize int
 	var requireIndexSize int
 	for i := 0; i < n; i++ {

@@ -24,6 +24,11 @@ type Options struct {
 	Width, Height int
 }
 
+func RunScene(options *Options, sc game.Scene) {
+	PushScene(sc)
+	Run(options)
+}
+
 func Run(options *Options)  {
 	log.Println("Game Start! " + options.Title)
 

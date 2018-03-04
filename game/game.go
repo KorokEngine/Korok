@@ -9,11 +9,12 @@ import (
 	"korok.io/korok/assets"
 	"korok.io/korok/hid/input"
 	"korok.io/korok/gfx/dbg"
+	"korok.io/korok/gui"
 
 	"log"
 	"reflect"
 	"fmt"
-	"korok.io/korok/gui"
+
 )
 
 const (
@@ -47,6 +48,7 @@ type Game struct {
 	*input.InputSystem
 	*effect.ParticleSimulateSystem
 	*ScriptSystem
+	*anim.AnimationSystem
 }
 
 func (g *Game) Camera() *gfx.Camera {
@@ -84,7 +86,7 @@ func AddScene(scene Scene) {
 func (g *Game) Create() {
 	gfx.Init()
 	// render system
-	rs := &gfx.RenderSystem{}
+	rs := gfx.NewRenderSystem()
 	g.RenderSystem = rs
 
 	//
@@ -140,6 +142,10 @@ func (g *Game) Create() {
 	/// script system
 	g.ScriptSystem = NewScriptSystem()
 	g.ScriptSystem.RequireTable(g.DB.Tables)
+
+	/// Sprite animation system
+	g.AnimationSystem = anim.NewAnimationSystem()
+	g.AnimationSystem.RequireTable(g.DB.Tables)
 
 	/// Customized scene
 	if current != nil {
@@ -206,6 +212,9 @@ func (g *Game) Update() {
 	g.InputSystem.Reset()
 
 	//// simulation....
+
+	// update sprite animation
+	g.AnimationSystem.Update(dt)
 
 	/// 动画更新，骨骼数据
 	///g.AnimationSystem.Update(dt)

@@ -26,9 +26,11 @@ func Clear()  {
 var Shader *ShaderManager
 var Texture *TextureManager
 var Font *FontManager
+var PSConfig *ParticleConfigManager
 
 func init() {
 	Shader = NewShaderManager()
 	Texture = NewTextureManager()
 	Font = NewFontManager()
+	PSConfig = NewParticleConfigManager()
 }

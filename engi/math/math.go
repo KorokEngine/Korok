@@ -55,3 +55,27 @@ func UInt16_max(a, b uint16) uint16 {
 func UInt32_cnttz(v uint32) uint32{
 	return 0
 }
+
+func Max(a, b float32) float32 {
+	if a < b {
+		return b
+	}
+	return a
+}
+
+func Min(a, b float32) float32 {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func F32Clamp(v, left, right float32) float32{
+	if v > right {
+		return right
+	}
+	if v < left {
+		return left
+	}
+	return v
+}
