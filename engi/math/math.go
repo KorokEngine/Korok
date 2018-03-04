@@ -5,6 +5,8 @@ import (
 	"math/rand"
 )
 
+const MaxFloat32 float32 = 3.40282346638528859811704183484516925440e+38
+
 /// This is A approximate yet fast inverse square-root.
 func InvSqrt(x float32) float32 {
 	xhalf := float32(0.5) * x

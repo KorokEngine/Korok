@@ -34,7 +34,7 @@ func Run(options *Options)  {
 
 	g := &game.Game{}
 	G = g
-	g.Init()
+	g.Init(game.Options{options.Width, options.Height})
 
 	Entity = g.DB.EntityM
 

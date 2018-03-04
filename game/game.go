@@ -2,6 +2,7 @@ package game
 
 import (
 	"korok.io/korok/engi"
+	"korok.io/korok/engi/math"
 	"korok.io/korok/gfx"
 	"korok.io/korok/effect"
 	"korok.io/korok/anim"
@@ -14,7 +15,6 @@ import (
 	"log"
 	"reflect"
 	"fmt"
-
 )
 
 const (
@@ -27,6 +27,11 @@ const (
 
 	MaxParticleSize = 1024
 )
+
+
+type Options struct {
+	W, H int
+}
 
 type Table interface{}
 
@@ -41,7 +46,7 @@ var scenes = make(map[string]Scene)
 var current Scene
 
 type Game struct {
-	FPS; DB
+	Options; FPS; DB
 
 	*gfx.RenderSystem
 	*gui.UISystem
@@ -88,6 +93,12 @@ func (g *Game) Create() {
 	// render system
 	rs := gfx.NewRenderSystem()
 	g.RenderSystem = rs
+
+	min, max := -math.MaxFloat32, math.MaxFloat32
+	// setup camera
+	c := &rs.MainCamera
+	c.SetViewPort(float32(g.Options.W), float32(g.Options.H))
+	c.SetBound(min, max, max, min)
 
 	//
 	// set table
@@ -159,7 +170,8 @@ func (g *Game) Destroy() {
 	g.RenderSystem.Destroy()
 }
 
-func (g *Game) Init() {
+func (g *Game) Init(op Options) {
+	g.Options = op
 	g.loadTables()
 }
 
