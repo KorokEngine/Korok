@@ -149,6 +149,11 @@ func Submit(id uint8, program uint16, depth int32) uint32 {
 	return g_renderQ.Submit(id, program, depth)
 }
 
+// Reset DrawCall state
+func ResetDrawCall() {
+	g_renderQ.drawCall.reset()
+}
+
 // Execute final draw
 func Flush() uint32 {
 	return g_renderQ.Flush()

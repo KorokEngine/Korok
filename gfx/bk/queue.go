@@ -50,7 +50,8 @@ type RenderDraw struct {
 }
 
 func (rd *RenderDraw) reset() {
-
+	rd.indexBuffer = 0
+	rd.firstIndex, rd.num = 0, 0
 }
 
 // ~ 8000 draw call
