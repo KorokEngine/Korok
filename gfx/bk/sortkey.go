@@ -11,14 +11,15 @@ const (
 
 // SortKey FORMAT
 // 64bit:
-// 0000    00000   000   0000000000    0000000000 - 32(0)
-//  ^        ^      ^       ^              ^
-//  |        |      |       |              |
-//  |      shader   |    texture         unused
-// Layer          blend
+// 0000 - 0000000000 -       00000 -  000 - 0000000000
+//  ^        ^                  ^      ^       ^
+//  |        |                  |      |       |
+//  |      z-order            shader   |    texture
+// Layer                             blend
 //
 type SortKey struct {
 	Layer   uint16
+	Order   uint16
 	Shader  uint16
 	Blend   uint16
 	Texture uint16

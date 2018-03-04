@@ -15,8 +15,8 @@ const InvalidId uint16 = 0x0000
 const UINT16_MAX uint16 = 0xFFFF
 
 const (
-	ID_TYPE_MASK  uint16 = 0x0FFF
-	ID_TYPE_SHIFT = 12
+	ID_MASK       uint16 = 0x0FFF
+	ID_TYPE_SHIFT        = 12
 )
 
 type Memory struct {
@@ -94,7 +94,7 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 		log.Println("fail to alloc index-buffer, ", err)
 	} else {
 		if g_debug&DEBUG_R != 0 {
-			log.Printf("alloc index-buffer: (%d, %d)", id&ID_TYPE_MASK, ib.Id)
+			log.Printf("alloc index-buffer: (%d, %d)", id&ID_MASK, ib.Id)
 		}
 	}
 	return
@@ -108,7 +108,7 @@ func (rm *ResManager) AllocVertexBuffer(mem Memory, stride uint16) (id uint16, v
 		log.Println("fail to alloc vertex-buffer, ", err)
 	} else {
 		if  g_debug&DEBUG_R != 0 {
-			log.Printf("alloc vertex-buffer: (%d, %d)", id&ID_TYPE_MASK, vb.Id)
+			log.Printf("alloc vertex-buffer: (%d, %d)", id&ID_MASK, vb.Id)
 		}
 	}
 	return
@@ -120,10 +120,10 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 	id = id | (ID_TYPE_UNIFORM << ID_TYPE_SHIFT)
 	if ok, sh := rm.Shader(shId); ok {
 		if um.create(sh.Program, name, xType, num) < 0 {
-			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId&ID_TYPE_MASK)
+			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId&ID_MASK)
 		} else {
 			if (g_debug & DEBUG_R) != 0 {
-				log.Printf("alloc uniform: %s(%d, %d)", name, id&ID_TYPE_MASK, um.Slot)
+				log.Printf("alloc uniform: %s(%d, %d)", name, id&ID_MASK, um.Slot)
 			}
 		}
 	}
@@ -138,7 +138,7 @@ func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) 
 		log.Printf("fail to alloc texture, %s", err)
 	} else {
 		if (g_debug & DEBUG_R) != 0 {
-			log.Printf("alloc texture id: (%d, %d)", id&ID_TYPE_MASK, tex.Id)
+			log.Printf("alloc texture id: (%d, %d)", id&ID_MASK, tex.Id)
 		}
 	}
 	return
@@ -153,7 +153,7 @@ func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 		log.Println("fail to alloc shader, ", err)
 	} else {
 		if (g_debug & DEBUG_R) != 0 {
-			log.Printf("alloc shader id:(%d, %d) ", id&ID_TYPE_MASK, sh.Program)
+			log.Printf("alloc shader id:(%d, %d) ", id&ID_MASK, sh.Program)
 		}
 	}
 	return
@@ -162,7 +162,7 @@ func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 /// Destroy Method
 func (rm *ResManager) Free(id uint16) {
 	t := (id >> ID_TYPE_SHIFT) & 0x000F
-	v := id & ID_TYPE_MASK
+	v := id & ID_MASK
 
 	switch t {
 	case ID_TYPE_INDEX:
@@ -186,7 +186,7 @@ func (rm *ResManager) Free(id uint16) {
 
 /// Retrieve Method
 func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
+	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_INDEX || v >= MAX_INDEX {
 		return false, nil
 	}
@@ -194,7 +194,7 @@ func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
 }
 
 func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
+	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_VERTEX || v >= MAX_VERTEX {
 		return false, nil
 	}
@@ -202,7 +202,7 @@ func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 }
 
 func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
-	t, v := id >>ID_TYPE_SHIFT, id&ID_TYPE_MASK
+	t, v := id >>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_TEXTURE || v >= MAX_TEXTURE {
 		return false, nil
 	}
@@ -210,7 +210,7 @@ func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
 }
 
 func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
+	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_UNIFORM || v >= MAX_UNIFORM {
 		return false, nil
 	}
@@ -218,7 +218,7 @@ func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 }
 
 func (rm *ResManager) Shader(id uint16) (ok bool, sh *Shader) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_TYPE_MASK
+	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_SHADER || v >= MAX_SHADER {
 		if (g_debug & DEBUG_R) != 0 {
 			log.Printf("Invalid shader id:(%d, %d, %d)", id, t, v)
