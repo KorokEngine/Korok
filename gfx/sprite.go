@@ -14,6 +14,7 @@ import (
 type SpriteComp struct {
 	engi.Entity
 	*SubTex
+	anim uint16
 
 	Scale float32
 	Color uint32
@@ -39,6 +40,10 @@ func (sc *SpriteComp) SetZOrder(z int16) {
 
 func (sc *SpriteComp) SetBatchId(b int16) {
 	sc.batchId = b
+}
+
+func (sc *SpriteComp) SetSize(w, h float32) {
+	sc.Width, sc.Height = w, h
 }
 
 type SpriteTable struct {

@@ -89,7 +89,7 @@ func (th *RenderSystem) RegisterRender(t RenderType, render Render) {
 
 func (th *RenderSystem) Update(dt float32) {
 	// update camera todo default invalid should be zero
-	if c := &th.MainCamera; c.follow != 1000000 {
+	if c := &th.MainCamera; c.follow != 0xFFFFFFFF {
 		xf := th.xfs.Comp(c.follow)
 		p  := xf.Position()
 		c.MoveTo(p[0], p[1])
@@ -116,5 +116,6 @@ func (th *RenderSystem) Destroy() {
 
 func NewRenderSystem() *RenderSystem {
 	th := new(RenderSystem)
+	th.MainCamera.follow = 0xFFFFFFFF
 	return th
 }
