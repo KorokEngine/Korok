@@ -59,7 +59,7 @@ func NewSpriteTable(cap int) *SpriteTable {
 	}
 }
 
-func (st *SpriteTable) NewComp(entity engi.Entity, tex *SubTex) (sc *SpriteComp) {
+func (st *SpriteTable) NewComp(entity engi.Entity) (sc *SpriteComp) {
 	if size := len(st.comps); st.index >= size {
 		st.comps = spriteResize(st.comps, size + STEP)
 	}
@@ -69,15 +69,16 @@ func (st *SpriteTable) NewComp(entity engi.Entity, tex *SubTex) (sc *SpriteComp)
 		return
 	}
 	sc = &st.comps[st.index]
-	sc.SubTex = tex
 	sc.Entity = entity
-	if tex != nil {
-		sc.batchId = int16(tex.TexId)
-		sc.Width = float32(tex.Width)
-		sc.Height = float32(tex.Width)
-	}
 	st._map[ei] = st.index
 	st.index ++
+	return
+}
+
+// New SpriteComp with parameter
+func (st *SpriteTable) NewCompX(entity engi.Entity, tex *SubTex) (sc *SpriteComp) {
+	sc = st.NewComp(entity)
+	sc.SetTexture(tex)
 	return
 }
 

@@ -3,6 +3,7 @@ package math
 import (
 	"unsafe"
 	"math/rand"
+	"math"
 )
 
 const MaxFloat32 float32 = 3.40282346638528859811704183484516925440e+38
@@ -72,7 +73,7 @@ func Min(a, b float32) float32 {
 	return b
 }
 
-func F32Clamp(v, left, right float32) float32{
+func Clamp(v, left, right float32) float32{
 	if v > right {
 		return right
 	}
@@ -80,4 +81,12 @@ func F32Clamp(v, left, right float32) float32{
 		return left
 	}
 	return v
+}
+
+func Sin(r float32) float32 {
+	return float32(math.Sin(float64(r)))
+}
+
+func Cos(r float32) float32 {
+	return float32(math.Cos(float64(r)))
 }
