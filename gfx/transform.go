@@ -80,6 +80,12 @@ func (xf *Transform) SetPosition(position f32.Vec2) {
 	}
 }
 
+func (xf *Transform) MoveBy(dx, dy float32) {
+	p := xf.local.Position
+	p[0], p[1] = p[0]+dx, p[1]+dy
+	xf.SetPosition(p)
+}
+
 // update world location: world = parent.world + self.local
 func (xf *Transform) setPosition(parent *SRT, local f32.Vec2) {
 	p := f32.Vec2{0, 0}
@@ -107,6 +113,12 @@ func (xf *Transform) SetScale(scale f32.Vec2) {
 	}
 }
 
+func (xf *Transform) ScaleBy(dx, dy float32) {
+	sk := xf.local.Scale
+	sk[0], sk[1] = sk[0]+dx, sk[1]+dy
+	xf.SetScale(sk)
+}
+
 func (xf *Transform) setScale(parent *SRT, scale f32.Vec2) {
 	s := f32.Vec2{1, 1}
 	if parent != nil {
@@ -132,6 +144,12 @@ func (xf *Transform) SetRotation(rotation float32) {
 	} else {
 		xf.setRotation(&xf.t.comps[xf.parent].world, rotation)
 	}
+}
+
+func (xf *Transform) RotateBy(d float32) {
+	r := xf.local.Rotation
+	r += d
+	xf.SetRotation(r)
 }
 
 func (xf *Transform) setRotation(parent *SRT, rotation float32) {

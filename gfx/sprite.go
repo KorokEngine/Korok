@@ -2,9 +2,9 @@ package gfx
 
 import (
 	"korok.io/korok/engi"
+	"korok.io/korok/gfx/dbg"
 
 	"sort"
-	"korok.io/korok/gfx/dbg"
 	"fmt"
 )
 
@@ -16,10 +16,11 @@ type SpriteComp struct {
 	*SubTex
 	anim uint16
 
-	Scale float32
-	Color uint32
-	Width float32
-	Height float32
+	scale float32
+	color uint32
+
+	width float32
+	height float32
 
 	zOrder  int16
 	batchId int16
@@ -29,8 +30,8 @@ func (sc *SpriteComp) SetTexture(tex *SubTex) {
 	sc.SubTex = tex
 	if tex != nil {
 		sc.batchId = int16(tex.TexId)
-		sc.Width = float32(tex.Width)
-		sc.Height = float32(tex.Width)
+		sc.width = float32(tex.Width)
+		sc.height = float32(tex.Width)
 	}
 }
 
@@ -43,7 +44,28 @@ func (sc *SpriteComp) SetBatchId(b int16) {
 }
 
 func (sc *SpriteComp) SetSize(w, h float32) {
-	sc.Width, sc.Height = w, h
+	sc.width, sc.height = w, h
+}
+
+func (sc *SpriteComp) Size() (w, h float32) {
+	w, h = sc.width, sc.height
+	return
+}
+
+func (sc *SpriteComp) Color() uint32 {
+	return sc.color
+}
+
+func (sc *SpriteComp) SetColor(color uint32) {
+	sc.color = color
+}
+
+func (sc *SpriteComp) Scale() float32 {
+	return sc.scale
+}
+
+func (sc *SpriteComp) SetScale(sk float32)  {
+	sc.scale = sk
 }
 
 type SpriteTable struct {
@@ -255,8 +277,8 @@ type spriteBatchObject struct {
 func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 	p := sbo.Transform.world.Position
 	r := sbo.SpriteComp.Region
-	w := sbo.Width
-	h := sbo.Height
+	w := sbo.width
+	h := sbo.height
 
 	buf[0].X, buf[0].Y = p[0], p[1]
 	buf[0].U, buf[0].V = r.X1, r.Y2
