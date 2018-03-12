@@ -2,7 +2,7 @@ package game
 
 import (
 	"korok.io/korok/engi"
-	"korok.io/korok/engi/math"
+	"korok.io/korok/math"
 	"korok.io/korok/gfx"
 	"korok.io/korok/effect"
 	"korok.io/korok/anim"

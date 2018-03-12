@@ -3,7 +3,7 @@ package input
 import (
 	"sync"
 	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 )
 
 // 记录一帧之内的按键，一帧时间做多支持同时按6个按键
@@ -129,7 +129,7 @@ func (in *InputSystem) SetPointerEvent(key int, pressed bool, x, y float32) {
 	if key != -1000 {
 		in.mutex.Lock()
 		in.pointerButton[key].Update(pressed)
-		in.pointers[key].MousePos = mgl32.Vec2{x, y}
+		in.pointers[key].MousePos = f32.Vec2{x, y}
 		if key > in.active {
 			in.active = key
 		}
@@ -137,7 +137,7 @@ func (in *InputSystem) SetPointerEvent(key int, pressed bool, x, y float32) {
 	} else {
 		// 如果是鼠标总是记录在 0 的位置
 		// 如果是手指... 这就尴尬了..需要特殊处理
-		in.pointers[0].MousePos = mgl32.Vec2{x, y}
+		in.pointers[0].MousePos = f32.Vec2{x, y}
 	}
 }
 
@@ -166,7 +166,7 @@ func PointerPosition(pb KeyPoint) PointerInput {
 }
 
 // Touch event
-func Touch(fi FingerId) (btn *button, pos, delta mgl32.Vec2) {
+func Touch(fi FingerId) (btn *button, pos, delta f32.Vec2) {
 	btn = &Input.pointerButton[fi]
 	p := Input.pointers[fi]
 	pos, delta = p.MousePos, p.MouseDelta
@@ -174,7 +174,7 @@ func Touch(fi FingerId) (btn *button, pos, delta mgl32.Vec2) {
 }
 
 // Mouse event
-func Mouse(key int) (btn *button, pos, delta mgl32.Vec2) {
+func Mouse(key int) (btn *button, pos, delta f32.Vec2) {
 	btn = &Input.pointerButton[key]
 	p := Input.pointers[key]
 	pos, delta = p.MousePos, p.MouseDelta

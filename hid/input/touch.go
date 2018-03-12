@@ -1,6 +1,6 @@
 package input
 
-import "github.com/go-gl/mathgl/mgl32"
+import "korok.io/korok/math/f32"
 
 type FingerId int
 
@@ -10,7 +10,7 @@ type PointerInput struct {
 	Id FingerId
 
 	// The position and moved amount of pointer
-	MousePos, MouseDelta mgl32.Vec2
+	MousePos, MouseDelta f32.Vec2
 
 	used bool
 }

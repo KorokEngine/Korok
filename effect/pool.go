@@ -2,7 +2,7 @@ package effect
 
 import (
 	"unsafe"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 )
 
 // A description of channel used in pool
@@ -87,9 +87,9 @@ func (p *Pool) Field(t ChanFiled) (array interface{}) {
 	case ChanF32:
 		array = channel_f32((*[1<<16]float32)(unsafe.Pointer(mem))[:p.cap])
 	case ChanV2:
-		array = channel_v2((*[1<<16]mgl32.Vec2)(unsafe.Pointer(mem))[:p.cap])
+		array = channel_v2((*[1<<16]f32.Vec2)(unsafe.Pointer(mem))[:p.cap])
 	case ChanV4:
-		array = channel_v4((*[1<<16]mgl32.Vec4)(unsafe.Pointer(mem))[:p.cap])
+		array = channel_v4((*[1<<16]f32.Vec4)(unsafe.Pointer(mem))[:p.cap])
 	}
 	return
 }

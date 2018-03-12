@@ -1,8 +1,7 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-
+	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx/dbg"
 	"fmt"
@@ -23,13 +22,13 @@ type RenderObject struct {
 	Type uint32
 
 	// Position
-	position mgl32.Vec2
+	position f32.Vec2
 
 	// Rotation
 	rotation float32
 
 	// Scale
-	scale mgl32.Vec2
+	scale f32.Vec2
 }
 
 // 传入参数是经过可见性系统筛选后的 Entity，这是一个很小的数组，可以

@@ -2,7 +2,6 @@ package gfx
 
 import (
 	"korok.io/korok/gfx/bk"
-	//"log"
 )
 
 // USED to model sprite

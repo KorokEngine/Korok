@@ -1,7 +1,7 @@
 package bk
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 	"log"
 	"unsafe"
 )
@@ -157,7 +157,7 @@ func (rq *RenderQueue) SetUniform(id uint16, ptr unsafe.Pointer) {
 }
 
 // Transform 是 uniform 之一，2D 世界可以省略
-func (rq *RenderQueue) SetTransform(mtx *mgl32.Mat4) {
+func (rq *RenderQueue) SetTransform(mtx *f32.Mat4) {
 	// TODO impl
 }
 
@@ -200,7 +200,7 @@ func (rq *RenderQueue) SetViewClear(id uint8, flags uint16, rgba uint32, depth f
 	clear.stencil = stencil
 }
 
-func (rq *RenderQueue) SetViewTransform(id uint8, view, proj *mgl32.Mat4, flags uint8) {
+func (rq *RenderQueue) SetViewTransform(id uint8, view, proj *f32.Mat4, flags uint8) {
 
 }
 

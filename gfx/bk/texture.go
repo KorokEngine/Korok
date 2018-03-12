@@ -8,7 +8,7 @@ import (
 	_ "image/png"
 
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 )
 
 /**
@@ -39,8 +39,8 @@ func (t *Texture2D) Bind(stage int32) {
 
 func (t *Texture2D) Sub(x, y float32, w, h float32) *SubTex {
 	subTex := &SubTex{Texture2D: t}
-	subTex.Min = mgl32.Vec2{x, y}
-	subTex.Max = mgl32.Vec2{x + w, y + h}
+	subTex.Min = f32.Vec2{x, y}
+	subTex.Max = f32.Vec2{x + w, y + h}
 	return subTex
 }
 
@@ -87,5 +87,5 @@ type SubTex struct {
 	*Texture2D
 
 	// location -
-	Min, Max mgl32.Vec2
+	Min, Max f32.Vec2
 }

@@ -1,10 +1,11 @@
 package gui
 
 import (
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
-	"unsafe"
-	"github.com/go-gl/mathgl/mgl32"
 	"korok.io/korok/gfx/bk"
+
+	"unsafe"
 )
 
 
@@ -74,7 +75,7 @@ func (ui *UISystem) Draw(dt float32) {
 	}
 }
 
-var	mat4 = mgl32.Ident4()
+var	mat4 = f32.Ident4()
 
 func (ui *UISystem) Destroy() {
 

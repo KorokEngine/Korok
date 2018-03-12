@@ -1,12 +1,11 @@
 package effect
 
 import (
+	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx"
 	"korok.io/korok/gfx/bk"
 	"korok.io/korok/gfx/dbg"
-
-	"github.com/go-gl/mathgl/mgl32"
 
 	"unsafe"
 	"fmt"
@@ -160,7 +159,7 @@ func (prf *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
 	// add new feature
 	rs.Accept(prf)
 }
-var mat = mgl32.Ident4()
+var mat = f32.Ident4()
 
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！

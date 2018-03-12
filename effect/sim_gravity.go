@@ -1,10 +1,11 @@
 package effect
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-	"log"
-	"korok.io/korok/engi/math"
+	"korok.io/korok/math"
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
+
+	"log"
 )
 
 // name convention: r = red, d_r = derivative of r with respect to time
@@ -47,7 +48,7 @@ type GravityConfig struct {
 	Config
 
 	// gravity
-	Gravity mgl32.Vec2
+	Gravity f32.Vec2
 
 	// speed and d
 	Velocity [2]Var
@@ -83,7 +84,7 @@ type GravitySimulator struct {
 	tangentialAcc channel_f32
 
 	//
-	gravity mgl32.Vec2
+	gravity f32.Vec2
 
 	live int
 }
@@ -173,7 +174,7 @@ func (g *GravitySimulator) newParticle(new int) {
 		g.life[i] = rdm(cfg.Life)
 		invLife := 1/g.life[i]
 
-		g.pose[i] = mgl32.Vec2{cfg.X.Random(), cfg.Y.Random()}
+		g.pose[i] = f32.Vec2{cfg.X.Random(), cfg.Y.Random()}
 		// color
 		var red, _g, b, a  float32 = 1, 1, 1, 1
 		var redd, gd, bd, ad float32
@@ -201,8 +202,8 @@ func (g *GravitySimulator) newParticle(new int) {
 				ad = (cfg.A.End.Random() - a) * invLife
 			}
 		}
-		g.color[i] = mgl32.Vec4{red, _g, b, a}
-		g.colorDelta[i] = mgl32.Vec4{redd, gd, bd, ad}
+		g.color[i] = f32.Vec4{red, _g, b, a}
+		g.colorDelta[i] = f32.Vec4{redd, gd, bd, ad}
 
 		g.size[i] = cfg.Size.Start.Random()
 		if cfg.Size.Start != cfg.Size.End {
@@ -219,7 +220,7 @@ func (g *GravitySimulator) newParticle(new int) {
 		// gravity
 		g.radialAcc[i] = cfg.RadialAcc.Random()
 		g.tangentialAcc[i] = cfg.TangentialAcc.Random()
-		g.velocity[i] = mgl32.Vec2{cfg.Velocity[0].Random(), cfg.Velocity[1].Random()}
+		g.velocity[i] = f32.Vec2{cfg.Velocity[0].Random(), cfg.Velocity[1].Random()}
 	}
 }
 

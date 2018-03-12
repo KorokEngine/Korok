@@ -1,7 +1,6 @@
 package tween
 
 import (
-	//"fmt"
 	"korok.io/korok/anim/tween/ease"
 )
 

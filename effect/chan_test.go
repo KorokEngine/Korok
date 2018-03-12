@@ -2,7 +2,7 @@ package effect
 
 import (
 	"testing"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 )
 
 func TestChannel_f32(t *testing.T) {
@@ -47,7 +47,7 @@ func TestChannel_f32(t *testing.T) {
 }
 
 func TestChannel_v2(t *testing.T) {
-	p := channel_v2(make([]mgl32.Vec2, 1024))
+	p := channel_v2(make([]f32.Vec2, 1024))
 	n := 10
 
 	p.SetConst(int32(n), 4, 8)
@@ -64,7 +64,7 @@ func TestChannel_v2(t *testing.T) {
 		}
 	}
 
-	v := channel_v2(make([]mgl32.Vec2, 1024))
+	v := channel_v2(make([]f32.Vec2, 1024))
 	v.SetConst(int32(n), 16, 32)
 	p.Integrate(int32(n), v, 1.0/60)
 

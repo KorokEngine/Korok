@@ -1,7 +1,7 @@
 package bk
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 	"unsafe"
 )
 
@@ -65,7 +65,7 @@ func SetTexture(stage uint8, sampler uint16, handle uint16, flags uint32) {
 }
 
 /// Set Model matrix
-func SetTransform(mtx *mgl32.Mat4) {
+func SetTransform(mtx *f32.Mat4) {
 	g_renderQ.SetTransform(mtx)
 }
 
@@ -125,7 +125,7 @@ func SetViewClear(id uint8, flags uint16, rgba uint32, depth float32, stencil ui
 /// @param proj Projection matrix. When using stero rendering this projection matrix
 ///				 represent projection matrix for left eye
 /// @param flags View flags. default=BGFX_VIEW_STEREO
-func SetViewTransform(id uint8, view, proj *mgl32.Mat4, flags uint8) {
+func SetViewTransform(id uint8, view, proj *f32.Mat4, flags uint8) {
 	g_renderQ.SetViewTransform(id, view, proj, flags)
 }
 

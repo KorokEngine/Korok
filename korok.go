@@ -16,8 +16,8 @@ import (
 	"korok.io/korok/hid/input"
 )
 
-const VERSION_CODE  = 1
-const VERSION_NAME  = "0.1"
+const VERSION_CODE  = 2
+const VERSION_NAME  = "0.2"
 
 type Options struct {
 	Title string

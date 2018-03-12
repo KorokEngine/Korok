@@ -2,7 +2,7 @@ package effect
 
 import (
 	"korok.io/korok/gfx"
-	"korok.io/korok/engi/math"
+	"korok.io/korok/math"
 )
 
 /**

@@ -2,7 +2,7 @@ package effect
 
 import (
 	"korok.io/korok/gfx"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 
 	"math"
 	"log"
@@ -88,7 +88,7 @@ func (r *RadiusSimulator) Simulate(dt float32) {
 	for i := int32(0); i < n; i ++ {
 		x := float32(math.Cos(float64(r.angle[i]))) * r.radius[i]
 		y := float32(math.Sin(float64(r.angle[i]))) * r.radius[i]
-		r.pose[i] = mgl32.Vec2{x, y}
+		r.pose[i] = f32.Vec2{x, y}
 	}
 	r.color.Integrate(n, r.colorDelta, dt)
 	r.size.Integrate(n, r.sizeDelta, dt)
@@ -114,7 +114,7 @@ func (r *RadiusSimulator) newParticle(new int) {
 	for i := start; i < r.live; i++ {
 		r.life[i] = cfg.Life.Random()
 		invLife := 1/r.life[i]
-		r.pose[i] = mgl32.Vec2{cfg.X.Random(), cfg.Y.Random()}
+		r.pose[i] = f32.Vec2{cfg.X.Random(), cfg.Y.Random()}
 
 		// color
 		var _r, g, b, a  float32 = 1, 1, 1, 1
@@ -143,8 +143,8 @@ func (r *RadiusSimulator) newParticle(new int) {
 				ad = (cfg.A.End.Random() - a) * invLife
 			}
 		}
-		r.color[i] = mgl32.Vec4{_r, g, b, a}
-		r.colorDelta[i] = mgl32.Vec4{redd, gd, bd, ad}
+		r.color[i] = f32.Vec4{_r, g, b, a}
+		r.colorDelta[i] = f32.Vec4{redd, gd, bd, ad}
 
 
 		r.size[i] = cfg.Size.Start.Random()

@@ -1,7 +1,7 @@
 package effect
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
 	"log"
 )
@@ -26,8 +26,8 @@ type FireSimulator struct {
 	Config struct{
 		Life Var
 		Size Var
-		Color mgl32.Vec4
-		Position mgl32.Vec2
+		Color f32.Vec4
+		Position f32.Vec2
 		Velocity [2]Var
 	}
 }
@@ -40,9 +40,9 @@ func NewFireSimulator(cap int) Simulator {
 	sim.AddChan(Color)
 	// config
 	sim.Config.Life = Var{3, 4}
-	sim.Config.Color = mgl32.Vec4{1, 1, 1, 1}
+	sim.Config.Color = f32.Vec4{1, 1, 1, 1}
 	sim.Config.Size = Var{5, 10}
-	sim.Config.Position = mgl32.Vec2{240, 50}
+	sim.Config.Position = f32.Vec2{240, 50}
 	sim.Config.Velocity[0] = Var{10, 70}
 	sim.Config.Velocity[1] = Var{10, 40}
 
@@ -128,7 +128,7 @@ func (f *FireSimulator) NewParticle(new int32) {
 		f.position[i] = f.Config.Position
 		dx := f.Config.Velocity[0].Random()
 		dy := f.Config.Velocity[1].Random()
-		v := mgl32.Vec2{dx-40, float32(30+dy)}
+		v := f32.Vec2{dx-40, float32(30+dy)}
 		f.velocity[i] = v
 	}
 }

@@ -1,7 +1,7 @@
 package gui
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
 )
 
@@ -97,7 +97,7 @@ func InputText(hint string, style *InputStyle) {
 }
 
 // Widget: Image
-func Image(id ID, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
+func Image(id ID, texId uint16, uv f32.Vec4, style *ImageStyle) {
 	gContext.Image(id, texId, uv, style)
 }
 

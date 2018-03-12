@@ -1,8 +1,7 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-
+	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
 )
 
@@ -23,9 +22,9 @@ const STEP = 64
 const none = 0
 
 type SRT struct {
-	Scale mgl32.Vec2
+	Scale f32.Vec2
 	Rotation float32
-	Position mgl32.Vec2
+	Position f32.Vec2
 }
 
 // 还可以做更细的拆分，把 Matrix 全部放到一个数组里面
@@ -50,11 +49,11 @@ type Transform struct {
 	t *TransformTable
 }
 
-func (xf *Transform) Position() mgl32.Vec2 {
+func (xf *Transform) Position() f32.Vec2 {
 	return xf.local.Position
 }
 
-func (xf *Transform) Scale() mgl32.Vec2 {
+func (xf *Transform) Scale() f32.Vec2 {
 	return xf.local.Scale
 }
 
@@ -71,7 +70,7 @@ func (xf *Transform) World() SRT {
 }
 
 // Set local position relative to parent
-func (xf *Transform) SetPosition(position mgl32.Vec2) {
+func (xf *Transform) SetPosition(position f32.Vec2) {
 	xf.local.Position = position
 	// compute world position
 	if xf.parent == none {
@@ -82,8 +81,8 @@ func (xf *Transform) SetPosition(position mgl32.Vec2) {
 }
 
 // update world location: world = parent.world + self.local
-func (xf *Transform) setPosition(parent *SRT, local mgl32.Vec2) {
-	p := mgl32.Vec2{0, 0}
+func (xf *Transform) setPosition(parent *SRT, local f32.Vec2) {
+	p := f32.Vec2{0, 0}
 	if parent != nil {
 		p = parent.Position
 	}
@@ -98,7 +97,7 @@ func (xf *Transform) setPosition(parent *SRT, local mgl32.Vec2) {
 }
 
 // apply scale to child
-func (xf *Transform) SetScale(scale mgl32.Vec2) {
+func (xf *Transform) SetScale(scale f32.Vec2) {
 	xf.local.Scale = scale
 	// compute world scale
 	if xf.parent == none {
@@ -108,8 +107,8 @@ func (xf *Transform) SetScale(scale mgl32.Vec2) {
 	}
 }
 
-func (xf *Transform) setScale(parent *SRT, scale mgl32.Vec2) {
-	s := mgl32.Vec2{1, 1}
+func (xf *Transform) setScale(parent *SRT, scale f32.Vec2) {
+	s := f32.Vec2{1, 1}
 	if parent != nil {
 		s = parent.Scale
 	}
@@ -255,8 +254,8 @@ func (tt *TransformTable) NewComp(entity engi.Entity) (xf *Transform) {
 
 	xf = &tt.comps[tt.index]
 	xf.Entity = entity
-	xf.local.Scale = mgl32.Vec2{1, 1}
-	xf.world.Scale = mgl32.Vec2{1, 1}
+	xf.local.Scale = f32.Vec2{1, 1}
+	xf.world.Scale = f32.Vec2{1, 1}
 	xf.t = tt
 	tt._map[ei] = tt.index
 	tt.index += 1

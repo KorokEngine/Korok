@@ -1,8 +1,8 @@
 package effect
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-	"korok.io/korok/engi/math"
+	"korok.io/korok/math/f32"
+	"korok.io/korok/math"
 )
 
 // 计算通道定义：
@@ -53,7 +53,7 @@ func (ch channel_f32) Integrate(n int32, ch1 channel_f32, dt float32) {
 	}
 }
 
-type channel_v2 []mgl32.Vec2
+type channel_v2 []f32.Vec2
 
 func (ch channel_v2) SetConst(n int32, x, y float32) {
 	for i := int32(0); i < n; i++ {
@@ -112,7 +112,7 @@ func (ch channel_v2) tangentIntegrate(n int32, xy channel_v2, m channel_f32, dt 
 }
 
 // maybe only color will use it
-type channel_v4 []mgl32.Vec4
+type channel_v4 []f32.Vec4
 
 func (ch channel_v4) SetConst(n int32, x, y, z, w float32) {
 	for i := int32(0); i < n; i ++ {

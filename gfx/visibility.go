@@ -1,14 +1,14 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
 )
 
 /// 可见性系统，以一个组件的形式呈现
 type BoundingBox struct {
-	Min mgl32.Vec2
-	Max mgl32.Vec2
+	Min f32.Vec2
+	Max f32.Vec2
 }
 
 /// 每个Entity只有一个可见性对象，如果它包含多个 RenderComp，那么求出一个最大面积

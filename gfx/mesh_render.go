@@ -1,8 +1,7 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx/bk"
 
 	"unsafe"
@@ -38,8 +37,8 @@ func NewMeshRender(vsh, fsh string) *MeshRender {
 		sh.AddAttributeBinding("xyuv\x00", 0, P4C4[0])
 		sh.AddAttributeBinding("rgba\x00", 0, P4C4[1])
 
-		p := mgl32.Ortho2D(0, 480, 0, 320)
-		m := mgl32.Translate3D(240, 160, 0)
+		p := f32.Ortho2D(0, 480, 0, 320)
+		m := f32.Translate3D(240, 160, 0)
 		s0 := int32(0)
 
 		// setup uniform
@@ -71,7 +70,7 @@ func (mr *MeshRender) SetCamera(camera *Camera) {
 	bottom := camera.pos.y - camera.view.h/2
 	top := camera.pos.y + camera.view.h/2
 
-	p := mgl32.Ortho2D(left, right, bottom, top)
+	p := f32.Ortho2D(left, right, bottom, top)
 
 	// setup uniform
 	bk.SetUniform(mr.umh_P, unsafe.Pointer(&p[0]))
@@ -89,7 +88,7 @@ func (mr *MeshRender) Extract(visibleObjects []uint32) {
 }
 
 // draw
-func (mr *MeshRender) Draw(m *Mesh, mat4 *mgl32.Mat4) {
+func (mr *MeshRender) Draw(m *Mesh, mat4 *f32.Mat4) {
 	// state
 	bk.SetState(mr.stateFlags, mr.rgba)
 	bk.SetTexture(0, mr.umh_S0, uint16(m.TextureId), 0)

@@ -3,7 +3,6 @@ package frame
 import (
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx"
-	//"log"
 )
 
 // implement frame-animation system

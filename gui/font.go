@@ -1,10 +1,10 @@
 package gui
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
 	"unicode/utf8"
 	"korok.io/korok/gfx"
-	"korok.io/korok/engi/math"
+	"korok.io/korok/math"
+	"korok.io/korok/math/f32"
 )
 
 // 工具结构，负责把字符串转化为顶点..
@@ -22,7 +22,7 @@ type FontRender struct {
 }
 
 // 当前的实现中，不考虑裁切优化，全部绘制所有字符
-func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) (size mgl32.Vec2){
+func (fr *FontRender) RenderText1(pos f32.Vec2, text string) (size f32.Vec2){
 	dx, dy := pos[0], pos[1]
 	maxWidth := float32(0)
 
@@ -71,10 +71,10 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) (size mgl32.Vec2)
 		u2, v2 := float32(g.X+g.Width)/ texWidth, float32(g.Y+g.Height)/ texHeight
 
 		vi := bufferUsed * 4
-		vtxWriter[vi+0] = DrawVert{mgl32.Vec2{x1, y1}, mgl32.Vec2{u1, v2}, color}
-		vtxWriter[vi+1] = DrawVert{mgl32.Vec2{x2, y1}, mgl32.Vec2{u2, v2}, color}
-		vtxWriter[vi+2] = DrawVert{mgl32.Vec2{x2, y2}, mgl32.Vec2{u2, v1}, color}
-		vtxWriter[vi+3] = DrawVert{mgl32.Vec2{x1, y2}, mgl32.Vec2{u1, v1}, color}
+		vtxWriter[vi+0] = DrawVert{f32.Vec2{x1, y1}, f32.Vec2{u1, v2}, color}
+		vtxWriter[vi+1] = DrawVert{f32.Vec2{x2, y1}, f32.Vec2{u2, v2}, color}
+		vtxWriter[vi+2] = DrawVert{f32.Vec2{x2, y2}, f32.Vec2{u2, v1}, color}
+		vtxWriter[vi+3] = DrawVert{f32.Vec2{x1, y2}, f32.Vec2{u1, v1}, color}
 
 		ii, offset := bufferUsed * 6, fr.DrawList.vtxIndex
 		idxWriter[ii+0] = DrawIdx(offset+0)
@@ -103,7 +103,7 @@ func (fr *FontRender) RenderText1(pos mgl32.Vec2, text string) (size mgl32.Vec2)
 	return
 }
 
-func (fr *FontRender) RenderWrapped(pos mgl32.Vec2, text string, wrapWidth float32) (size mgl32.Vec2){
+func (fr *FontRender) RenderWrapped(pos f32.Vec2, text string, wrapWidth float32) (size f32.Vec2){
 	wrap  := math.Max(wrapWidth, 0)
 	// wrap text
 	_, lines := fr.wrap(text, wrap)
@@ -181,10 +181,10 @@ func (fr *FontRender) wrap(text string, wrap float32) (n int, lines string) {
 	return n, string(buff)
 }
 
-func (fr *FontRender) CalculateTextSize1(text string) mgl32.Vec2{
+func (fr *FontRender) CalculateTextSize1(text string) f32.Vec2{
 	glyphA := fr.font.Glyph('A')
 	scale := fr.fontSize/float32(glyphA.Height)
-	size := mgl32.Vec2{0, fr.fontSize}
+	size := f32.Vec2{0, fr.fontSize}
 
 	for i, w := 0, 0; i < len(text); i += w {
 		r, width := utf8.DecodeRuneInString(text[i:])

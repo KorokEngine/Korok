@@ -1,8 +1,8 @@
 package gui
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-	"korok.io/korok/engi/math"
+	"korok.io/korok/math/f32"
+	"korok.io/korok/math"
 
 	"log"
 )
@@ -128,7 +128,7 @@ func (b *Bound) SizeAuto() {
 	b.W, b.H = 0, 0
 }
 
-func (b *Bound) InRange(p mgl32.Vec2) bool{
+func (b *Bound) InRange(p f32.Vec2) bool{
 	if p[0] < b.X || p[0] > (b.X + b.W) {
 		return false
 	}

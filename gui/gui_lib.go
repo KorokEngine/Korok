@@ -1,8 +1,7 @@
 package gui
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
 	"korok.io/korok/gfx/bk"
 	"korok.io/korok/hid/input"
@@ -42,7 +41,7 @@ type Context struct {
 
 		// drag state
 		draggingPointer ID
-		draggingStart mgl32.Vec2
+		draggingStart f32.Vec2
 
 		isLastEventPointerType bool
 		pointerCapture ID
@@ -73,7 +72,7 @@ func NewContext(style *Style) *Context {
 func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Element {
 	var (
 		elem, ready = ctx.BeginElement(id)
-		size mgl32.Vec2
+		size f32.Vec2
 	)
 
 	// draw text 最好返回最新的大小..
@@ -96,7 +95,7 @@ func (ctx *Context) InputText(hint string, lyt LayoutManager, style *InputStyle)
 }
 
 // Widget: Image
-func (ctx *Context) Image(id ID, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
+func (ctx *Context) Image(id ID, texId uint16, uv f32.Vec4, style *ImageStyle) {
 	var (
 		elem, ready = ctx.BeginElement(id)
 	)
@@ -149,9 +148,9 @@ func (ctx *Context) renderTextClipped(text string, bb *Bound, style *TextStyle) 
 	x, y := Gui2Game(bb.X, bb.Y)
 	font := ctx.Style.Text.Font
 	if bb.W == 0 {
-		ctx.DrawList.AddText(mgl32.Vec2{x, y}, text, font, 12, 0xFF000000, 0)
+		ctx.DrawList.AddText(f32.Vec2{x, y}, text, font, 12, 0xFF000000, 0)
 	} else {
-		ctx.DrawList.AddText(mgl32.Vec2{x, y}, text, font, 12, 0xFF000000, bb.W)
+		ctx.DrawList.AddText(f32.Vec2{x, y}, text, font, 12, 0xFF000000, bb.W)
 	}
 }
 
@@ -177,7 +176,7 @@ func (ctx *Context) ImageButton(id ID, normal, pressed *gfx.SubTex, style *Image
 		} else {
 			tex = normal
 		}
-		ctx.DrawImage(bb, tex.TexId, mgl32.Vec4{tex.X1, tex.Y1, tex.X2, tex.Y2}, &style.ImageStyle)
+		ctx.DrawImage(bb, tex.TexId, f32.Vec4{tex.X1, tex.Y1, tex.X2, tex.Y2}, &style.ImageStyle)
 	} else {
 		size := ctx.Layout.Cursor.Bound
 		elem.W = size.W
@@ -241,7 +240,7 @@ func (ctx *Context) Slider(id ID, value *float32, style *SliderStyle) (e EventTy
 
 // Scroll 效果的关键是使用裁切限制滚动区域，然后
 // 通过计算拖拽，来得到争取的偏移
-func (ctx *Context) StartScroll(size, offset mgl32.Vec2) {
+func (ctx *Context) StartScroll(size, offset f32.Vec2) {
 	event := ctx.CheckEvent(123, nil, false)
 
 	if event == EventStartDrag {
@@ -327,7 +326,7 @@ func (ctx *Context) CheckEvent(id ID, bound *Bound, checkDragOnly bool) EventTyp
 				event = EventEndDrag
 				log.Println("drag end real..", event)
 				ctx.state.draggingPointer = -1
-				ctx.state.draggingStart = mgl32.Vec2{}
+				ctx.state.draggingStart = f32.Vec2{}
 				event |= EventWentUp
 			} else if btn.Down() {
 				event = EventDragging
@@ -394,7 +393,7 @@ func (ctx *Context) DrawRect(bb *Bound, color uint32, round float32) {
 		y = g.Y + bb.Y
 	)
 	x, y = Gui2Game(x, y)
-	min, max := mgl32.Vec2{x, y-bb.H}, mgl32.Vec2{x+bb.W, y}
+	min, max := f32.Vec2{x, y-bb.H}, f32.Vec2{x+bb.W, y}
 	ctx.DrawList.AddRectFilled(min, max, color, round, FlagCornerAll)
 }
 
@@ -405,13 +404,13 @@ func (ctx *Context) DrawBorder(bb *Bound, color uint32, round, thick float32) {
 		y = g.Y + bb.Y
 	)
 	x, y = Gui2Game(x, y)
-	min, max := mgl32.Vec2{x, y-bb.H}, mgl32.Vec2{x+bb.W, y}
+	min, max := f32.Vec2{x, y-bb.H}, f32.Vec2{x+bb.W, y}
 	ctx.DrawList.AddRect(min, max, color, round, FlagCornerAll, thick)
 }
 
 func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {
 	x, y = Gui2Game(x, y)
-	min, max := mgl32.Vec2{x, y-h}, mgl32.Vec2{x+w, y}
+	min, max := f32.Vec2{x, y-h}, f32.Vec2{x+w, y}
 	ctx.DrawList.AddRect(min, max, color, 0, FlagCornerNone, 1)
 }
 
@@ -419,18 +418,18 @@ func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {
 func (ctx *Context) DrawCircle(x, y, radius float32, color uint32) {
 	g := ctx.Layout.hGroup
 	x, y = Gui2Game(g.X + x, g.Y + y)
-	ctx.DrawList.AddCircleFilled(mgl32.Vec2{x, y}, radius, color, 12)
+	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius, color, 12)
 }
 
-func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv mgl32.Vec4, style *ImageStyle) {
+func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv f32.Vec4, style *ImageStyle) {
 	g := ctx.Layout.hGroup
-	min := mgl32.Vec2{g.X+bound.X, g.Y+bound.Y}
+	min := f32.Vec2{g.X+bound.X, g.Y+bound.Y}
 	if bound.W == 0 {
 		if ok, tex := bk.R.Texture(texId); ok {
 			bound.W, bound.H = tex.Width, tex.Height
 		}
 	}
-	max := min.Add(mgl32.Vec2{bound.W, bound.H})
+	max := min.Add(f32.Vec2{bound.W, bound.H})
 	var color uint32
 	if style != nil {
 		color = style.TintColor
@@ -439,13 +438,13 @@ func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv mgl32.Vec4, style *
 	}
 	min[0], min[1] = Gui2Game(min[0], min[1])
 	max[0], max[1] = Gui2Game(max[0], max[1])
-	ctx.DrawList.AddImage(texId, min, max, mgl32.Vec2{uv[0], uv[1]}, mgl32.Vec2{uv[2], uv[3]}, color)
+	ctx.DrawList.AddImage(texId, min, max, f32.Vec2{uv[0], uv[1]}, f32.Vec2{uv[2], uv[3]}, color)
 }
 
 // 绘制元素, bb 存储相对于父容器的相对坐标..
 // Group 目前是绝对坐标
 // Group + Offset = 当前绝对坐标..
-func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size mgl32.Vec2) {
+func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size f32.Vec2) {
 	// 1. 取出布局
 	group := ctx.Layout.hGroup
 	x, y := Gui2Game(group.X+bb.X+style.Left, group.Y+bb.Y+style.Top)
@@ -456,13 +455,13 @@ func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size m
 		fontSize = style.Size
 		color = style.Color
 		wrapWidth = bb.W + 10
-		pos = mgl32.Vec2{x, y}
+		pos = f32.Vec2{x, y}
 	)
 	size = ctx.DrawList.AddText(pos, text, font, fontSize, color, wrapWidth)
 	return
 }
 
-func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) mgl32.Vec2 {
+func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) f32.Vec2 {
 	fr := &FontRender{
 		font: font,
 		fontSize:fontSize,
@@ -572,12 +571,12 @@ func (ctx *Context) EndLayout() {
 }
 
 // Reference System: VirtualBounds
-func (ctx *Context) PushVBounds(bounds mgl32.Vec4) {
+func (ctx *Context) PushVBounds(bounds f32.Vec4) {
 
 }
 
 // Clip:
-func (ctx *Context) PushClipRect(minClip, maxClip mgl32.Vec2, intersectCurrent bool) {
+func (ctx *Context) PushClipRect(minClip, maxClip f32.Vec2, intersectCurrent bool) {
 
 }
 

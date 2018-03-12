@@ -1,8 +1,7 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx/bk"
 
 	"unsafe"
@@ -43,7 +42,7 @@ func NewBatchRender(vsh, fsh string) *BatchRender {
 		sh.AddAttributeBinding("xyuv\x00", 0, P4C4[0])
 		sh.AddAttributeBinding("rgba\x00", 0, P4C4[1])
 
-		p := mgl32.Ortho2D(0, 480, 0, 320)
+		p := f32.Ortho2D(0, 480, 0, 320)
 		s0 := int32(0)
 
 		// setup uniform
@@ -69,7 +68,7 @@ func (br *BatchRender) SetCamera(camera *Camera) {
 	bottom := camera.pos.y - camera.view.h/2
 	top := camera.pos.y + camera.view.h/2
 
-	p := mgl32.Ortho2D(left, right, bottom, top)
+	p := f32.Ortho2D(left, right, bottom, top)
 
 	// setup uniform
 	bk.SetUniform(br.umh_PJ, unsafe.Pointer(&p[0]))

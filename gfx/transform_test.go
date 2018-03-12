@@ -3,7 +3,7 @@ package gfx
 import (
 	"testing"
 	"korok.io/korok/engi"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 )
 
 func TestTransform(t *testing.T) {
@@ -16,7 +16,7 @@ func TestTransform(t *testing.T) {
 	c1, c2 := em.New(), em.New()
 	xf1, xf2 := tt.NewComp(c1), tt.NewComp(c2)
 
-	xf.SetPosition(mgl32.Vec2{100, 100})
+	xf.SetPosition(f32.Vec2{100, 100})
 
 	if xy := xf.Local().Position; xy[0] != 100 || xy[1] != 100 {
 		t.Error("xf local position is not set correctly")
@@ -30,18 +30,18 @@ func TestTransform(t *testing.T) {
 	xf.LinkChild(xf1)
 	xf.LinkChild(xf2)
 
-	xf1.SetPosition(mgl32.Vec2{50, 50})
-	xf2.SetPosition(mgl32.Vec2{-50, -50})
+	xf1.SetPosition(f32.Vec2{50, 50})
+	xf2.SetPosition(f32.Vec2{-50, -50})
 
 	if xy := xf1.World().Position; xy[0] != 150 || xy[1] != 150 {
-		t.Error("child1 postion:", xy, "expected:", mgl32.Vec2{150, 150})
+		t.Error("child1 postion:", xy, "expected:", f32.Vec2{150, 150})
 	}
 
 	if xy := xf2.World().Position; xy[0] != 50 || xy[1] != 50 {
-		t.Error("child2 postion:", xy, "expected:", mgl32.Vec2{50, 50})
+		t.Error("child2 postion:", xy, "expected:", f32.Vec2{50, 50})
 	}
 
-	xf.SetPosition(mgl32.Vec2{200, 200})
+	xf.SetPosition(f32.Vec2{200, 200})
 
 	if xy := xf.World().Position; xy[0] != 200 || xy[1] != 200 {
 		t.Error("xf world is not set correctly")
@@ -49,11 +49,11 @@ func TestTransform(t *testing.T) {
 
 	xf1, xf2 = tt.Comp(c1), tt.Comp(c2)
 	if xy := xf1.World().Position; xy[0] != 250 || xy[1] != 250 {
-		t.Error("child1 postion err:", xy, "expected:", mgl32.Vec2{250, 250})
+		t.Error("child1 postion err:", xy, "expected:", f32.Vec2{250, 250})
 	}
 
 	if xy := xf2.World().Position; xy[0] != 150 || xy[1] != 150 {
-		t.Error("child2 postion err:", xy, "expected:", mgl32.Vec2{150, 150})
+		t.Error("child2 postion err:", xy, "expected:", f32.Vec2{150, 150})
 	}
 }
 

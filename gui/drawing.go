@@ -1,8 +1,8 @@
 package gui
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-	"korok.io/korok/engi/math"
+	"korok.io/korok/math/f32"
+	"korok.io/korok/math"
 	"korok.io/korok/gfx"
 	geo "math"
 	"korok.io/korok/gfx/bk"
@@ -42,15 +42,15 @@ const (
 // DrawList provide method to write primitives to buffer
 type DrawCmd struct {
 	ElemCount int
-	ClipRect mgl32.Vec4
+	ClipRect f32.Vec4
 	TextureId uint16
 }
 
 type DrawIdx uint16
 
 type DrawVert struct {
-	xy mgl32.Vec2
-	uv  mgl32.Vec2
+	xy f32.Vec2
+	uv  f32.Vec2
 	color uint32
 }
 
@@ -70,17 +70,17 @@ type DrawList struct {
 	VtxWriter []DrawVert
 	IdxWriter []DrawIdx
 
-	ClipRectStack[]mgl32.Vec4
+	ClipRectStack[]f32.Vec4
 	TextureIdStack []uint16
 
 	// path
-	path [64]mgl32.Vec2
+	path [64]f32.Vec2
 	pathUsed int
 
 
-	FullScreen mgl32.Vec4
-	TexUVWhitePixel mgl32.Vec2
-	CircleVtx12 [12]mgl32.Vec2
+	FullScreen f32.Vec4
+	TexUVWhitePixel f32.Vec2
+	CircleVtx12 [12]f32.Vec2
 	Font gfx.FontSystem
 	FontSize float32
 
@@ -99,13 +99,13 @@ func (dl *DrawList) Initialize() {
 	dl.VtxBuffer = make([]DrawVert, 2024)
 
 	// TODO
-	dl.TexUVWhitePixel = mgl32.Vec2{0, 0}
+	dl.TexUVWhitePixel = f32.Vec2{0, 0}
 
 	// TODO bake circle vertex!!
 	for i := 0; i < 12; i++ {
 		sin := float32(geo.Sin((6.28/12)*(float64(i))))
 		cos := float32(geo.Cos((6.28/12)*float64(i)))
-		dl.CircleVtx12[i] = mgl32.Vec2{cos, sin}
+		dl.CircleVtx12[i] = f32.Vec2{cos, sin}
 	}
 }
 
@@ -130,14 +130,14 @@ func (dl *DrawList) PathClear() {
 	dl.pathUsed = 0
 }
 
-func (dl *DrawList) PathLineTo(pos mgl32.Vec2) {
+func (dl *DrawList) PathLineTo(pos f32.Vec2) {
 	if n := len(dl.path); dl.pathUsed < n-1 {
 		dl.path[dl.pathUsed] = pos
 		dl.pathUsed += 1
 	}
 }
 
-func (dl *DrawList) PathLineToMergeDuplicate(pos mgl32.Vec2) {
+func (dl *DrawList) PathLineToMergeDuplicate(pos f32.Vec2) {
 	//if (_Path.Size == 0 || memcmp(&_Path[_Path.Size-1], &pos, 8) != 0)
 	//	_Path.push_back(pos);
 }
@@ -154,7 +154,7 @@ func (dl *DrawList) PathStroke(color uint32, thickness float32, closed bool)  {
 }
 
 
-func (dl *DrawList) CurrentClipRect() (clip mgl32.Vec4) {
+func (dl *DrawList) CurrentClipRect() (clip f32.Vec4) {
 	if n := len(dl.ClipRectStack); n > 0 {
 		clip = dl.ClipRectStack[n-1]
 	} else {
@@ -180,8 +180,8 @@ func (dl *DrawList) UpdateTextureId() {
 }
 
 // Clip 相关的操作
-func (dl *DrawList) PushClipRect(min, max mgl32.Vec2, intersectCurrentClip bool) {
-	cr := mgl32.Vec4{min[0], min[1], max[0], max[1]}
+func (dl *DrawList) PushClipRect(min, max f32.Vec2, intersectCurrentClip bool) {
+	cr := f32.Vec4{min[0], min[1], max[0], max[1]}
 	if intersectCurrentClip && len(dl.ClipRectStack) > 0{
 		current := dl.ClipRectStack[len(dl.ClipRectStack)-1]
 		if cr[0] < current[0] {
@@ -205,8 +205,8 @@ func (dl *DrawList) PushClipRect(min, max mgl32.Vec2, intersectCurrentClip bool)
 }
 
 func (dl *DrawList) PushClipRectFullScreen() {
-	min := mgl32.Vec2{dl.FullScreen[0], dl.FullScreen[1]}
-	max := mgl32.Vec2{dl.FullScreen[2], dl.FullScreen[3]}
+	min := f32.Vec2{dl.FullScreen[0], dl.FullScreen[1]}
+	max := f32.Vec2{dl.FullScreen[2], dl.FullScreen[3]}
 	dl.PushClipRect(min, max, false)
 }
 
@@ -216,12 +216,12 @@ func (dl *DrawList) PopClipRect() {
 	}
 }
 
-func (dl *DrawList) GetClipRectMin() mgl32.Vec2 {
-	return mgl32.Vec2{0, 0 }
+func (dl *DrawList) GetClipRectMin() f32.Vec2 {
+	return f32.Vec2{0, 0 }
 }
 
-func (dl *DrawList) GetClipRectMax() mgl32.Vec2 {
-	return mgl32.Vec2{0, 0 }
+func (dl *DrawList) GetClipRectMax() f32.Vec2 {
+	return f32.Vec2{0, 0 }
 }
 
 func (dl *DrawList) PushTextureId(texId uint16) {
@@ -240,9 +240,9 @@ func (dl *DrawList) PrimReserve(idxCount, vtxCount int) {
 	dl.IdxWriter = dl.IdxBuffer[dl.idxIndex:dl.idxIndex+idxCount]
 }
 
-func (dl *DrawList) PrimRect(min, max mgl32.Vec2, color uint32) {
+func (dl *DrawList) PrimRect(min, max f32.Vec2, color uint32) {
 	uv := dl.TexUVWhitePixel
-	a, b, c, d := min, mgl32.Vec2{max[0], min[1]}, max, mgl32.Vec2{min[0], max[1]}
+	a, b, c, d := min, f32.Vec2{max[0], min[1]}, max, f32.Vec2{min[0], max[1]}
 	dl.VtxWriter[0] = DrawVert{a, uv, color}
 	dl.VtxWriter[1] = DrawVert{b, uv, color}
 	dl.VtxWriter[2] = DrawVert{c, uv, color}
@@ -260,9 +260,9 @@ func (dl *DrawList) PrimRect(min, max mgl32.Vec2, color uint32) {
 	dl.idxIndex += 6
 }
 
-func (dl *DrawList) PrimRectUV(a, c mgl32.Vec2, uva, uvc mgl32.Vec2, color uint32) {
-	b, d := mgl32.Vec2{c[0], a[1]}, mgl32.Vec2{a[0], c[1]}
-	uvb, uvd := mgl32.Vec2{uvc[0], uva[1]}, mgl32.Vec2{uva[0], uvc[1]}
+func (dl *DrawList) PrimRectUV(a, c f32.Vec2, uva, uvc f32.Vec2, color uint32) {
+	b, d := f32.Vec2{c[0], a[1]}, f32.Vec2{a[0], c[1]}
+	uvb, uvd := f32.Vec2{uvc[0], uva[1]}, f32.Vec2{uva[0], uvc[1]}
 
 	dl.VtxWriter[0] = DrawVert{a, uva, color}
 	dl.VtxWriter[1] = DrawVert{b, uvb, color}
@@ -281,7 +281,7 @@ func (dl *DrawList) PrimRectUV(a, c mgl32.Vec2, uva, uvc mgl32.Vec2, color uint3
 	dl.vtxIndex += 4
 }
 
-func (dl *DrawList) PrimQuadUV(a, b, c, d mgl32.Vec2, uva, uvb,uvc, uvd mgl32.Vec2, color uint32) {
+func (dl *DrawList) PrimQuadUV(a, b, c, d f32.Vec2, uva, uvb,uvc, uvd f32.Vec2, color uint32) {
 	// vertex
 	dl.VtxWriter[0] = DrawVert{a, uva, color}
 	dl.VtxWriter[1] = DrawVert{b, uvb, color}
@@ -302,7 +302,7 @@ func (dl *DrawList) PrimQuadUV(a, b, c, d mgl32.Vec2, uva, uvb,uvc, uvd mgl32.Ve
 
 // 此处生成最终的顶点数据和索引数据
 // 当前并不支持抗锯齿！！简单的用顶点生成线段
-func (dl *DrawList) AddPolyLine(points []mgl32.Vec2, color uint32, thickness float32, closed bool) {
+func (dl *DrawList) AddPolyLine(points []f32.Vec2, color uint32, thickness float32, closed bool) {
 	pointsCount := len(points)
 	if pointsCount < 2 {
 		return
@@ -332,10 +332,10 @@ func (dl *DrawList) AddPolyLine(points []mgl32.Vec2, color uint32, thickness flo
 		dy := diff[1] * (thickness * 0.5)
 
 		vi := i1*4
-		dl.VtxWriter[vi+0] = DrawVert{mgl32.Vec2{p1[0]+dy, p1[1]-dx}, uv, color}
-		dl.VtxWriter[vi+1] = DrawVert{mgl32.Vec2{p2[0]+dy, p2[1]-dx}, uv, color}
-		dl.VtxWriter[vi+2] = DrawVert{mgl32.Vec2{p2[0]-dy, p2[1]+dx}, uv, color}
-		dl.VtxWriter[vi+3] = DrawVert{mgl32.Vec2{p1[0]-dy, p1[1]+dx}, uv, color}
+		dl.VtxWriter[vi+0] = DrawVert{f32.Vec2{p1[0]+dy, p1[1]-dx}, uv, color}
+		dl.VtxWriter[vi+1] = DrawVert{f32.Vec2{p2[0]+dy, p2[1]-dx}, uv, color}
+		dl.VtxWriter[vi+2] = DrawVert{f32.Vec2{p2[0]-dy, p2[1]+dx}, uv, color}
+		dl.VtxWriter[vi+3] = DrawVert{f32.Vec2{p1[0]-dy, p1[1]+dx}, uv, color}
 
 		ii := i1*6
 		dl.IdxWriter[ii+0] = DrawIdx(dl.vtxIndex+0)
@@ -352,7 +352,7 @@ func (dl *DrawList) AddPolyLine(points []mgl32.Vec2, color uint32, thickness flo
 }
 
 // Non Anti-aliased Fill
-func (dl *DrawList) AddConvexPolyFilled(points []mgl32.Vec2, color uint32) {
+func (dl *DrawList) AddConvexPolyFilled(points []f32.Vec2, color uint32) {
 	uv := dl.TexUVWhitePixel
 	pointCount := len(points)
 
@@ -380,7 +380,7 @@ func (dl *DrawList) AddConvexPolyFilled(points []mgl32.Vec2, color uint32) {
 // f(x) = centre.x + cos()*radius
 // f(y) = centre.y + sin()*radius
 // 以上, 可以提前算好 sin/cos 加速整个过程
-func (dl *DrawList) PathArcToFast(centre mgl32.Vec2, radius float32, min12, max12 int) {
+func (dl *DrawList) PathArcToFast(centre f32.Vec2, radius float32, min12, max12 int) {
 	if radius == 0 || min12 > max12 {
 		dl.path[dl.pathUsed] = centre; dl.pathUsed ++
 		return
@@ -388,12 +388,12 @@ func (dl *DrawList) PathArcToFast(centre mgl32.Vec2, radius float32, min12, max1
 	for a := min12; a <= max12; a++ {
 		x := centre[0] + dl.CircleVtx12[a%12][0] * radius
 		y := centre[1] + dl.CircleVtx12[a%12][1] * radius
-		dl.path[dl.pathUsed] = mgl32.Vec2{x, y}
+		dl.path[dl.pathUsed] = f32.Vec2{x, y}
 		dl.pathUsed ++
 	}
 }
 
-func (dl *DrawList) PathArcTo(centre mgl32.Vec2, radius float32, min, max float32, segments int) {
+func (dl *DrawList) PathArcTo(centre f32.Vec2, radius float32, min, max float32, segments int) {
 	if radius == 0 {
 		dl.path[dl.pathUsed] = centre; dl.pathUsed++
 		return
@@ -402,22 +402,22 @@ func (dl *DrawList) PathArcTo(centre mgl32.Vec2, radius float32, min, max float3
 		a := float64(min + (float32(i)/float32(segments)) * (max-min))
 		x := centre[0] + float32(geo.Cos(a)) * radius
 		y := centre[1] + float32(geo.Sin(a)) * radius
-		dl.path[dl.pathUsed] = mgl32.Vec2{x, y}
+		dl.path[dl.pathUsed] = f32.Vec2{x, y}
 		dl.pathUsed ++
 	}
 
 }
 
-func (dl *DrawList) PathBezierCurveTo(p2, p3, p4 mgl32.Vec2, segments int) {
+func (dl *DrawList) PathBezierCurveTo(p2, p3, p4 f32.Vec2, segments int) {
 
 }
 
-func (dl *DrawList) PathRect(a, b mgl32.Vec2, rounding float32, corners FlagCorner) {
+func (dl *DrawList) PathRect(a, b f32.Vec2, rounding float32, corners FlagCorner) {
 	if rounding <= 0 || corners == FlagCornerNone {
 		dl.PathLineTo(a)
-		dl.PathLineTo(mgl32.Vec2{b[0], a[1]})
+		dl.PathLineTo(f32.Vec2{b[0], a[1]})
 		dl.PathLineTo(b)
-		dl.PathLineTo(mgl32.Vec2{a[0], b[1]})
+		dl.PathLineTo(f32.Vec2{a[0], b[1]})
 	} else {
 		var bl, br, tr, tl float32
 		if (corners & FlagCornerBottomLeft) != 0 {
@@ -432,28 +432,28 @@ func (dl *DrawList) PathRect(a, b mgl32.Vec2, rounding float32, corners FlagCorn
 		if (corners & FlagCornerTopLeft) != 0 {
 			tl = rounding
 		}
-		dl.PathArcToFast(mgl32.Vec2{a[0]+bl, a[1]+bl}, bl, 6, 9) // bottom-left
-		dl.PathArcToFast(mgl32.Vec2{b[0]-br, a[1]+br}, br, 9, 12)// bottom-right
-		dl.PathArcToFast(mgl32.Vec2{b[0]-tr, b[1]-tr}, tr, 0, 3) // top-right
-		dl.PathArcToFast(mgl32.Vec2{a[0]+tl, b[1]-tl}, tl, 3, 6) // top-left
+		dl.PathArcToFast(f32.Vec2{a[0]+bl, a[1]+bl}, bl, 6, 9) // bottom-left
+		dl.PathArcToFast(f32.Vec2{b[0]-br, a[1]+br}, br, 9, 12)// bottom-right
+		dl.PathArcToFast(f32.Vec2{b[0]-tr, b[1]-tr}, tr, 0, 3) // top-right
+		dl.PathArcToFast(f32.Vec2{a[0]+tl, b[1]-tl}, tl, 3, 6) // top-left
 	}
 }
 
-func (dl *DrawList) AddLine(a, b mgl32.Vec2, color uint32, thickness float32) {
-	dl.PathLineTo(a.Add(mgl32.Vec2{.5, .5}))
-	dl.PathLineTo(b.Add(mgl32.Vec2{.5, .5}))
+func (dl *DrawList) AddLine(a, b f32.Vec2, color uint32, thickness float32) {
+	dl.PathLineTo(a.Add(f32.Vec2{.5, .5}))
+	dl.PathLineTo(b.Add(f32.Vec2{.5, .5}))
 	dl.PathStroke(color, thickness, false)
 }
 
 // 所有非填充图形看来都是使用路径实现的
-func (dl *DrawList) AddRect(a, b mgl32.Vec2, color uint32, rounding float32, roundFlags FlagCorner, thickness float32) {
+func (dl *DrawList) AddRect(a, b f32.Vec2, color uint32, rounding float32, roundFlags FlagCorner, thickness float32) {
 	//dl.PathRect(a.Add(mgl32.Vec2{5, .5}), b.Sub(mgl32.Vec2{.5, .5}), rounding, roundFlags)
 	// TODO
 	dl.PathRect(a, b, rounding, roundFlags)
 	dl.PathStroke(color, thickness, true)
 }
 
-func (dl *DrawList) AddRectFilled(min, max mgl32.Vec2, color uint32, rounding float32, corner FlagCorner) {
+func (dl *DrawList) AddRectFilled(min, max f32.Vec2, color uint32, rounding float32, corner FlagCorner) {
 	if rounding > 0 && corner != FlagCornerNone {
 		dl.PathRect(min, max, rounding, corner)
 		dl.PathFillConvex(color)
@@ -468,7 +468,7 @@ func (dl *DrawList) AddRectFilledMultiColor() {
 
 }
 
-func (dl *DrawList) AddQuad(a, b, c, d mgl32.Vec2, color uint32, thickness float32) {
+func (dl *DrawList) AddQuad(a, b, c, d f32.Vec2, color uint32, thickness float32) {
 	dl.PathLineTo(a)
 	dl.PathLineTo(b)
 	dl.PathLineTo(c)
@@ -476,7 +476,7 @@ func (dl *DrawList) AddQuad(a, b, c, d mgl32.Vec2, color uint32, thickness float
 	dl.PathStroke(color, thickness, true)
 }
 
-func (dl *DrawList) AddQuadFilled(a, b, c, d mgl32.Vec2, color uint32) {
+func (dl *DrawList) AddQuadFilled(a, b, c, d f32.Vec2, color uint32) {
 	dl.PathLineTo(a)
 	dl.PathLineTo(b)
 	dl.PathLineTo(c)
@@ -484,40 +484,40 @@ func (dl *DrawList) AddQuadFilled(a, b, c, d mgl32.Vec2, color uint32) {
 	dl.PathFillConvex(color)
 }
 
-func (dl *DrawList) AddTriangle(a, b, c mgl32.Vec2, color uint32, thickness float32) {
+func (dl *DrawList) AddTriangle(a, b, c f32.Vec2, color uint32, thickness float32) {
 	dl.PathLineTo(a)
 	dl.PathLineTo(b)
 	dl.PathLineTo(c)
 	dl.PathStroke(color, thickness, true)
 }
 
-func (dl *DrawList) AddTriangleFilled(a, b, c mgl32.Vec2, color uint32) {
+func (dl *DrawList) AddTriangleFilled(a, b, c f32.Vec2, color uint32) {
 	dl.PathLineTo(a)
 	dl.PathLineTo(b)
 	dl.PathLineTo(c)
 	dl.PathFillConvex(color)
 }
 
-func (dl *DrawList) AddCircle(centre mgl32.Vec2, radius float32, color uint32, segments int, thickness float32) {
+func (dl *DrawList) AddCircle(centre f32.Vec2, radius float32, color uint32, segments int, thickness float32) {
 	max := PI * 2 * float32(segments-1)/float32(segments)
 	dl.PathArcTo(centre, radius, 0.0, max, segments)
 	dl.PathStroke(color, thickness, true)
 }
 
-func (dl *DrawList) AddCircleFilled(centre mgl32.Vec2, radius float32, color uint32, segments int) {
+func (dl *DrawList) AddCircleFilled(centre f32.Vec2, radius float32, color uint32, segments int) {
 	max := PI * 2 * float32(segments-1)/float32(segments)
 	dl.PathArcTo(centre, radius,0.0, max, segments)
 	dl.PathFillConvex(color)
 }
 
-func (dl *DrawList) AddBezierCurve(pos0 mgl32.Vec2, cp0, cp1 mgl32.Vec2, pos1 mgl32.Vec2,
+func (dl *DrawList) AddBezierCurve(pos0 f32.Vec2, cp0, cp1 f32.Vec2, pos1 f32.Vec2,
 	color uint32, thickness float32, segments int) {
 	dl.PathLineTo(pos0)
 	dl.PathBezierCurveTo(cp0, cp1, pos1, segments)
 	dl.PathStroke(color, thickness, false)
 }
 
-func (dl *DrawList) AddImage(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.Vec2, color uint32) {
+func (dl *DrawList) AddImage(texId uint16, a, b f32.Vec2, uva, uvb f32.Vec2, color uint32) {
 	if n := len(dl.TextureIdStack); n == 0 || texId != dl.TextureIdStack[n-1]  {
 		dl.PushTextureId(texId)
 		defer dl.PopTextureId()
@@ -528,7 +528,7 @@ func (dl *DrawList) AddImage(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.Vec2,
 	dl.AddCommand(6)
 }
 
-func (dl *DrawList) AddImageQuad(texId uint16, a, b, c, d mgl32.Vec2, uva, uvb, uvc, uvd mgl32.Vec2, color uint32) {
+func (dl *DrawList) AddImageQuad(texId uint16, a, b, c, d f32.Vec2, uva, uvb, uvc, uvd f32.Vec2, color uint32) {
 	if n := len(dl.TextureIdStack); n == 0 || texId != dl.TextureIdStack[n-1] {
 		dl.PushTextureId(texId)
 		defer dl.PopTextureId()
@@ -538,7 +538,7 @@ func (dl *DrawList) AddImageQuad(texId uint16, a, b, c, d mgl32.Vec2, uva, uvb, 
 	dl.AddCommand(6)
 }
 
-func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.Vec2, color uint32, rounding float32, corners FlagCorner) {
+func (dl *DrawList) AddImageRound(texId uint16, a, b f32.Vec2, uva, uvb f32.Vec2, color uint32, rounding float32, corners FlagCorner) {
 	if rounding <= 0 || (corners & FlagCornerAll) == 0 {
 		dl.AddImage(texId, a, b, uva, uvb, color)
 		return
@@ -553,7 +553,7 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 
 	// map uv to vertex - linear scale
 	xySize, uvSize := b.Sub(a), uvb.Sub(uva)
-	var scale mgl32.Vec2
+	var scale f32.Vec2
 	if xySize[0] != 0 {
 		scale[0] = uvSize[0]/xySize[0]
 	}
@@ -566,7 +566,7 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 		vertex := &dl.VtxWriter[i]
 		dx := (vertex.xy[0] - a[0]) * scale[0]
 		dy := (vertex.xy[1] - a[1]) * scale[1]
-		vertex.uv = mgl32.Vec2{uva[0]+dx, uva[1]+dy}
+		vertex.uv = f32.Vec2{uva[0]+dx, uva[1]+dy}
 	}
 }
 
@@ -586,14 +586,14 @@ func (dl *DrawList) AddImageRound(texId uint16, a, b mgl32.Vec2, uva, uvb mgl32.
 //min
 //  0    1    2    3
 //patch = {x1, x2, y1, y2} % TextureSize
-func (dl *DrawList) AddImageNinePatch(texId uint16, min, max mgl32.Vec2, uva, uvb mgl32.Vec2, patch mgl32.Vec4, color uint32) {
+func (dl *DrawList) AddImageNinePatch(texId uint16, min, max f32.Vec2, uva, uvb f32.Vec2, patch f32.Vec4, color uint32) {
 	if n := len(dl.TextureIdStack); n == 0 || texId != dl.TextureIdStack[n-1]  {
 		dl.PushTextureId(texId)
 		defer dl.PopTextureId()
 	}
 
 	_, tex := bk.R.Texture(texId)
-	texSize := mgl32.Vec2{tex.Width, tex.Height}
+	texSize := f32.Vec2{tex.Width, tex.Height}
 
 	idxCount, vtxCount := 9 * 6, 16
 	dl.PrimReserve(idxCount, vtxCount)
@@ -614,23 +614,23 @@ func (dl *DrawList) AddImageNinePatch(texId uint16, min, max mgl32.Vec2, uva, uv
 
 	// fill vertex
 	vtxWriter[0] = DrawVert{min, uva, color}
-	vtxWriter[1] = DrawVert{mgl32.Vec2{x1, min[1]}, mgl32.Vec2{u1, uva[1]}, color}
-	vtxWriter[2] = DrawVert{mgl32.Vec2{x2, min[1]}, mgl32.Vec2{u2, uva[1]}, color}
-	vtxWriter[3] = DrawVert{mgl32.Vec2{max[0], min[1]}, mgl32.Vec2{uvb[0], uva[1]}, color}
+	vtxWriter[1] = DrawVert{f32.Vec2{x1, min[1]}, f32.Vec2{u1, uva[1]}, color}
+	vtxWriter[2] = DrawVert{f32.Vec2{x2, min[1]}, f32.Vec2{u2, uva[1]}, color}
+	vtxWriter[3] = DrawVert{f32.Vec2{max[0], min[1]}, f32.Vec2{uvb[0], uva[1]}, color}
 
-	vtxWriter[4] = DrawVert{mgl32.Vec2{min[0], y1}, mgl32.Vec2{uva[0], v1}, color}
-	vtxWriter[5] = DrawVert{mgl32.Vec2{x1, y1}, mgl32.Vec2{u1, v1}, color}
-	vtxWriter[6] = DrawVert{mgl32.Vec2{x2, y1}, mgl32.Vec2{u2, v1}, color}
-	vtxWriter[7] = DrawVert{mgl32.Vec2{max[0], y1}, mgl32.Vec2{uvb[0], v1}, color}
+	vtxWriter[4] = DrawVert{f32.Vec2{min[0], y1}, f32.Vec2{uva[0], v1}, color}
+	vtxWriter[5] = DrawVert{f32.Vec2{x1, y1}, f32.Vec2{u1, v1}, color}
+	vtxWriter[6] = DrawVert{f32.Vec2{x2, y1}, f32.Vec2{u2, v1}, color}
+	vtxWriter[7] = DrawVert{f32.Vec2{max[0], y1}, f32.Vec2{uvb[0], v1}, color}
 
-	vtxWriter[8] = DrawVert{mgl32.Vec2{min[0], y2}, mgl32.Vec2{uva[0], v2}, color}
-	vtxWriter[9] = DrawVert{mgl32.Vec2{x1, y2}, mgl32.Vec2{u1, v2}, color}
-	vtxWriter[10] = DrawVert{mgl32.Vec2{x2, y2}, mgl32.Vec2{u2, v2}, color}
-	vtxWriter[11] = DrawVert{mgl32.Vec2{max[0], y2}, mgl32.Vec2{uvb[0], v2}, color}
+	vtxWriter[8] = DrawVert{f32.Vec2{min[0], y2}, f32.Vec2{uva[0], v2}, color}
+	vtxWriter[9] = DrawVert{f32.Vec2{x1, y2}, f32.Vec2{u1, v2}, color}
+	vtxWriter[10] = DrawVert{f32.Vec2{x2, y2}, f32.Vec2{u2, v2}, color}
+	vtxWriter[11] = DrawVert{f32.Vec2{max[0], y2}, f32.Vec2{uvb[0], v2}, color}
 
-	vtxWriter[12] = DrawVert{mgl32.Vec2{min[0], max[1]}, mgl32.Vec2{uva[0], uvb[1]}, color}
-	vtxWriter[13] = DrawVert{mgl32.Vec2{x1, max[1]}, mgl32.Vec2{u1, uvb[1]}, color}
-	vtxWriter[14] = DrawVert{mgl32.Vec2{x2, max[1]}, mgl32.Vec2{u2, uvb[1]}, color}
+	vtxWriter[12] = DrawVert{f32.Vec2{min[0], max[1]}, f32.Vec2{uva[0], uvb[1]}, color}
+	vtxWriter[13] = DrawVert{f32.Vec2{x1, max[1]}, f32.Vec2{u1, uvb[1]}, color}
+	vtxWriter[14] = DrawVert{f32.Vec2{x2, max[1]}, f32.Vec2{u2, uvb[1]}, color}
 	vtxWriter[15] = DrawVert{max, uvb, color}
 
 	// fill index
@@ -650,7 +650,7 @@ var ninePatchIndex = [54]uint16 {
 	8, 9, 13, 8, 13, 12,  9, 10, 14, 9, 14, 13,  10, 11,15, 10, 15, 14,
 }
 
-func (dl *DrawList) AddText(pos mgl32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) (size mgl32.Vec2){
+func (dl *DrawList) AddText(pos f32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) (size f32.Vec2){
 	if text == "" {
 		return
 	}

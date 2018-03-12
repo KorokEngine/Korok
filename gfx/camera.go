@@ -1,7 +1,7 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
 )
 
@@ -13,7 +13,7 @@ const (
 
 //
 type Camera struct {
-	Eye mgl32.Vec3
+	Eye f32.Vec3
 	//
 	bound struct{
 		left, top, right, bottom float32

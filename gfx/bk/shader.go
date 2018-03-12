@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/go-gl/gl/v3.2-core/gl"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 	"log"
 )
 
@@ -129,7 +129,7 @@ func (s *GLShader) SetInteger(name string, value int32) {
 	gl.Uniform1i(location, value)
 }
 
-func (s *GLShader) SetMatrix4(name string, mat4 mgl32.Mat4) {
+func (s *GLShader) SetMatrix4(name string, mat4 f32.Mat4) {
 	location := gl.GetUniformLocation(s.Program, gl.Str(name))
 	gl.UniformMatrix4fv(location, 1, false, &mat4[0])
 }

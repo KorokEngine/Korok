@@ -1,8 +1,7 @@
 package gfx
 
 import (
-	"github.com/go-gl/mathgl/mgl32"
-
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx/bk"
 	"korok.io/korok/engi"
 
@@ -52,7 +51,7 @@ func (m *Mesh) Setup() {
 	}
 }
 
-func (m*Mesh) SRT(pos mgl32.Vec2, rot float32, scale mgl32.Vec2) {
+func (m*Mesh) SRT(pos f32.Vec2, rot float32, scale f32.Vec2) {
 	for i := 0; i < 4; i++ {
 		v := &m.vertex[i]
 		v.X += pos[0]
@@ -286,7 +285,7 @@ func (srf *MeshRenderFeature) Register(rs *RenderSystem) {
 	rs.Accept(srf)
 }
 
-var mat4 = mgl32.Translate3D(300, 100, 0)
+var mat4 = f32.Translate3D(300, 100, 0)
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (srf *MeshRenderFeature) Draw(filter []engi.Entity) {

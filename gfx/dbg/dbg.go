@@ -2,8 +2,7 @@ package dbg
 
 import (
 	"korok.io/korok/gfx/bk"
-
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 
 	"unsafe"
 	"log"
@@ -120,7 +119,7 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		sh.AddAttributeBinding("xyuv\x00", 0, P4C4[0])
 		sh.AddAttributeBinding("rgba\x00", 0, P4C4[1])
 
-		p := mgl32.Ortho2D(0, 480, 0, 320)
+		p := f32.Ortho2D(0, 480, 0, 320)
 		s0 := int32(0)
 
 		// setup uniform

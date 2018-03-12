@@ -2,7 +2,7 @@ package effect
 
 import (
 	"testing"
-	"github.com/go-gl/mathgl/mgl32"
+	"korok.io/korok/math/f32"
 )
 
 func TestFireSimulator(t *testing.T) {
@@ -53,7 +53,7 @@ func TestGravitySimulator(t *testing.T) {
 			A: Range{Var{1, 0}, Var{0, 0}},
 		},
 		Velocity: [2]Var{{10, 0}, {10, 0}},
-		Gravity:mgl32.Vec2{0, 90},
+		Gravity:f32.Vec2{0, 90},
 	}
 	gravity := NewGravitySimulator(cfg)
 	gravity.Initialize()
