@@ -13,7 +13,7 @@ import (
 
 type SpriteComp struct {
 	engi.Entity
-	*SubTex
+	tex *SubTex
 	anim uint16
 
 	scale float32
@@ -21,17 +21,22 @@ type SpriteComp struct {
 
 	width float32
 	height float32
+	gravity struct{
+		x, y float32
+	}
 
 	zOrder  int16
 	batchId int16
 }
 
 func (sc *SpriteComp) SetTexture(tex *SubTex) {
-	sc.SubTex = tex
+	sc.tex = tex
 	if tex != nil {
 		sc.batchId = int16(tex.TexId)
+	}
+	if tex != nil && (sc.width == 0 || sc.height == 0) {
 		sc.width = float32(tex.Width)
-		sc.height = float32(tex.Width)
+		sc.height = float32(tex.Height)
 	}
 }
 
@@ -50,6 +55,11 @@ func (sc *SpriteComp) SetSize(w, h float32) {
 func (sc *SpriteComp) Size() (w, h float32) {
 	w, h = sc.width, sc.height
 	return
+}
+
+func (sc *SpriteComp) SetGravity(x, y float32) {
+	sc.gravity.x = x
+	sc.gravity.y = y
 }
 
 func (sc *SpriteComp) Color() uint32 {
@@ -92,6 +102,8 @@ func (st *SpriteTable) NewComp(entity engi.Entity) (sc *SpriteComp) {
 	}
 	sc = &st.comps[st.index]
 	sc.Entity = entity
+	sc.gravity.x, sc.gravity.y = .5, .5
+	sc.color = 0xFFFFFFFF
 	st._map[ei] = st.index
 	st.index ++
 	return
@@ -240,7 +252,7 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 			batchId = bid
 			begin = true
 
-			render.Begin(b.SpriteComp.SubTex.TexId)
+			render.Begin(b.SpriteComp.tex.TexId)
 		}
 
 		render.Draw(b)
@@ -275,26 +287,32 @@ type spriteBatchObject struct {
 // 1 * 1 quad for each char
 // order: 3 0 1 3 1 2
 func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
-	p := sbo.Transform.world.Position
-	r := sbo.SpriteComp.Region
-	w := sbo.width
-	h := sbo.height
+	var (
+		p = sbo.Transform.world.Position
+		c = sbo.SpriteComp
+		r = c.tex.Region
+		w = sbo.width
+		h = sbo.height
+	)
+
+	p[0] -= w * c.gravity.x
+	p[1] -= h * c.gravity.y
 
 	buf[0].X, buf[0].Y = p[0], p[1]
 	buf[0].U, buf[0].V = r.X1, r.Y2
-	buf[0].RGBA = 0xffffffff
+	buf[0].RGBA = c.color
 
 	buf[1].X, buf[1].Y = p[0] + w, p[1]
 	buf[1].U, buf[1].V = r.X2, r.Y2
-	buf[1].RGBA = 0xffffffff
+	buf[1].RGBA = c.color
 
 	buf[2].X, buf[2].Y = p[0] + w, p[1] + h
 	buf[2].U, buf[2].V = r.X2, r.Y1
-	buf[2].RGBA = 0xffffffff
+	buf[2].RGBA = c.color
 
 	buf[3].X, buf[3].Y = p[0], p[1] + h
 	buf[3].U, buf[3].V = r.X1, r.Y1
-	buf[3].RGBA = 0x00ffffff
+	buf[3].RGBA = c.color
 }
 
 func (sbo spriteBatchObject) Size() int {
