@@ -6,6 +6,7 @@ import (
 
 	"sort"
 	"fmt"
+	"korok.io/korok/math/f32"
 )
 
 /// SpriteComp & SpriteTable
@@ -286,31 +287,43 @@ type spriteBatchObject struct {
 // 		0----------1
 // 1 * 1 quad for each char
 // order: 3 0 1 3 1 2
+//
+// Transform Method:
+//
+// |
+// |
+// |
 func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 	var (
-		p = sbo.Transform.world.Position
+		srt = sbo.Transform.world
+		p = srt.Position
 		c = sbo.SpriteComp
 		r = c.tex.Region
 		w = sbo.width
 		h = sbo.height
 	)
 
-	p[0] -= w * c.gravity.x
-	p[1] -= h * c.gravity.y
+	// Center of model
+	ox := w * c.gravity.x
+	oy := h * c.gravity.y
 
-	buf[0].X, buf[0].Y = p[0], p[1]
+	// Transform matrix
+	m := f32.Mat3{}; m.Initialize(p[0], p[1], srt.Rotation, srt.Scale[0], srt.Scale[1], ox, oy, 0,0)
+
+	// Let's go!
+	buf[0].X, buf[0].Y = m.Transform(0, 0)
 	buf[0].U, buf[0].V = r.X1, r.Y2
 	buf[0].RGBA = c.color
 
-	buf[1].X, buf[1].Y = p[0] + w, p[1]
+	buf[1].X, buf[1].Y = m.Transform(w, 0)
 	buf[1].U, buf[1].V = r.X2, r.Y2
 	buf[1].RGBA = c.color
 
-	buf[2].X, buf[2].Y = p[0] + w, p[1] + h
+	buf[2].X, buf[2].Y = m.Transform(w, h)
 	buf[2].U, buf[2].V = r.X2, r.Y1
 	buf[2].RGBA = c.color
 
-	buf[3].X, buf[3].Y = p[0], p[1] + h
+	buf[3].X, buf[3].Y = m.Transform(0, h)
 	buf[3].U, buf[3].V = r.X1, r.Y1
 	buf[3].RGBA = c.color
 }
