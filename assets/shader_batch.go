@@ -30,7 +30,7 @@ in vec2 fragTexCoord;
 in vec4 outColor;
 out vec4 outputColor;
 void main() {
-    outputColor = texture(tex, fragTexCoord);// * outColor;
+    outputColor = texture(tex, fragTexCoord) * outColor;
 }
 ` + "\x00"
 
