@@ -84,7 +84,7 @@ func (rm *ResManager) Destroy() {
 
 }
 
-/// Create Method
+// AllocIndexBuffer alloc a new Index-Buffer, Return the resource handler.
 func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) {
 	id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
 	rm.ibIndex++
@@ -100,6 +100,7 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 	return
 }
 
+// AllocVertexBuffer alloc a new Vertex-Buffer, Return the resource handler.
 func (rm *ResManager) AllocVertexBuffer(mem Memory, stride uint16) (id uint16, vb *VertexBuffer) {
 	id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
 	rm.vbIndex++
@@ -114,6 +115,7 @@ func (rm *ResManager) AllocVertexBuffer(mem Memory, stride uint16) (id uint16, v
 	return
 }
 
+// AllocUniform get the uniform slot in a shader program, Return the resource handler.
 func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, num uint32) (id uint16, um *Uniform) {
 	id, um = rm.umIndex, &rm.uniforms[rm.umIndex]
 	rm.umIndex++
@@ -130,6 +132,7 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 	return
 }
 
+// AllocTexture upload image to GPU, Return the resource handler.
 func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) {
 	id, tex = rm.ttIndex, &rm.textures[rm.ttIndex]
 	rm.ttIndex ++
@@ -144,6 +147,7 @@ func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) 
 	return
 }
 
+// AllocShader compile and link the Shader source code, Return the resource handler.
 func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 	id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
 	rm.shIndex++
@@ -159,7 +163,8 @@ func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 	return
 }
 
-/// Destroy Method
+// Free free all resource managed by R. Including index-buffer, vertex-buffer,
+// texture, uniform and shader program.
 func (rm *ResManager) Free(id uint16) {
 	t := (id >> ID_TYPE_SHIFT) & 0x000F
 	v := id & ID_MASK
@@ -184,7 +189,7 @@ func (rm *ResManager) Free(id uint16) {
 	}
 }
 
-/// Retrieve Method
+// IndexBuffer returns the low-level IndexBuffer struct.
 func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
 	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_INDEX || v >= MAX_INDEX {
@@ -193,6 +198,7 @@ func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
 	return true, &rm.indexBuffers[v]
 }
 
+// VertexBuffer returns the low-level VertexBuffer struct.
 func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_VERTEX || v >= MAX_VERTEX {
@@ -201,6 +207,7 @@ func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 	return true, &rm.vertexBuffers[v]
 }
 
+// Texture returns the low-level Texture struct.
 func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
 	t, v := id >>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_TEXTURE || v >= MAX_TEXTURE {
@@ -209,6 +216,7 @@ func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
 	return true, &rm.textures[v]
 }
 
+// Uniform returns the low-level Uniform struct.
 func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_UNIFORM || v >= MAX_UNIFORM {
@@ -217,6 +225,7 @@ func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 	return true, &rm.uniforms[v]
 }
 
+// Shader returns the low-level Shader struct.
 func (rm *ResManager) Shader(id uint16) (ok bool, sh *Shader) {
 	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
 	if t != ID_TYPE_SHADER || v >= MAX_SHADER {
