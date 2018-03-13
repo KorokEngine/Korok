@@ -4,6 +4,7 @@ import (
 	"korok.io/korok/math/f32"
 	"log"
 	"unsafe"
+	"sort"
 )
 
 type Rect struct {
@@ -212,7 +213,8 @@ func (rq *RenderQueue) Submit(id uint8, program uint16, depth int32) uint32 {
 
 	// encode sort-key
 	sk := &rq.sk
-	sk.Layer = 0
+	sk.Layer = uint16(id)
+	sk.Order = uint16(depth)
 
 	sk.Shader = program & ID_MASK // trip type
 	sk.Blend = 0
@@ -238,19 +240,49 @@ func (rq *RenderQueue) Submit(id uint8, program uint16, depth int32) uint32 {
 
 /// 执行最终的绘制
 func (rq *RenderQueue) Flush() uint32 {
-	//
-	////// real draw !!!
+	num := rq.drawCallNum
 
-	sortKeys := rq.sortKey[:rq.drawCallNum]
-	sortValues := rq.sortValues[:rq.drawCallNum]
-	drawList := rq.drawCallList[:rq.drawCallNum]
+	var (
+		sortKeys = rq.sortKey[:num]
+		sortVals = rq.sortValues[:num]
+		drawList = rq.drawCallList[:num]
+	)
 
-	rq.ctx.Draw(sortKeys, sortValues, drawList)
+	// Sort by SortKey
+	sort.Sort(ByKey{sortKeys, sortVals})
 
+	// Draw respect to sorted values
+	rq.ctx.Draw(sortKeys, sortVals, drawList)
+
+	// Clear counter
 	rq.drawCallNum = 0
 	rq.uniformBegin = 0
 	rq.uniformEnd = 0
 	rq.ub.Reset()
 
-	return uint32(rq.drawCallNum)
+	return uint32(num)
 }
+
+// For 2D games, batch-system will reduce draw-call obviously,
+// A simple default sort method will be OK.
+
+// sort draw-call based on SortKey
+type ByKey struct {
+	k []uint64
+	v []uint16
+}
+
+func (a ByKey) Len() int           {
+	return len(a.k)
+}
+
+func (a ByKey) Swap(i, j int)      {
+	a.k[i], a.k[j] = a.k[j], a.k[i]
+	a.v[i], a.v[j] = a.v[j], a.v[i]
+}
+
+func (a ByKey) Less(i, j int) bool {
+	return a.k[i] < a.k[j]
+}
+
+

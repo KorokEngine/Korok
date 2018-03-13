@@ -14,9 +14,9 @@ const (
 // 0000 - 0000000000 -       00000 -  000 - 0000000000
 //  ^        ^                  ^      ^       ^
 //  |        |                  |      |       |
-//  |      z-order            shader   |    texture
-// Layer                             blend
-//
+//  |      z-order()         shader(2^5)   |    texture(2^10)
+// Layer(2^4)                        blend(2^3)
+// 4 + 10 + 5 + 3 + 10
 type SortKey struct {
 	Layer   uint16
 	Order   uint16
@@ -28,17 +28,18 @@ type SortKey struct {
 func (sk *SortKey) Encode() (key uint64) {
 	return 0 |
 		uint64(sk.Layer  )<<28 |
-		uint64(sk.Shader )<<23 |
-		uint64(sk.Blend  )<<20 |
-		uint64(sk.Texture)<<10
+		uint64(sk.Order  )<<18 |
+		uint64(sk.Shader )<<13 |
+		uint64(sk.Blend  )<<10 |
+		uint64(sk.Texture)
 }
 
 func (sk *SortKey) Decode(key uint64) {
-	sk.Texture = uint16((key >>  0) & (2<<10 - 1))
-	sk.Texture = uint16((key >> 10) & (2<<10 - 1))
-	sk.Blend   = uint16((key >> 20) & (2<< 3 - 1))
-	sk.Shader  = uint16((key >> 23) & (2<< 5 - 1))
-	sk.Layer   = uint16((key >> 28) & (2<< 4 - 1))
+	sk.Texture = uint16((key >> 00) & (1<<10 - 1))
+	sk.Blend   = uint16((key >> 10) & (1<< 3 - 1))
+	sk.Shader  = uint16((key >> 13) & (1<< 5 - 1))
+	sk.Order   = uint16((key >> 18) & (1<<10 - 1))
+	sk.Layer   = uint16((key >> 28) & (1<< 4 - 1))
 }
 
 func SkDecode(key uint64) (sk SortKey) {
