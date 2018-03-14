@@ -17,6 +17,9 @@ type RenderContext struct {
 	// window rect
 	wRect Rect
 
+	// clips rect, index-0 is a default zero-rect.
+	clips []Rect
+
 	backBufferFbo uint32
 }
 
@@ -24,6 +27,7 @@ func NewRenderContext(r *ResManager, ub *UniformBuffer) *RenderContext {
 	return &RenderContext{
 		R:  r,
 		ub: ub,
+		clips:make([]Rect, 1),
 	}
 }
 
@@ -41,6 +45,12 @@ func (ctx *RenderContext) Shutdown() {
 	}
 }
 
+// Reset OpenGL state, then each frame has same starting state.
+func (ctx *RenderContext) Reset() {
+	ctx.clips = ctx.clips[:1]
+	gl.Disable(gl.SCISSOR_TEST)
+}
+
 func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList []RenderDraw) {
 	// 1. 绑定 VAO 和 FrameBuffer
 	if defaultVao := ctx.vao; 0 != defaultVao {
@@ -53,6 +63,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 
 	// 3. 初始化 per-draw state
 	currentState := RenderDraw{}
+
 	//
 	shaderId := InvalidId
 	key := SortKey{}
@@ -70,7 +81,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 
 		// 1. 求取变化的状态位
 		newFlags := draw.state
-		changedFlags := currentState.state ^ draw.state // TODO golang 异或
+		changedFlags := currentState.state ^ draw.state
 		currentState.state = newFlags
 
 		newStencil := draw.stencil
@@ -81,21 +92,13 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		scissor := draw.scissor
 		if currentState.scissor != scissor {
 			currentState.scissor = scissor
+			clip := ctx.clips[scissor]
 
-			if scissor.isZero() {
-				if (g_debug & DEBUG_Q) != 0 {
-					log.Println("Renderc disable scissor")
-				}
+			if clip.isZero() {
 				gl.Disable(gl.SCISSOR_TEST)
 			} else {
-				if (g_debug & DEBUG_Q) != 0 {
-					log.Printf("Renderc enable scissor: %q", scissor)
-				}
 				gl.Enable(gl.SCISSOR_TEST)
-				gl.Scissor(int32(scissor.x),
-					int32(ctx.wRect.h-scissor.h-scissor.y),
-					int32(scissor.w),
-					int32(scissor.h))
+				gl.Scissor(int32(clip.x), int32(clip.y), int32(clip.w), int32(clip.h))
 			}
 		}
 

@@ -55,7 +55,7 @@ func SetTransform(mtx *f32.Mat4) {
 	g_renderQ.SetTransform(mtx)
 }
 
-// SetUniform sets shader uniform parameter for drawCall primitive
+// SetUniform sets shader uniform parameter for drawCall primitive.
 func SetUniform(id uint16, ptr unsafe.Pointer) {
 	g_renderQ.SetUniform(id, ptr)
 }
@@ -65,9 +65,14 @@ func SetStencil(stencil uint32) {
 	g_renderQ.SetStencil(stencil)
 }
 
-// SetScissor set scissor for drawCall primitive.
-func SetScissor(x, y, width, height uint16) {
-	g_renderQ.SetScissor(x, y, width, height)
+// SetScissor set scissor for drawCall primitive. Return a cached ScissorRect handler.
+func SetScissor(x, y, width, height uint16) uint16 {
+	return g_renderQ.SetScissor(x, y, width, height)
+}
+
+// SetScissorCached set scissor rect with a cached ScissorRect handler.
+func SetScissorCached(id uint16) {
+	g_renderQ.SetScissorCached(id)
 }
 
 // SetViewScissor view scissor. Draw primitive outsize view will be clipped. When

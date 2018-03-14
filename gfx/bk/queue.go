@@ -44,7 +44,7 @@ type RenderDraw struct {
 
 	// stencil and scissor
 	stencil uint32
-	scissor Rect
+	scissor uint16
 
 	// required renderer state
 	state uint64
@@ -53,6 +53,7 @@ type RenderDraw struct {
 func (rd *RenderDraw) reset() {
 	rd.indexBuffer = 0
 	rd.firstIndex, rd.num = 0, 0
+	rd.scissor = 0
 }
 
 // ~ 8000 draw call
@@ -109,7 +110,8 @@ func (rq *RenderQueue) Init() {
 
 // reset frame-buffer size
 func (rq *RenderQueue) Reset(w, h uint16) {
-
+	rq.ctx.wRect.w = w
+	rq.ctx.wRect.h = h
 }
 
 func (rq *RenderQueue) Destroy() {
@@ -166,10 +168,15 @@ func (rq *RenderQueue) SetStencil(stencil uint32) {
 	rq.drawCall.stencil = stencil
 }
 
-func (rq *RenderQueue) SetScissor(x, y, width, height uint16) {
-	r := &rq.drawCall.scissor
-	r.x, r.y = x, y
-	r.w, r.h = width, height
+func (rq *RenderQueue) SetScissor(x, y, width, height uint16) uint16 {
+	index := uint16(len(rq.ctx.clips))
+	rq.drawCall.scissor = index
+	rq.ctx.clips = append(rq.ctx.clips, Rect{x,y, width, height})
+	return index
+}
+
+func (rq *RenderQueue) SetScissorCached(id uint16) {
+	rq.drawCall.scissor = id
 }
 
 /// View Related Setting
@@ -259,6 +266,7 @@ func (rq *RenderQueue) Flush() uint32 {
 	rq.uniformBegin = 0
 	rq.uniformEnd = 0
 	rq.ub.Reset()
+	rq.ctx.Reset()
 
 	return uint32(num)
 }
