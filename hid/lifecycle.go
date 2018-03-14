@@ -3,7 +3,7 @@ package hid
 // 窗口生命周期
 type WindowCallback interface {
 	// 窗口创建
-	OnCreate()
+	OnCreate(pixelRatio float32)
 
 	// 窗口循环
 	OnLoop()

@@ -19,8 +19,8 @@ func Init() {
 }
 
 // Reset resets RenderContext's internal state, such as frame-buffer size.
-func Reset(width, height uint32) {
-	g_renderQ.Reset(uint16(width), uint16(height))
+func Reset(width, height uint32, pixelRatio float32) {
+	g_renderQ.Reset(uint16(width), uint16(height), pixelRatio)
 }
 
 // Destroy release any resource used by the bk-api.

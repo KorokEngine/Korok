@@ -10,9 +10,9 @@ import (
 
 const SharedIndexBufferSize uint16 = 0xFFFF
 
-func Init() {
+func Init(pixelRatio float32) {
 	bk.Init()
-	bk.Reset(480, 320)
+	bk.Reset(480, 320, pixelRatio)
 
 	// Enable debug text
 	bk.SetDebug(bk.DEBUG_R|bk.DEBUG_Q)

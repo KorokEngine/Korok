@@ -16,6 +16,8 @@ type RenderContext struct {
 
 	// window rect
 	wRect Rect
+	// pixel-ratio = windows-size/frame-buffer-size
+	pixelRatio float32
 
 	// clips rect, index-0 is a default zero-rect.
 	clips []Rect
@@ -49,6 +51,17 @@ func (ctx *RenderContext) Shutdown() {
 func (ctx *RenderContext) Reset() {
 	ctx.clips = ctx.clips[:1]
 	gl.Disable(gl.SCISSOR_TEST)
+}
+
+func (ctx *RenderContext) AddClipRect(x, y, w, h uint16) uint16 {
+	index := uint16(len(ctx.clips))
+	ratio := ctx.pixelRatio
+	ctx.clips = append(ctx.clips, Rect{
+		uint16(float32(x)*ratio),
+		uint16(float32(y)*ratio),
+		uint16(float32(w)*ratio),
+		uint16(float32(h)*ratio)})
+	return index
 }
 
 func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList []RenderDraw) {

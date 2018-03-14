@@ -109,9 +109,10 @@ func (rq *RenderQueue) Init() {
 }
 
 // reset frame-buffer size
-func (rq *RenderQueue) Reset(w, h uint16) {
+func (rq *RenderQueue) Reset(w, h uint16, pr float32) {
 	rq.ctx.wRect.w = w
 	rq.ctx.wRect.h = h
+	rq.ctx.pixelRatio = pr
 }
 
 func (rq *RenderQueue) Destroy() {
@@ -168,11 +169,10 @@ func (rq *RenderQueue) SetStencil(stencil uint32) {
 	rq.drawCall.stencil = stencil
 }
 
-func (rq *RenderQueue) SetScissor(x, y, width, height uint16) uint16 {
-	index := uint16(len(rq.ctx.clips))
-	rq.drawCall.scissor = index
-	rq.ctx.clips = append(rq.ctx.clips, Rect{x,y, width, height})
-	return index
+func (rq *RenderQueue) SetScissor(x, y, width, height uint16) (id uint16) {
+	id = rq.ctx.AddClipRect(x, y, width, height)
+	rq.drawCall.scissor = id
+	return id
 }
 
 func (rq *RenderQueue) SetScissorCached(id uint16) {

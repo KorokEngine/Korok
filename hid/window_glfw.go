@@ -107,8 +107,7 @@ func CreateWindow(option *WindowOptions)  {
 
 	// DEBUG
 	// ========== Engine Start
-
-	windowCallback.OnCreate()
+	windowCallback.OnCreate(float32(w)/float32(option.Width))
 
 	// ========== Engine End
 	// 全局配置

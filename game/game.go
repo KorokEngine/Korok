@@ -61,8 +61,8 @@ func (g *Game) Camera() *gfx.Camera {
 }
 
 /// window callback
-func (g *Game) OnCreate() {
-	g.Create()
+func (g *Game) OnCreate(ratio float32) {
+	g.Create(ratio)
 }
 
 func (g *Game) OnLoop() {
@@ -88,8 +88,9 @@ func AddScene(scene Scene) {
 }
 
 // init subsystem
-func (g *Game) Create() {
-	gfx.Init()
+func (g *Game) Create(ratio float32) {
+	gfx.Init(ratio)
+	
 	// render system
 	rs := gfx.NewRenderSystem()
 	g.RenderSystem = rs
