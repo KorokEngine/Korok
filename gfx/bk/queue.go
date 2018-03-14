@@ -256,7 +256,7 @@ func (rq *RenderQueue) Flush() uint32 {
 	)
 
 	// Sort by SortKey
-	sort.Sort(ByKey{sortKeys, sortVals})
+	sort.Stable(ByKey{sortKeys, sortVals})
 
 	// Draw respect to sorted values
 	rq.ctx.Draw(sortKeys, sortVals, drawList)
