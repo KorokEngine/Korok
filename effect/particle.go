@@ -16,7 +16,7 @@ type ParticleComp struct {
 	engi.Entity
 	sim Simulator
 
-	tex *gfx.SubTex
+	tex gfx.Sprite
 	color uint32
 	scale float32
 }
@@ -201,7 +201,7 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 		comp.sim.Visualize(buf)
 
 		ro.Mesh = gfx.Mesh{
-			TextureId:comp.tex.TexId,
+			TextureId:comp.tex.Tex(),
 			IndexId:prf.BufferContext.indexId,
 			VertexId:prf.BufferContext.vertexId,
 			FirstVertex:uint16(vertexOffset),

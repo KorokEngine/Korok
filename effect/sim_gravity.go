@@ -8,10 +8,6 @@ import (
 	"log"
 )
 
-// name convention: r = red, d_r = derivative of r with respect to time
-// integrate: r' = r + d_r * t
-//
-
 /**
 duration: life of system
 

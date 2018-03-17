@@ -1,21 +1,31 @@
 package gfx
 
 import (
+	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx/dbg"
 
 	"sort"
 	"fmt"
-	"korok.io/korok/math/f32"
+
 )
+
+// Sprite is a Texture or a SubTexture
+type Sprite interface {
+	// return texture id
+	Tex() uint16
+	// uv
+	Region() Region
+	// size
+	Size() Size
+}
 
 /// SpriteComp & SpriteTable
 /// Usually, sprite can be rendered with a BatchRenderer
 
 type SpriteComp struct {
 	engi.Entity
-	tex *SubTex
-	anim uint16
+	Sprite
 
 	scale float32
 	color uint32
@@ -30,14 +40,15 @@ type SpriteComp struct {
 	batchId int16
 }
 
-func (sc *SpriteComp) SetTexture(tex *SubTex) {
-	sc.tex = tex
-	if tex != nil {
-		sc.batchId = int16(tex.TexId)
-	}
-	if tex != nil && (sc.width == 0 || sc.height == 0) {
-		sc.width = float32(tex.Width)
-		sc.height = float32(tex.Height)
+func (sc *SpriteComp) SetSprite(spt Sprite) {
+	sc.Sprite = spt
+	sc.batchId = int16(spt.Tex())
+
+	// optional size
+	if sc.width == 0 || sc.height == 0 {
+		size := spt.Size()
+		sc.width = size.Width
+		sc.height = size.Height
 	}
 }
 
@@ -111,9 +122,9 @@ func (st *SpriteTable) NewComp(entity engi.Entity) (sc *SpriteComp) {
 }
 
 // New SpriteComp with parameter
-func (st *SpriteTable) NewCompX(entity engi.Entity, tex *SubTex) (sc *SpriteComp) {
+func (st *SpriteTable) NewCompX(entity engi.Entity, spt Sprite) (sc *SpriteComp) {
 	sc = st.NewComp(entity)
-	sc.SetTexture(tex)
+	sc.SetSprite(spt)
 	return
 }
 
@@ -253,7 +264,7 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 			batchId = bid
 			begin = true
 
-			render.Begin(b.SpriteComp.tex.TexId)
+			render.Begin(b.SpriteComp.Sprite.Tex())
 		}
 
 		render.Draw(b)
@@ -298,10 +309,10 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 		srt = sbo.Transform.world
 		p = srt.Position
 		c = sbo.SpriteComp
-		r = c.tex.Region
 		w = sbo.width
 		h = sbo.height
 	)
+	rg := c.Sprite.Region()
 
 	// Center of model
 	ox := w * c.gravity.x
@@ -312,19 +323,19 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 
 	// Let's go!
 	buf[0].X, buf[0].Y = m.Transform(0, 0)
-	buf[0].U, buf[0].V = r.X1, r.Y2
+	buf[0].U, buf[0].V = rg.X1, rg.Y2
 	buf[0].RGBA = c.color
 
 	buf[1].X, buf[1].Y = m.Transform(w, 0)
-	buf[1].U, buf[1].V = r.X2, r.Y2
+	buf[1].U, buf[1].V = rg.X2, rg.Y2
 	buf[1].RGBA = c.color
 
 	buf[2].X, buf[2].Y = m.Transform(w, h)
-	buf[2].U, buf[2].V = r.X2, r.Y1
+	buf[2].U, buf[2].V = rg.X2, rg.Y1
 	buf[2].RGBA = c.color
 
 	buf[3].X, buf[3].Y = m.Transform(0, h)
-	buf[3].U, buf[3].V = r.X1, r.Y1
+	buf[3].U, buf[3].V = rg.X1, rg.Y1
 	buf[3].RGBA = c.color
 }
 

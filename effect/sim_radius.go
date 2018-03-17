@@ -3,8 +3,8 @@ package effect
 import (
 	"korok.io/korok/gfx"
 	"korok.io/korok/math/f32"
+	"korok.io/korok/math"
 
-	"math"
 	"log"
 
 )
@@ -86,8 +86,8 @@ func (r *RadiusSimulator) Simulate(dt float32) {
 
 	// 极坐标转换
 	for i := int32(0); i < n; i ++ {
-		x := float32(math.Cos(float64(r.angle[i]))) * r.radius[i]
-		y := float32(math.Sin(float64(r.angle[i]))) * r.radius[i]
+		x := float32(math.Cos(r.angle[i])) * r.radius[i]
+		y := float32(math.Sin(r.angle[i])) * r.radius[i]
 		r.pose[i] = f32.Vec2{x, y}
 	}
 	r.color.Integrate(n, r.colorDelta, dt)

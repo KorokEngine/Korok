@@ -45,7 +45,7 @@ func SetVertexBuffer(stream uint8, id uint16, firstVertex, numVertex uint32) {
 	g_renderQ.SetVertexBuffer(stream, id, uint16(firstVertex), uint16(numVertex))
 }
 
-// SetTexture sets texture stages for drawCall primitive.
+// SetSprite sets texture stages for drawCall primitive.
 func SetTexture(stage uint8, sampler uint16, handle uint16, flags uint32) {
 	g_renderQ.SetTexture(stage, sampler, handle, flags)
 }

@@ -223,8 +223,8 @@ func (lyt *LayoutManager) Offset(dx, dy float32) *LayoutManager {
 }
 
 func (lyt *LayoutManager) SetGravity(x, y float32) *LayoutManager {
-	lyt.hGroup.Gravity.X = math.F32Clamp(x, 0, 1)
-	lyt.hGroup.Gravity.Y = math.F32Clamp(y, 0, 1)
+	lyt.hGroup.Gravity.X = math.Clamp(x, 0, 1)
+	lyt.hGroup.Gravity.Y = math.Clamp(y, 0, 1)
 	return lyt
 }
 

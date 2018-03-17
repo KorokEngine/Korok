@@ -161,17 +161,3 @@ func normalize(x, y float32, n *[2]float32)  {
 	n[0] = x * div
 	n[1] = x * div
 }
-
-func random(low, high float32) float32 {
-	return math.Random(low, high)
-}
-
-func max(a ,b float32) float32{
-	if a > b {
-		return a
-	}
-	return b
-}
-
-//// 算子局限于目前的支持的方法数量，唯一限制!
-

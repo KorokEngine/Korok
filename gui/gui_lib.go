@@ -5,9 +5,9 @@ import (
 	"korok.io/korok/gfx"
 	"korok.io/korok/gfx/bk"
 	"korok.io/korok/hid/input"
+	"korok.io/korok/gfx/dbg"
 
 	"log"
-	"korok.io/korok/gfx/dbg"
 	"fmt"
 )
 
@@ -160,7 +160,7 @@ func (ctx *Context) ImageBackground(eventType EventType) {
 
 }
 
-func (ctx *Context) ImageButton(id ID, normal, pressed *gfx.SubTex, style *ImageButtonStyle) ( event EventType) {
+func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Sprite, style *ImageButtonStyle) ( event EventType) {
 	if style == nil {
 		style = &ctx.Style.ImageButton
 	}
@@ -170,13 +170,14 @@ func (ctx *Context) ImageButton(id ID, normal, pressed *gfx.SubTex, style *Image
 	)
 	if ready {
 		event = ctx.CheckEvent(id, bb, false)
-		var tex *gfx.SubTex
+		var tex gfx.Sprite
 		if event & EventDown != 0 {
 			tex = pressed
 		} else {
 			tex = normal
 		}
-		ctx.DrawImage(bb, tex.TexId, f32.Vec4{tex.X1, tex.Y1, tex.X2, tex.Y2}, &style.ImageStyle)
+		rg := tex.Region()
+		ctx.DrawImage(bb, tex.Tex(), f32.Vec4{rg.X1, rg.Y1, rg.X2, rg.Y2}, &style.ImageStyle)
 	} else {
 		size := ctx.Layout.Cursor.Bound
 		elem.W = size.W

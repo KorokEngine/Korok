@@ -27,7 +27,7 @@ type AnimationState struct {
 // 序列帧动画
 type Engine struct {
 	// 原始的帧地址
-	frames []gfx.SubTex
+	frames []gfx.Sprite
 
 	// 动画定义
 	data []SpriteAnimation
@@ -65,7 +65,7 @@ func (eng *Engine) RequireTable(tables []interface{}) {
 // 或者说无法删除动画，只能全部删除或者完全重新加载...
 // 如何动画以组的形式存在，那么便可以避免很多问题
 //
-func (eng *Engine) NewAnimation(name string, frames []gfx.SubTex, loop bool) {
+func (eng *Engine) NewAnimation(name string, frames []gfx.Sprite, loop bool) {
 	// copy frames
 	start, size := len(eng.frames), len(frames)
 	eng.frames = append(eng.frames, frames...)
@@ -76,7 +76,7 @@ func (eng *Engine) NewAnimation(name string, frames []gfx.SubTex, loop bool) {
 }
 
 // 返回动画定义 - 好像并没有太大的意义
-func (eng *Engine) Animation(name string) (anim *SpriteAnimation, seq []gfx.SubTex) {
+func (eng *Engine) Animation(name string) (anim *SpriteAnimation, seq []gfx.Sprite) {
 	if ii, ok := eng.names[name]; ok {
 		anim = &eng.data[ii]
 		seq  = eng.frames[anim.Start:anim.Start+anim.Len]
@@ -145,7 +145,8 @@ func (eng *Engine) Update(dt float32) {
 		anim := eng.data[st.define]
 
 		ii := st.ii % anim.Len
-		comp.SubTex = &eng.frames[anim.Start+ii]
+		frame := eng.frames[anim.Start+ii]
+		comp.SetSprite(frame)
 
 		// log.Println("play subtex:", comp.SubTex)
 	}

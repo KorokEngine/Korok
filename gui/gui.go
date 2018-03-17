@@ -106,7 +106,7 @@ func Button(id ID, text string, style *ButtonStyle) (event EventType) {
 	return gContext.Button(id, text, style)
 }
 
-func ImageButton(id ID, normal, pressed *gfx.SubTex, style *ImageButtonStyle) EventType{
+func ImageButton(id ID, normal, pressed gfx.SubTex, style *ImageButtonStyle) EventType{
 	return gContext.ImageButton(id, normal, pressed, style)
 }
 
