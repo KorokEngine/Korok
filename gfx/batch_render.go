@@ -140,15 +140,15 @@ type BatchContext struct {
 	indexId   uint16
 	index   []uint16
 
-	// shared vertex
-	vb [8]*bk.VertexBuffer
-	vertexId [8]uint16
 	vertex []PosTexColorVertex
 	vertexPos uint32
 	firstVertex uint32
 
+	//
+	vb *bk.VertexBuffer
+	vertexId uint16
+
 	// state
-	vbUsed 	  int
 	batchUsed int
 	texId     uint16
 
@@ -173,11 +173,7 @@ func (bc *BatchContext)init() {
 
 	// init shared vertex
 	bc.vertex = make([]PosTexColorVertex, MAX_BATCH_VERTEX_SIZE)
-	for i := 0; i < 8; i++ {
-		bc.vertexId[i], bc.vb[i] = bk.R.AllocVertexBuffer(bk.Memory{nil, MAX_BATCH_VERTEX_SIZE * 20}, 20)
-	}
 	bc.batchUsed = 0
-	bc.vbUsed = 0
 }
 
 func (bc *BatchContext) begin(tex uint16) {
@@ -201,11 +197,6 @@ func (bc *BatchContext) drawComp(b BatchObject) {
 
 		bc.vertexPos = 0
 		bc.firstVertex = 0
-		bc.vbUsed += 1
-
-		if bc.vbUsed >= 8 {
-			log.Printf("VertexBuffer out of size: (%d, %d)", 8, bc.vbUsed)
-		}
 	}
 
 	buf := bc.vertex[bc.vertexPos:bc.vertexPos+step]
@@ -222,7 +213,7 @@ func (bc *BatchContext) end() {
 	batch := &bc.BatchList[bc.batchUsed]
 	batch.TextureId = bc.texId
 
-	batch.VertexId = bc.vertexId[bc.vbUsed]
+	batch.VertexId = bc.vertexId
 	batch.firstVertex = uint16(bc.firstVertex)
 	batch.numVertex = uint16(bc.vertexPos-bc.firstVertex)
 
@@ -239,13 +230,19 @@ func (bc *BatchContext) reset() {
 	bc.firstVertex = 0
 	bc.vertexPos = 0
 	bc.batchUsed = 0
-	bc.vbUsed = 0
 }
 
 // flushBuffer() will write and switch vertex-buffer
 // we must submit batch with a end() method
 func (bc *BatchContext) flushBuffer() {
-	vb := bc.vb[bc.vbUsed]
+	var (
+		reqSize = int(bc.vertexPos)
+		stride = 20
+	)
+	id, _, vb := Context.TempVertexBuffer(reqSize, stride)
 	vb.Update(0, bc.vertexPos * 20, unsafe.Pointer(&bc.vertex[0]), false)
+
+	bc.vertexId = id
+	bc.vb = vb
 }
 

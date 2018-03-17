@@ -3,6 +3,7 @@ package gfx
 import (
 	"korok.io/korok/gfx/bk"
 	"unsafe"
+	"sort"
 )
 
 // graphics context
@@ -20,6 +21,7 @@ func Init(pixelRatio float32) {
 
 func Flush() {
 	bk.Flush()
+	Context.Reset()
 }
 
 func Destroy() {
@@ -53,7 +55,7 @@ type context struct {
 // 一帧之后自动释放
 func (ctx *context) TempVertexBuffer(reqSize, stride int) (id uint16, size int, vb *bk.VertexBuffer){
 	for i, tb := range ctx.temps {
-		if tb.use == 0 && tb.stride == stride && tb.size > reqSize {
+		if tb.use == 0 && tb.stride == stride && tb.size >= reqSize {
 			id, size, vb = tb.id, tb.size, tb.vb
 			ctx.temps[i].use = 1
 			return
@@ -82,10 +84,18 @@ func (ctx *context) newVertexBuffer(vertexSize,stride int) (id uint16, size int,
 	return tb.id, tb.size, tb.vb
 }
 
-func (ctx *context) ReleaseBuffer() {
+func (ctx *context) releaseBuffer() {
 	for i := range ctx.temps {
 		ctx.temps[i].use = 0
 	}
+	sort.Slice(ctx.temps, func(i, j int) bool {
+		return ctx.temps[i].size < ctx.temps[j].size
+	})
+}
+
+
+func (ctx *context) Reset() {
+	ctx.releaseBuffer()
 }
 
 // 64kb, format={3, 0, 1, 3, 1, 2}
@@ -117,4 +127,4 @@ func (ctx *context) initIndexBuffer () {
 }
 
 // global shared
-var Context *context = &context{}
+var Context = &context{}
