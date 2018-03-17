@@ -1,14 +1,10 @@
 package anim
 
 import (
-	"korok.io/korok/gfx"
 	"korok.io/korok/engi"
+	"korok.io/korok/anim/frame"
 )
 
-func NewSpriteAnimation(name string, frames []gfx.SubTex, loop bool) {
-
-}
-
-func OfEntity(entity engi.Entity) {
-
+func OfSprite(entity engi.Entity) frame.Animator{
+	return spriteEngine.Of(entity)
 }
