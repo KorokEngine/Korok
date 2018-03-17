@@ -6,7 +6,6 @@ import (
 	"korok.io/korok/gfx"
 	"korok.io/korok/effect"
 	"korok.io/korok/anim"
-	"korok.io/korok/physics"
 	"korok.io/korok/assets"
 	"korok.io/korok/hid/input"
 	"korok.io/korok/gfx/dbg"
@@ -90,7 +89,7 @@ func AddScene(scene Scene) {
 // init subsystem
 func (g *Game) Create(ratio float32) {
 	gfx.Init(ratio)
-	
+
 	// render system
 	rs := gfx.NewRenderSystem()
 	g.RenderSystem = rs
@@ -194,13 +193,6 @@ func (g *Game) loadTables() {
 
 	psTable := effect.NewParticleSystemTable(MaxParticleSize)
 	g.DB.Tables = append(g.DB.Tables, psTable)
-
-	skTable := &anim.SkeletonTable{}
-	g.DB.Tables = append(g.DB.Tables, skTable)
-
-	rigidTable := &physics.RigidBodyTable{}
-	colliderTable :=& physics.ColliderTable{}
-	g.DB.Tables = append(g.DB.Tables, rigidTable, colliderTable)
 }
 
 func (g *Game) Input(dt float32) {
