@@ -49,7 +49,7 @@ func NewTex(id uint16) Sprite {
 	return bkTex{id:id}
 }
 
-// SubTexture = (bk-Texture << 16) + SubTextureId
+// SubTexture = (atlas-id << 16) + SubTexture-id
 type SubTex struct {
 	id uint32
 }
@@ -64,6 +64,12 @@ func (tex SubTex) Region() Region {
 
 func (tex SubTex) Size() Size {
 	return R.size(tex.id)
+}
+
+func (tex SubTex) Id() (atlas, index int) {
+	atlas = int(tex.id >> 16)
+	index = int(tex.id & 0xFFFF)
+	return
 }
 
 // A small struct to describe a group of sub-texture
@@ -86,11 +92,17 @@ type Atlas struct {
 }
 
 func (at *Atlas) initialize(size int) {
-	buffer := make([]byte, size * int(sizeOfRegion+sizeOfSize+sizeOfString))
+	var (
+		szRegion = size * int(sizeOfRegion)
+		szSize   = size * int(sizeOfSize)
+		szString = size * int(sizeOfString)
+	)
 
-	at.regions = (*[1<<16]Region)(unsafe.Pointer(&buffer[0]))[:]
-	at.sizes = (*[1<<16]Size)(unsafe.Pointer(&buffer[size*int(sizeOfRegion)]))[:]
-	at.names = (*[1<<16]string)(unsafe.Pointer(&buffer[size*int(sizeOfRegion+sizeOfSize)]))[:]
+	buffer := make([]byte, szRegion + szSize + szString)
+	at.regions = (*[1<<16]Region)(unsafe.Pointer(&buffer[0]))[:size]
+	at.sizes = (*[1<<16]Size)(unsafe.Pointer(&buffer[szRegion]))[:size]
+	at.names = (*[1<<16]string)(unsafe.Pointer(&buffer[szRegion+szSize]))[:size]
+
 	at.index = 0
 	at.size = uint16(size)
 }
@@ -112,26 +124,34 @@ func (at *Atlas) AddItem(x, y, w, h float32, name string) {
 	at.names[ii] = name
 }
 
-func (at *Atlas) GetByName(name string) (tex SubTex) {
+func (at *Atlas) GetByName(name string) (tex SubTex, ok bool) {
 	for i := range at.names {
 		if at.names[i] == name {
-			tex = SubTex{uint32(i)} // todo atlas index
+			ok = true
+			tex = SubTex{uint32(at.aid) << 16 + uint32(i)}
 		}
 	}
 	return
 }
 
-func (at *Atlas) GetByIndex(index int) (tex SubTex) {
-	return SubTex{uint32(index)}
+func (at *Atlas) GetByIndex(index int) (tex SubTex, ok bool) {
+	if index < int(at.size) {
+		ok = true
+		tex = SubTex{uint32(at.aid) << 16 + uint32(index)}
+	}
+	return
 }
 
 func (at *Atlas) Region(ii int) Region {
 	return at.regions[ii]
 }
 
-
 func (at *Atlas) Size(ii int) Size {
 	return at.sizes[ii]
+}
+
+func (at *Atlas) Name(ii int) string {
+	return at.names[ii]
 }
 
 // Texture Resource Manager
