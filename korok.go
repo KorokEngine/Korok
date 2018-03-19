@@ -11,9 +11,8 @@ import (
 	"korok.io/korok/hid"
 	"korok.io/korok/gfx/dbg"
 	"korok.io/korok/effect"
-	"korok.io/korok/anim"
-	"korok.io/korok/physics"
 	"korok.io/korok/hid/input"
+	"korok.io/korok/math/f32"
 )
 
 const VERSION_CODE  = 2
@@ -22,6 +21,7 @@ const VERSION_NAME  = "0.2"
 type Options struct {
 	Title string
 	Width, Height int
+	Clear f32.Vec4
 }
 
 func RunScene(options *Options, sc game.Scene) {
@@ -50,12 +50,6 @@ func Run(options *Options)  {
 			Text = t
 		case *effect.ParticleSystemTable:
 			ParticleSystem = t
-		case *anim.SkeletonTable:
-			Skeleton = t
-		case *physics.RigidBodyTable:
-			RigidBody = t
-		case *physics.ColliderTable:
-			Collider = t
 		case *game.TagTable:
 			Tag = t
 		case *game.ScriptTable:
@@ -74,6 +68,7 @@ func Run(options *Options)  {
 		options.Title,
 		options.Width,
 		options.Height,
+		options.Clear,
 	})
 }
 
@@ -102,13 +97,6 @@ var Text       *gfx.TextTable
 
 ///// particle system
 var ParticleSystem *effect.ParticleSystemTable
-
-///// animation
-var Skeleton       *anim.SkeletonTable
-
-///// physics
-var RigidBody *physics.RigidBodyTable
-var Collider  *physics.ColliderTable
 
 ///// input system
 var Input *input.InputSystem

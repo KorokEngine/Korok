@@ -113,7 +113,11 @@ func CreateWindow(option *WindowOptions)  {
 	// 全局配置
 	//gl.Enable(gl.DEPTH_TEST)
 	//gl.DepthFunc(gl.LESS)
-	gl.ClearColor(1.0, 1.0, 1.0, 1.0)
+	if option.Clear[3] == 0 {
+		gl.ClearColor(1.0, 1.0, 1.0, 1.0)
+	} else {
+		gl.ClearColor(option.Clear[0], option.Clear[1], option.Clear[2], option.Clear[3])
+	}
 
 	// 如果窗口没有关闭，那么应该持续当前的循环
 	// main loop...
