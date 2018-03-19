@@ -202,12 +202,11 @@ func (g *Game) Input(dt float32) {
 
 func (g *Game) Update() {
 	// update
-	g.FPS.Step()
+	dt := g.FPS.Smooth()
 
 	// update input-system
 	g.InputSystem.Frame()
 
-	dt := g.FPS.dt
 	if current != nil {
 		current.Update(dt)
 	}

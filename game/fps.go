@@ -10,33 +10,40 @@ type FPS struct {
 
 	dt float32
 	fps int32
+	pause bool
 }
 
-func (*FPS) SetScale(factor float32) {
-
+func (fps *FPS) SetScale(factor float32) {
+	fps.scale = factor
 }
 
-func (f *FPS) Step() {
+func (fps *FPS) Step() float32 {
 	time := glfw.GetTime()
-	dt := time - f.preTime
-	f.preTime = time
-	if dt <= 0.001 {
-		f.dt = 16
-		f.fps = 60
-	} else {
-		f.dt = float32(dt)
-		f.fps = int32(1/dt)
-	}
+	dt := time - fps.preTime
+	fps.preTime = time
+	fps.dt = float32(dt)
+	fps.fps = int32(1/dt)
+
+	return fps.dt
 }
 
-func (*FPS) Sleep(d float32) {
+func (fps *FPS) Smooth() float32 {
+	time := glfw.GetTime()
+	dt := time - fps.preTime
+	fps.preTime = time
 
+	predt := fps.dt
+	sdt := predt * .8 + float32(dt*.2)
+	fps.dt = sdt
+	fps.fps = int32(1/sdt)
+
+	return fps.dt
 }
 
-func (*FPS) Pause() {
-
+func (fps *FPS) Pause() {
+	fps.pause = true
 }
 
-func (*FPS) Resume() {
-
+func (fps *FPS) Resume() {
+	fps.pause = false
 }
