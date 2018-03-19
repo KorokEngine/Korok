@@ -44,15 +44,19 @@ func (tm *TextureManager) Load(file string) {
 // LoadAtlas loads the atlas with a description file.
 // The SubTexture can be found by SubTexture's name.
 func (tm *TextureManager) LoadAtlas(img, desc string) {
-	id, data := tm.loadAtlas(img, desc)
-	size := len(data.texes)
+	id, data, err := tm.loadAtlas(img, desc)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+	size := len(data.Frames)
 
 	// new atlas
 	at := gfx.R.NewAtlas(id, size, img)
 
 	// fill
-	for _, item := range data.texes {
-		at.AddItem(float32(item.X), float32(item.Y), float32(item.W), float32(item.H), item.Name)
+	for _, f := range data.Frames {
+		at.AddItem(float32(f.Frame.X), float32(f.Frame.Y), float32(f.Frame.W), float32(f.Frame.H), f.Filename)
 	}
 }
 
@@ -129,29 +133,49 @@ func (tm *TextureManager) loadTexture(file string)(uint16, error)  {
 }
 
 // 加载纹理图集
-func (tm *TextureManager) loadAtlas(img, desc string)(id uint16, at *atlas) {
+func (tm *TextureManager) loadAtlas(img, desc string)(id uint16, at *atlas, e error) {
 	id, err := tm.loadTexture(img)
 	if err != nil {
-		// todo
+		e = err
+		return
 	}
 	file, err := os.Open(desc)
 	defer file.Close()
 
 	if err != nil {
-		// todo
+		e = err
+		return
 	}
 	d, err := ioutil.ReadAll(file)
 	if err != nil {
-		// todo
+		e = err
+		return
 	}
 	at = &atlas{}
-	json.Unmarshal(d, at)
+	e = json.Unmarshal(d, at)
 	return
 }
 
+// Field int `json:"myName"`
+// The file format is TexturePacker's generic json-array format.
+// TexturePacker: https://www.codeandweb.com/texturepacker
 type atlas struct {
-	texes []struct{
-		Name string
-		X, Y, W, H int32
-	}
+	Meta struct {
+		App string `json:"app"`
+		Version string `json:"version"`
+		Image string   `json:"image"`
+		Format string  `json:"format"`
+		Size struct{
+			W, H int
+		} `json:"size"`
+		Scale float32 `json:"scale,string"`
+	} `json:"meta"`
+
+	Frames []struct{
+		Filename string `json:"filename"`
+		Frame struct{ X, Y, W, H int} `json:"frame"`
+		Rotated bool `json:"rotated"`
+		Trimmed bool `json:trimmed`
+		Pivot struct{X, Y float32} `json:"pivot"`
+	} `json:"frames"`
 }
