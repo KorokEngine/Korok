@@ -56,7 +56,7 @@ type Simulator interface {
 	Play()
 
 	// Write the result to vertex-buffer.
-	Visualize(buf []gfx.PosTexColorVertex)
+	Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite)
 
 	// Return the size of the simulator.
 	Size() (live, cap int)
@@ -160,7 +160,7 @@ type VisualController struct {
 }
 
 // Visualize write the live particles to vertex-buffer.
-func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, live int) {
+func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite, live int) {
 	size := ctr.size
 	pose := ctr.pose
 
@@ -177,34 +177,34 @@ func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, live int) {
 		)
 
 		c := uint32(a*255) << 24 + uint32(b*255) << 16 + uint32(g_*255) << 8 + uint32(r*255)
-
+		rg := tex.Region()
 
 		// bottom-left
 		buf[vi+0].X = pose[i][0] - h_size
 		buf[vi+0].Y = pose[i][1] - h_size
-		buf[vi+0].U = 0
-		buf[vi+0].V = 0
+		buf[vi+0].U = rg.X1
+		buf[vi+0].V = rg.Y1
 		buf[vi+0].RGBA = c
 
 		// bottom-right
 		buf[vi+1].X = pose[i][0] + h_size
 		buf[vi+1].Y = pose[i][1] - h_size
-		buf[vi+1].U = 1
-		buf[vi+1].V = 0
+		buf[vi+1].U = rg.X2
+		buf[vi+1].V = rg.Y1
 		buf[vi+1].RGBA = c
 
 		// top-right
 		buf[vi+2].X = pose[i][0] + h_size
 		buf[vi+2].Y = pose[i][1] + h_size
-		buf[vi+2].U = 1
-		buf[vi+2].V = 1
+		buf[vi+2].U = rg.X2
+		buf[vi+2].V = rg.Y2
 		buf[vi+2].RGBA = c
 
 		// top-left
 		buf[vi+3].X = pose[i][0] - h_size
 		buf[vi+3].Y = pose[i][1] + h_size
-		buf[vi+3].U = 0
-		buf[vi+3].V = 1
+		buf[vi+3].U = rg.X1
+		buf[vi+3].V = rg.Y2
 		buf[vi+3].RGBA = c
 	}
 }

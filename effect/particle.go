@@ -190,7 +190,7 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 
 		// write vertex
 		buf := vertex[vertexOffset:vertexOffset+vn]
-		comp.sim.Visualize(buf)
+		comp.sim.Visualize(buf, comp.tex)
 
 		ro.Mesh = gfx.Mesh{
 			TextureId:comp.tex.Tex(),
@@ -243,7 +243,9 @@ type BufferContext struct {
 
 func (ctx *BufferContext) AllocBuffer(vertexSize, indexSize int) {
 	if vertexSize > ctx.vertexSize {
-		bk.R.Free(ctx.vertexId)
+		if ctx.vertexId != 0 {
+			bk.R.Free(ctx.vertexId)
+		}
 		{
 			vertexSize--
 			vertexSize |= vertexSize >> 1
@@ -263,7 +265,6 @@ func (ctx *BufferContext) AllocBuffer(vertexSize, indexSize int) {
 	}
 
 	if indexSize > ctx.indexSize {
-		bk.R.Free(ctx.indexId)
 		ctx.indexId, ctx.indexSize = gfx.Context.SharedIndexBuffer()
 	}
 }

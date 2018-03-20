@@ -156,8 +156,8 @@ func (r *RadiusSimulator) newParticle(new int) {
 	}
 }
 
-func (r *RadiusSimulator) Visualize(buf []gfx.PosTexColorVertex) {
-	r.VisualController.Visualize(buf, int(r.live))
+func (r *RadiusSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite) {
+	r.VisualController.Visualize(buf, tex, int(r.live))
 }
 
 func (r *RadiusSimulator) Size() (live, cap int) {

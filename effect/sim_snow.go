@@ -106,6 +106,6 @@ func (sim *SnowSimulator) NewParticle(new int) {
 	}
 }
 
-func (sim *SnowSimulator) Visualize(buf []gfx.PosTexColorVertex) {
-	sim.VisualController.Visualize(buf, int(sim.live))
+func (sim *SnowSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite) {
+	sim.VisualController.Visualize(buf, tex, int(sim.live))
 }

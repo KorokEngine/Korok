@@ -108,7 +108,7 @@ func (f *FireSimulator) newParticle(new int) {
 	}
 }
 
-func (f *FireSimulator) Visualize(buf []gfx.PosTexColorVertex) {
-	f.VisualController.Visualize(buf, f.live)
+func (f *FireSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite) {
+	f.VisualController.Visualize(buf, tex, f.live)
 }
 

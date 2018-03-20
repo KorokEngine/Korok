@@ -191,8 +191,8 @@ func rdm(p Var) float32 {
 }
 
 
-func (g *GravitySimulator) Visualize(buf []gfx.PosTexColorVertex) {
-	g.VisualController.Visualize(buf, g.live)
+func (g *GravitySimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite) {
+	g.VisualController.Visualize(buf, tex, g.live)
 }
 
 func (r *GravitySimulator) Size() (live, cap int) {
