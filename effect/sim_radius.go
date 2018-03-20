@@ -9,6 +9,7 @@ import (
 
 )
 
+// RadiusConfig used to configure the RadiusSimulator.
 type RadiusConfig struct {
 	Config
 
@@ -16,20 +17,16 @@ type RadiusConfig struct {
 	Angle, AngleDelta    Var
 }
 
-// Radius 模式既以极坐标表示的物理模拟
-// 方便模拟粒子旋转放射的场景
+// RadiusSimulator works as the radius mode of the Cocos2D's particle-system.
 type RadiusSimulator struct {
 	Pool
-	*RadiusConfig
 
-	// channel ref
-	life channel_f32
+	LifeController
+	RateController
+	VisualController
 
-	pose channel_v2
 	poseStart channel_v2
-	color channel_v4
 	colorDelta channel_v4
-	size channel_f32
 	sizeDelta channel_f32
 	rot channel_f32
 	rotDelta channel_f32
@@ -39,11 +36,11 @@ type RadiusSimulator struct {
 	radius channel_f32
 	radiusDelta channel_f32
 
-	live int
+	*RadiusConfig
 }
 
 func NewRadiusSimulator(cfg *RadiusConfig) *RadiusSimulator {
-	r := &RadiusSimulator{Pool:Pool{cap: 1024}, RadiusConfig: cfg}
+	r := &RadiusSimulator{Pool:Pool{cap: cfg.Max}, RadiusConfig: cfg}
 	r.Pool.AddChan(Life)
 	r.Pool.AddChan(Position, PositionStart)
 	r.Pool.AddChan(Color, ColorDelta)
@@ -72,6 +69,9 @@ func (r *RadiusSimulator) Initialize() {
 	r.angleDelta = r.Field(AngleDelta).(channel_f32)
 	r.radius = r.Field(Radius).(channel_f32)
 	r.radiusDelta = r.Field(RadiusDelta).(channel_f32)
+
+	// init controller
+	r.RateController.Initialize(r.Duration, r.RadiusConfig.Rate)
 }
 
 func (r *RadiusSimulator) Simulate(dt float32) {
@@ -94,7 +94,7 @@ func (r *RadiusSimulator) Simulate(dt float32) {
 	r.size.Integrate(n, r.sizeDelta, dt)
 	r.rot.Integrate(n, r.rotDelta, dt)
 	// recycle dead particle
-	r.gc()
+	r.GC(&r.Pool)
 }
 
 func (r *RadiusSimulator) Rate() int {
@@ -103,7 +103,6 @@ func (r *RadiusSimulator) Rate() int {
 
 func (r *RadiusSimulator) newParticle(new int) {
 	if (r.live + new) > r.cap {
-		log.Println("pool overflow...")
 		return
 	}
 	start := r.live
@@ -117,33 +116,22 @@ func (r *RadiusSimulator) newParticle(new int) {
 		r.pose[i] = f32.Vec2{cfg.X.Random(), cfg.Y.Random()}
 
 		// color
-		var _r, g, b, a  float32 = 1, 1, 1, 1
+		var red, _g, b, a  float32 = 0, 0, 0, 1
 		var redd, gd, bd, ad float32
+
 		if cfg.R.Used() {
-			_r = cfg.R.Start.Random()
-			if cfg.R.HasRange() {
-				redd = (cfg.R.End.Random() - _r) * invLife
-			}
+			red, redd = cfg.R.RangeInit(invLife)
 		}
 		if cfg.G.Used() {
-			g = cfg.G.Start.Random()
-			if cfg.G.HasRange() {
-				gd = (cfg.G.End.Random() - g) * invLife
-			}
+			_g, gd = cfg.G.RangeInit(invLife)
 		}
 		if cfg.B.Used() {
-			b = cfg.B.Start.Random()
-			if cfg.B.HasRange() {
-				bd = (cfg.B.End.Random() - b) * invLife
-			}
+			b, bd = cfg.B.RangeInit(invLife)
 		}
 		if cfg.A.Used() {
-			a = cfg.A.Start.Random()
-			if cfg.A.HasRange() {
-				ad = (cfg.A.End.Random() - a) * invLife
-			}
+			a, ad = cfg.A.RangeInit(invLife)
 		}
-		r.color[i] = f32.Vec4{_r, g, b, a}
+		r.color[i] = f32.Vec4{red, _g, b, a}
 		r.colorDelta[i] = f32.Vec4{redd, gd, bd, ad}
 
 
@@ -170,91 +158,8 @@ func (r *RadiusSimulator) newParticle(new int) {
 	}
 }
 
-func (r *RadiusSimulator) gc() {
-	for i, n := 0, r.live ; i < n; i++{
-		if r.life[i] <= 0 {
-			// find last live
-			j := r.live - 1
-			for ; j > i && r.life[j] <= 0; j-- {
-				r.live --
-				n = r.live
-			}
-
-			if j > i {
-				r.SwapErase(i, j)
-			}
-			r.live --
-			n = r.live
-		}
-	}
-}
-
-func (r *RadiusSimulator) SwapErase(i, j int) {
-	r.life[i] = r.life[j]
-	r.pose[i] = r.pose[j]
-	r.poseStart[i] = r.poseStart[j]
-	r.color[i] = r.color[j]
-	r.colorDelta[i] = r.colorDelta[j]
-	r.size[i] = r.size[j]
-	r.sizeDelta[i] = r.sizeDelta[j]
-	r.rot[i] = r.rot[j]
-	r.rotDelta[i] = r.rotDelta[j]
-	r.angle[i] = r.angle[i]
-	r.angleDelta[i] = r.angleDelta[j]
-	r.radius[i] = r.radius[j]
-	r.radiusDelta[i] = r.radiusDelta[i]
-}
-
 func (r *RadiusSimulator) Visualize(buf []gfx.PosTexColorVertex) {
-	size := r.size
-	pose := r.pose
-	live := int(r.live)
-
-	var zcc int
-	var lcc int
-	// compute vbo
-	for i := 0; i < live; i ++ {
-		vi := i << 2
-		h_size := size[i] / 2
-		alpha := r.color[i][3]
-		if alpha <= 0 {
-			alpha = 0
-			zcc ++
-		}
-
-		if r.life[i] <= 0 {
-			lcc ++
-		}
-		c := 0x00ffffff + (uint32(0xff*alpha) << 24)
-
-		// bottom-left
-		buf[vi+0].X = pose[i][0] - h_size
-		buf[vi+0].Y = pose[i][1] - h_size
-		buf[vi+0].U = 0
-		buf[vi+0].V = 0
-		buf[vi+0].RGBA = c
-
-		// bottom-right
-		buf[vi+1].X = pose[i][0] + h_size
-		buf[vi+1].Y = pose[i][1] - h_size
-		buf[vi+1].U = 1
-		buf[vi+1].V = 0
-		buf[vi+1].RGBA = c
-
-		// top-right
-		buf[vi+2].X = pose[i][0] + h_size
-		buf[vi+2].Y = pose[i][1] + h_size
-		buf[vi+2].U = 1
-		buf[vi+2].V = 1
-		buf[vi+2].RGBA = c
-
-		// top-left
- 		buf[vi+3].X = pose[i][0] - h_size
-		buf[vi+3].Y = pose[i][1] + h_size
-		buf[vi+3].U = 0
-		buf[vi+3].V = 1
-		buf[vi+3].RGBA = c
-	}
+	r.VisualController.Visualize(buf, int(r.live))
 }
 
 func (r *RadiusSimulator) Size() (live, cap int) {

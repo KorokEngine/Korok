@@ -11,7 +11,7 @@ import (
 	"fmt"
 )
 
-// particle component
+// Particle Component
 type ParticleComp struct {
 	engi.Entity
 	sim Simulator
@@ -21,37 +21,37 @@ type ParticleComp struct {
 	scale float32
 }
 
-func (ec *ParticleComp) SetSimulator(sim Simulator) {
-	ec.sim = sim
+func (pc *ParticleComp) SetSimulator(sim Simulator) {
+	pc.sim = sim
 }
 
-func (ec *ParticleComp) SetTexture(tex *gfx.SubTex) {
-	ec.tex = tex
+func (pc *ParticleComp) SetTexture(tex gfx.Sprite) {
+	pc.tex = tex
 }
 
-func (ec *ParticleComp) SetColor(color uint32) {
-	ec.color = color
+func (pc *ParticleComp) SetColor(color uint32) {
+	pc.color = color
 }
 
-func (ec *ParticleComp) SetScale(scale float32) {
-	ec.scale = scale
+func (pc *ParticleComp) SetScale(scale float32) {
+	pc.scale = scale
 }
 
-func (ec *ParticleComp) Play() {
-
-}
-
-func (ec *ParticleComp) Pause() {
-
-}
-
-func (ec *ParticleComp) Resume() {
-
-}
-
-func (ec *ParticleComp) Stop() {
-
-}
+//func (pc *ParticleComp) Play() {
+//	// pc.sim.s
+//}
+//
+//func (pc *ParticleComp) Pause() {
+//
+//}
+//
+//func (pc *ParticleComp) Resume() {
+//
+//}
+//
+//func (pc *ParticleComp) Stop() {
+//
+//}
 
 // component manager
 type ParticleSystemTable struct {

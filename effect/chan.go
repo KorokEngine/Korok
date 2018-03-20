@@ -5,9 +5,12 @@ import (
 	"korok.io/korok/math"
 )
 
-// 计算通道定义：
-// 此处定了 3 中类型的计算通道：float32/Vec2/Vec4
-// 定义了 10 个左右的基本算法: random/const/add/sub/mul/integrate
+// Compute Channel：
+// Types：float32/Vec2/Vec4
+// Methods: random/const/add/sub/mul/integrate
+//
+// Compute channel is an array of values that can be computed in a for-loop.
+// It's data structure is cache-friendly.
 type ChanType uint8
 const (
 	ChanF32 ChanType = iota
