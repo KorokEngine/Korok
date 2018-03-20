@@ -69,7 +69,7 @@ func (v Var) Used() bool {
 }
 
 func (v Var) Random() float32{
-	return math.Random(v.Base, v.Base + v.Var)
+	return math.Random(v.Base-v.Var/2 , v.Base+v.Var/2)
 }
 
 // range [start, end]
@@ -83,6 +83,14 @@ func (r Range) Used() bool {
 
 func (r Range) HasRange() bool {
 	return r.Start != r.End
+}
+
+func (r *Range) RangeInit(invLife float32) (start, d float32) {
+	start = r.Start.Random()
+	if r.Start != r.End {
+		d = (r.End.Random() - start) * invLife
+	}
+	return
 }
 
 type Simulator interface {
@@ -109,9 +117,118 @@ type Updater interface {
 
 }
 
+// 把粒子系统的各个子控制器拆成小的片段，这样
+// 通过组合就可以最优化的实现一个例子仿真器
+type RateController struct {
+	// control emitter-rate
+	accTime float32
+	threshTime float32
+
+	// lifetime
+	lifeTime float32
+	duration float32
+	stop bool
+}
+
+func (ctr *RateController) Rate(dt float32) (n int) {
+	ctr.lifeTime += dt
+	if ctr.stop || ctr.lifeTime > ctr.duration {
+		return
+	}
+	ctr.accTime += dt
+	if ctr.accTime >= ctr.threshTime {
+		acc := ctr.accTime
+		for d := ctr.threshTime ; acc > d; {
+			acc -= d; n++
+		}
+		ctr.accTime = acc
+	}
+	return
+}
+
+type LifeController struct {
+	// channel ref
+	life channel_f32
+	live int
+}
+
+func (ctr *LifeController) gc(p *Pool) {
+	for i, n := 0, ctr.live ; i < n; i++{
+		if ctr.life[i] <= 0 {
+			// find last live
+			j := ctr.live - 1
+			for ; j > i && ctr.life[j] <= 0; j-- {
+				ctr.live --
+				n = ctr.live
+			}
+
+			if j > i {
+				p.Swap(i, j)
+			}
+			ctr.live --
+			n = ctr.live
+		}
+	}
+}
+
+type VisualController struct {
+	pose channel_v2
+	color channel_v4
+	size channel_f32
+}
+
+func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, live int) {
+	size := ctr.size
+	pose := ctr.pose
+
+	// compute vbo
+	for i := 0; i < live; i ++ {
+		vi := i << 2
+		h_size := size[i] / 2
+
+		var (
+			r = math.Clamp(ctr.color[i][0], 0, 1)
+			g_ = math.Clamp(ctr.color[i][1], 0, 1)
+			b = math.Clamp(ctr.color[i][2], 0, 1)
+			a = math.Clamp(ctr.color[i][3], 0, 1)
+		)
+
+		c := uint32(a*255) << 24 + uint32(b*255) << 16 + uint32(g_*255) << 8 + uint32(r*255)
 
 
+		// bottom-left
+		buf[vi+0].X = pose[i][0] - h_size
+		buf[vi+0].Y = pose[i][1] - h_size
+		buf[vi+0].U = 0
+		buf[vi+0].V = 0
+		buf[vi+0].RGBA = c
 
+		// bottom-right
+		buf[vi+1].X = pose[i][0] + h_size
+		buf[vi+1].Y = pose[i][1] - h_size
+		buf[vi+1].U = 1
+		buf[vi+1].V = 0
+		buf[vi+1].RGBA = c
+
+		// top-right
+		buf[vi+2].X = pose[i][0] + h_size
+		buf[vi+2].Y = pose[i][1] + h_size
+		buf[vi+2].U = 1
+		buf[vi+2].V = 1
+		buf[vi+2].RGBA = c
+
+		// top-left
+		buf[vi+3].X = pose[i][0] - h_size
+		buf[vi+3].Y = pose[i][1] + h_size
+		buf[vi+3].U = 0
+		buf[vi+3].V = 1
+		buf[vi+3].RGBA = c
+	}
+}
+
+type ColorController struct {
+
+}
 
 // ps-comp simulate
 // 在仿真系统中，直接读取 PSTable 的 Comp 进行模拟仿真
