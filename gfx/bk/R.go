@@ -47,6 +47,22 @@ const (
 	MAX_SHADER  = 32
 )
 
+type FreeList struct {
+	slots []uint16
+}
+
+func (fl *FreeList) Pop() (slot uint16, ok bool) {
+	if size := len(fl.slots); size > 0 {
+		slot = fl.slots[size-1]
+		ok = true
+		fl.slots = fl.slots[:size-1]
+	}
+	return
+}
+
+func (fl *FreeList) Push(slot uint16) {
+	fl.slots = append(fl.slots, slot)
+}
 
 type ResManager struct {
 	indexBuffers  [MAX_INDEX]IndexBuffer
@@ -62,6 +78,13 @@ type ResManager struct {
 	vlIndex uint16
 	umIndex uint16
 	shIndex uint16
+
+	// free list
+	ibFrees FreeList
+	vbFrees FreeList
+	ttFrees FreeList
+	umFrees FreeList
+	shFrees FreeList
 }
 
 func NewResManager() *ResManager {
@@ -86,8 +109,13 @@ func (rm *ResManager) Destroy() {
 
 // AllocIndexBuffer alloc a new Index-Buffer, Return the resource handler.
 func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) {
-	id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
-	rm.ibIndex++
+	if index, ok := rm.ibFrees.Pop(); ok {
+		id = index
+		ib = &rm.indexBuffers[index]
+	} else {
+		id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
+		rm.ibIndex++
+	}
 	id = id | (ID_TYPE_INDEX << ID_TYPE_SHIFT)
 
 	if err := ib.Create(mem.Size, mem.Data, 0); err != nil {
@@ -102,8 +130,13 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 
 // AllocVertexBuffer alloc a new Vertex-Buffer, Return the resource handler.
 func (rm *ResManager) AllocVertexBuffer(mem Memory, stride uint16) (id uint16, vb *VertexBuffer) {
-	id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
-	rm.vbIndex++
+	if index, ok := rm.vbFrees.Pop(); ok {
+		id = index
+		vb = &rm.vertexBuffers[index]
+	} else {
+		id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
+		rm.vbIndex++
+	}
 	id = id | (ID_TYPE_VERTEX << ID_TYPE_SHIFT)
 	if err := vb.Create(mem.Size, mem.Data, stride, 0); err != nil {
 		log.Println("fail to alloc vertex-buffer, ", err)
@@ -117,8 +150,13 @@ func (rm *ResManager) AllocVertexBuffer(mem Memory, stride uint16) (id uint16, v
 
 // AllocUniform get the uniform slot in a shader program, Return the resource handler.
 func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, num uint32) (id uint16, um *Uniform) {
-	id, um = rm.umIndex, &rm.uniforms[rm.umIndex]
-	rm.umIndex++
+	if index, ok := rm.umFrees.Pop(); ok {
+		id = index
+		um = &rm.uniforms[index]
+	} else {
+		id, um = rm.umIndex, &rm.uniforms[rm.umIndex]
+		rm.umIndex++
+	}
 	id = id | (ID_TYPE_UNIFORM << ID_TYPE_SHIFT)
 	if ok, sh := rm.Shader(shId); ok {
 		if um.create(sh.Program, name, xType, num) < 0 {
@@ -134,8 +172,13 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 
 // AllocTexture upload image to GPU, Return the resource handler.
 func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) {
-	id, tex = rm.ttIndex, &rm.textures[rm.ttIndex]
-	rm.ttIndex ++
+	if index, ok := rm.ttFrees.Pop(); ok {
+		id = index
+		tex = &rm.textures[index]
+	} else {
+		id, tex = rm.ttIndex, &rm.textures[rm.ttIndex]
+		rm.ttIndex ++
+	}
 	id = id | (ID_TYPE_TEXTURE << ID_TYPE_SHIFT)
 	if err := tex.Create(img); err != nil {
 		log.Printf("fail to alloc texture, %s", err)
@@ -149,8 +192,13 @@ func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) 
 
 // AllocShader compile and link the Shader source code, Return the resource handler.
 func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
-	id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
-	rm.shIndex++
+	if index, ok := rm.shFrees.Pop(); ok {
+		id = index
+		sh = &rm.shaders[index]
+	} else {
+		id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
+		rm.shIndex++
+	}
 	id = id | (ID_TYPE_SHADER << ID_TYPE_SHIFT)
 
 	if err := sh.Create(vsh, fsh); err != nil {
@@ -172,20 +220,20 @@ func (rm *ResManager) Free(id uint16) {
 	switch t {
 	case ID_TYPE_INDEX:
 		rm.indexBuffers[v].Destroy()
-		rm.ibIndex--
+		rm.ibFrees.Push(v)
 	case ID_TYPE_VERTEX:
 		rm.vertexBuffers[v].Destroy()
-		rm.vbIndex--
+		rm.vbFrees.Push(v)
 	case ID_TYPE_TEXTURE:
 		rm.textures[v].Destroy()
-		rm.ttIndex--
+		rm.ttFrees.Push(v)
 	case ID_TYPE_LAYOUT:
-		rm.vlIndex--
+		// todo
 	case ID_TYPE_UNIFORM:
-		rm.umIndex--
+		rm.umFrees.Push(v)
 	case ID_TYPE_SHADER:
 		rm.shaders[v].Destroy()
-		rm.shIndex--
+		rm.shFrees.Push(v)
 	}
 }
 
