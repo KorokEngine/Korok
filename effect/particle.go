@@ -37,21 +37,13 @@ func (pc *ParticleComp) SetScale(scale float32) {
 	pc.scale = scale
 }
 
-//func (pc *ParticleComp) Play() {
-//	// pc.sim.s
-//}
-//
-//func (pc *ParticleComp) Pause() {
-//
-//}
-//
-//func (pc *ParticleComp) Resume() {
-//
-//}
-//
-//func (pc *ParticleComp) Stop() {
-//
-//}
+func (pc *ParticleComp) Play() {
+	pc.sim.Play()
+}
+
+func (pc *ParticleComp) Stop() {
+	pc.sim.Stop()
+}
 
 // component manager
 type ParticleSystemTable struct {

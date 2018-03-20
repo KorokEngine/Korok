@@ -3,8 +3,6 @@ package effect
 import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
-
-	"log"
 	"korok.io/korok/math"
 )
 

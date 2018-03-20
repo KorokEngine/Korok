@@ -5,8 +5,6 @@ import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/math"
 
-	"log"
-
 )
 
 // RadiusConfig used to configure the RadiusSimulator.

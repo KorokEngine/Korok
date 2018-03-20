@@ -51,6 +51,10 @@ type Simulator interface {
 	// Run the simulator with delta time.
 	Simulate(dt float32)
 
+	Stop()
+
+	Play()
+
 	// Write the result to vertex-buffer.
 	Visualize(buf []gfx.PosTexColorVertex)
 
@@ -111,6 +115,14 @@ func (ctr *RateController) Rate(dt float32) (n int) {
 		ctr.accTime = acc
 	}
 	return
+}
+
+func (ctr *RateController) Stop() {
+	ctr.stop = true
+}
+
+func (ctr *RateController) Play() {
+	ctr.stop = false
 }
 
 // LifeController is a helper struct to manage the Life of particles.

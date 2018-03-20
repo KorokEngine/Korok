@@ -4,8 +4,6 @@ import (
 	"korok.io/korok/math"
 	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
-
-	"log"
 )
 
 type Config struct {
