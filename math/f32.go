@@ -55,3 +55,13 @@ func Sin(r float32) float32 {
 func Cos(r float32) float32 {
 	return float32(math.Cos(float64(r)))
 }
+
+// Radian converts degree to radian.
+func Radian(d float32) float32 {
+	return d * Pi / 180
+}
+
+// Degree converts radian to degree.
+func Degree(r float32) float32 {
+	return r * 180 / Pi
+}
