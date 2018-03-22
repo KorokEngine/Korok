@@ -31,7 +31,7 @@ func NewBatchRender(vsh, fsh string) *BatchRender {
 	br := new(BatchRender)
 
 	// setup state
-	br.stateFlags |= bk.ST_BLEND.ALPHA_NON_PREMULTIPLIED
+	br.stateFlags |= bk.ST_BLEND.ALPHA_PREMULTIPLIED
 
 	// setup shader
 	if shId, sh := bk.R.AllocShader(vsh, fsh); shId != bk.InvalidId {

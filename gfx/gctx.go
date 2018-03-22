@@ -21,11 +21,12 @@ func Init(pixelRatio float32) {
 
 func Flush() {
 	bk.Flush()
-	Context.Reset()
+	Context.Step()
 }
 
 func Destroy() {
 	bk.Destroy()
+	Context.Destroy()
 }
 
 // 目前各个 RenderFeature 都是自己管理 VBO/IBO，但是对于一些系统，比如
@@ -84,7 +85,7 @@ func (ctx *context) newVertexBuffer(vertexSize,stride int) (id uint16, size int,
 	return tb.id, tb.size, tb.vb
 }
 
-func (ctx *context) releaseBuffer() {
+func (ctx *context) release() {
 	for i := range ctx.temps {
 		ctx.temps[i].use = 0
 	}
@@ -93,9 +94,13 @@ func (ctx *context) releaseBuffer() {
 	})
 }
 
+func (ctx *context) Step() {
+	ctx.release()
+	ctx.Stack.release()
+}
 
-func (ctx *context) Reset() {
-	ctx.releaseBuffer()
+func (ctx *context) Destroy() {
+	// destroy any release!
 }
 
 // 64kb, format={3, 0, 1, 3, 1, 2}
@@ -127,4 +132,9 @@ func (ctx *context) initIndexBuffer () {
 }
 
 // global shared
-var Context = &context{}
+var Context *context
+
+// Stack capacity ~ 100K
+func init() {
+	Context = &context{}; Context.Stack.initialize(100*1024)
+}

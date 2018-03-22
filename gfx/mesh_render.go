@@ -26,7 +26,7 @@ type MeshRender struct {
 func NewMeshRender(vsh, fsh string) *MeshRender {
 	mr := new(MeshRender)
 	// blend func
-	mr.stateFlags |= bk.ST_BLEND.ALPHA_NON_PREMULTIPLIED
+	mr.stateFlags |= bk.ST_BLEND.ALPHA_PREMULTIPLIED
 
 	// setup shader
 	if id, sh := bk.R.AllocShader(vsh, fsh); id != bk.InvalidId {

@@ -2,7 +2,6 @@ package game
 
 import "github.com/go-gl/glfw/v3.2/glfw"
 
-//
 type FPS struct {
 	scale float32
 	curTime float32

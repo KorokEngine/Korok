@@ -2,29 +2,37 @@ package gfx
 
 import "unsafe"
 
-// A stack for per-frame memory allocation
+// // This is a stack allocator used for fast per step allocations.
 type StackAllocator struct {
+	// bottom of the stack
 	data uintptr
-	alloc int32
+
+	// current position and capacity
+	alloc, cap int32
 
 	// keep a reference
 	ref unsafe.Pointer
 }
 
-func NewStackAllocator() *StackAllocator {
-	stack := new(StackAllocator)
-	mem := make([]byte, 100 * 1024)
+func (stack *StackAllocator) initialize(max int) {
+	mem := make([]byte, max)
 	stack.ref = unsafe.Pointer(&mem[0])
 	stack.data = uintptr(stack.ref)
-	return stack
 }
 
-func (stack *StackAllocator) Alloc(size int32) unsafe.Pointer {
-	ptr := unsafe.Pointer(stack.data + uintptr(stack.alloc))
-	stack.alloc += size
-	return ptr
+// Alloc alloc memory on the stack.
+func (stack *StackAllocator) Alloc(size int32) (ptr unsafe.Pointer) {
+	if req := stack.alloc + size; req < stack.cap {
+		ptr = unsafe.Pointer(stack.data + uintptr(stack.alloc))
+		stack.alloc += size
+	} else {
+		tmp := make([]byte, size)
+		ptr = unsafe.Pointer(&tmp[0])
+	}
+	return
 }
 
+// Free frees memory on the stack, it should pair with Alloc.
 func (stack *StackAllocator) Free(size int32) {
 	stack.alloc -= size
 	if stack.alloc < 0 {
@@ -33,7 +41,8 @@ func (stack *StackAllocator) Free(size int32) {
 	return
 }
 
-func (stack *StackAllocator) Reset() {
+// release will empty the stack each frame.
+func (stack *StackAllocator) release() {
 	stack.alloc = 0
 }
 
