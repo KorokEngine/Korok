@@ -1,6 +1,8 @@
 package gui
 
-import "korok.io/korok/gfx"
+import (
+	"korok.io/korok/gfx/font"
+)
 
 type Visibility uint8
 const (
@@ -30,15 +32,15 @@ type Padding struct {
 
 type TextStyle struct {
 	Padding
-	Font gfx.FontSystem
+	Font font.Font
 	Visibility
 	Color uint32
 	Size float32
 	Lines int
 }
 
-func (text *TextStyle) SetFont(fs gfx.FontSystem) *TextStyle {
-	text.Font = fs
+func (text *TextStyle) SetFont(f font.Font) *TextStyle {
+	text.Font = f
 	return text
 }
 

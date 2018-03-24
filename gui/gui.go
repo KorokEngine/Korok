@@ -3,6 +3,7 @@ package gui
 import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
+	"korok.io/korok/gfx/font"
 )
 
 /**
@@ -192,10 +193,10 @@ func UseTheme(style *Style) {
 	gContext.UseTheme(style)
 }
 
-func SetFont(font gfx.FontSystem) {
+func SetFont(font font.Font) {
 	gContext.Style.Text.Font = font
 	gContext.Style.Button.Font = font
-	texFont, _ := font.Tex()
+	texFont, _ := font.Tex2D()
 	gContext.DrawList.PushTextureId(texFont)
 }
 

@@ -12,11 +12,6 @@ import (
 // 文字应该采用 BatchRender 绘制
 // 如果使用 BatchRender 那么此处生成模型即可
 
-type FontSystem interface {
-	Glyph(rune rune) *font.Glyph
-	Tex() (uint16, *bk.Texture2D)
-}
-
 type TextQuad struct {
 	// local shit
 	xOffset, yOffset float32
@@ -31,7 +26,7 @@ type TextQuad struct {
 // TextSprite
 type TextComp struct {
 	engi.Entity
-	font FontSystem
+	font font.Font
 
 	scale float32
 	color uint32
@@ -81,7 +76,7 @@ func (tc *TextComp) fillData() {
 
 	chars := make([]TextQuad, len(tc.text))
 	tc.vertex = chars
-	id, tex := tc.font.Tex()
+	id, tex := tc.font.Tex2D()
 
 	if id == bk.InvalidId {
 		log.Println("failt to get font texture!!")
@@ -90,7 +85,7 @@ func (tc *TextComp) fillData() {
 	log.Println("fill data:", len(tc.text))
 
 	for i, r := range tc.text {
-		if glyph := tc.font.Glyph(r); glyph != nil {
+		if glyph, ok := tc.font.Glyph(r); ok {
 			advance := float32(glyph.Advance)
 			vw := glyph.Width
 			vh := glyph.Height
@@ -116,7 +111,7 @@ func (tc *TextComp) fillData() {
 }
 
 // should have default font!!
-func (tc *TextComp) SetFont(fs FontSystem) {
+func (tc *TextComp) SetFont(fs font.Font) {
 	if fs != nil {
 		log.Println("set font success!!")
 	}
@@ -271,7 +266,7 @@ func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 			batchId = bid
 			begin = true
 
-			id, _ := b.TextComp.font.Tex()
+			id, _ := b.TextComp.font.Tex2D()
 			render.Begin(id)
 		}
 

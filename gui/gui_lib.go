@@ -9,6 +9,7 @@ import (
 
 	"log"
 	"fmt"
+	"korok.io/korok/gfx/font"
 )
 
 type EventType uint8
@@ -462,7 +463,7 @@ func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size f
 	return
 }
 
-func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font gfx.FontSystem, fontSize float32) f32.Vec2 {
+func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font font.Font, fontSize float32) f32.Vec2 {
 	fr := &FontRender{
 		font: font,
 		fontSize:fontSize,

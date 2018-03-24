@@ -2,9 +2,9 @@ package gui
 
 import (
 	"unicode/utf8"
-	"korok.io/korok/gfx"
 	"korok.io/korok/math"
 	"korok.io/korok/math/f32"
+	"korok.io/korok/gfx/font"
 )
 
 // 工具结构，负责把字符串转化为顶点..
@@ -12,7 +12,7 @@ import (
 type FontRender struct {
 	*DrawList
 	fontSize float32
-	font gfx.FontSystem
+	font font.Font
 	color uint32
 	lineSpace float32
 
@@ -34,9 +34,9 @@ func (fr *FontRender) RenderText1(pos f32.Vec2, text string) (size f32.Vec2){
 	idxWriter := fr.DrawList.IdxWriter
 
 	color := fr.color
-	_, tex := fr.font.Tex()
+	_, tex := fr.font.Tex2D()
 	texWidth, texHeight := tex.Width, tex.Height
-	glyphA := fr.font.Glyph('A')
+	glyphA, _ := fr.font.Glyph('A')
 	scale := fr.fontSize/float32(glyphA.Height)
 	lineHeight := fr.fontSize
 
@@ -61,7 +61,7 @@ func (fr *FontRender) RenderText1(pos f32.Vec2, text string) (size f32.Vec2){
 			continue
 		}
 
-		g := fr.font.Glyph(r)
+		g, _ := fr.font.Glyph(r)
 
 		// Add kerning todo
 		// dx += getKerning(preglyph, g)
@@ -121,7 +121,7 @@ func (fr *FontRender) wrap(text string, wrap float32) (n int, lines string) {
 	size := len(text)
 	line := make([]byte, 0, size)
 	buff := make([]byte, 0, size*2)
-	glyphA := fr.font.Glyph('A')
+	glyphA, _ := fr.font.Glyph('A')
 	scale := fr.fontSize/float32(glyphA.Height)
 
 
@@ -139,7 +139,11 @@ func (fr *FontRender) wrap(text string, wrap float32) (n int, lines string) {
 			}
 
 			line = append(line, text[i:i+w]...)
-			lineSize += float32(fr.font.Glyph(r).Advance) * scale
+			if g, ok :=  fr.font.Glyph(r); ok {
+				lineSize += float32(g.Advance) * scale
+			} else {
+				// todo fallback ?
+			}
 			if r == ' ' || r == '\t' {
 				lastSpace = j
 			}
@@ -182,14 +186,14 @@ func (fr *FontRender) wrap(text string, wrap float32) (n int, lines string) {
 }
 
 func (fr *FontRender) CalculateTextSize1(text string) f32.Vec2{
-	glyphA := fr.font.Glyph('A')
+	glyphA, _ := fr.font.Glyph('A')
 	scale := fr.fontSize/float32(glyphA.Height)
 	size := f32.Vec2{0, fr.fontSize}
 
 	for i, w := 0, 0; i < len(text); i += w {
 		r, width := utf8.DecodeRuneInString(text[i:])
 		w = width
-		g := fr.font.Glyph(r)
+		g, _ := fr.font.Glyph(r)
 		if r >= 32 {
 			size[0] += float32(g.Advance) * scale
 		}

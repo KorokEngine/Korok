@@ -3,9 +3,8 @@ package gui
 import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/math"
-	"korok.io/korok/gfx"
-	geo "math"
 	"korok.io/korok/gfx/bk"
+	"korok.io/korok/gfx/font"
 )
 
 type DrawListFlags uint32
@@ -81,7 +80,7 @@ type DrawList struct {
 	FullScreen f32.Vec4
 	TexUVWhitePixel f32.Vec2
 	CircleVtx12 [12]f32.Vec2
-	Font gfx.FontSystem
+	Font font.Font
 	FontSize float32
 
 	Flags DrawListFlags
@@ -103,8 +102,8 @@ func (dl *DrawList) Initialize() {
 
 	// TODO bake circle vertex!!
 	for i := 0; i < 12; i++ {
-		sin := float32(geo.Sin((6.28/12)*(float64(i))))
-		cos := float32(geo.Cos((6.28/12)*float64(i)))
+		sin := math.Sin((6.28/12)*float32(i))
+		cos := math.Cos((6.28/12)*float32(i))
 		dl.CircleVtx12[i] = f32.Vec2{cos, sin}
 	}
 }
@@ -399,9 +398,9 @@ func (dl *DrawList) PathArcTo(centre f32.Vec2, radius float32, min, max float32,
 		return
 	}
 	for i := 0; i <= segments; i++ {
-		a := float64(min + (float32(i)/float32(segments)) * (max-min))
-		x := centre[0] + float32(geo.Cos(a)) * radius
-		y := centre[1] + float32(geo.Sin(a)) * radius
+		a := min + (float32(i)/float32(segments)) * (max-min)
+		x := centre[0] + math.Cos(a) * radius
+		y := centre[1] + math.Sin(a) * radius
 		dl.path[dl.pathUsed] = f32.Vec2{x, y}
 		dl.pathUsed ++
 	}
@@ -650,7 +649,7 @@ var ninePatchIndex = [54]uint16 {
 	8, 9, 13, 8, 13, 12,  9, 10, 14, 9, 14, 13,  10, 11,15, 10, 15, 14,
 }
 
-func (dl *DrawList) AddText(pos f32.Vec2, text string, font gfx.FontSystem, fontSize float32, color uint32, wrapWidth float32) (size f32.Vec2){
+func (dl *DrawList) AddText(pos f32.Vec2, text string, font font.Font, fontSize float32, color uint32, wrapWidth float32) (size f32.Vec2){
 	if text == "" {
 		return
 	}
