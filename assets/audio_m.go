@@ -1,7 +1,7 @@
 package assets
 
 type AudioManager struct {
-	repo map[string]RefCount
+	repo map[string]idCount
 }
 
 

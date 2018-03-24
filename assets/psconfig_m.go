@@ -11,11 +11,6 @@ import (
 	"korok.io/korok/math"
 )
 
-type refCount struct {
-	res interface{} 	// 资源引用
-	cnt uint16  // 引用计数
-}
-
 // 粒子系统配置文件管理
 type ParticleConfigManager struct {
 	repo map[string]refCount
@@ -29,7 +24,7 @@ func NewParticleConfigManager() *ParticleConfigManager {
 
 func (pcm *ParticleConfigManager) Load(file string) {
 	if rc, ok := pcm.repo[file]; ok {
-		pcm.repo[file] = refCount{rc.res, rc.cnt+1}
+		pcm.repo[file] = refCount{rc.ref, rc.cnt+1}
 	} else {
 		ref, err := pcm.load(file)
 		if err != nil {
@@ -43,7 +38,7 @@ func (pcm *ParticleConfigManager) Load(file string) {
 func (pcm *ParticleConfigManager) Unload(file string) {
 	if rc, ok := pcm.repo[file]; ok {
 		if rc.cnt > 1 {
-			pcm.repo[file] = refCount{rc.res, rc.cnt-1}
+			pcm.repo[file] = refCount{rc.ref, rc.cnt-1}
 		} else {
 			delete(pcm.repo, file)
 		}
@@ -52,7 +47,7 @@ func (pcm *ParticleConfigManager) Unload(file string) {
 
 func (pcm *ParticleConfigManager) Get(file string) (res interface{}, exist bool) {
 	if rc, ok := pcm.repo[file]; ok {
-		res = rc.res
+		res = rc.ref
 		exist = ok
 	}
 	return

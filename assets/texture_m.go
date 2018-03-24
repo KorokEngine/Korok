@@ -14,13 +14,13 @@ import (
 )
 
 type TextureManager struct {
-	repo map[string]RefCount
+	repo map[string]idCount
 	names map[string]uint32
 }
 
 func NewTextureManager() *TextureManager {
 	return &TextureManager{
-		make(map[string]RefCount),
+		make(map[string]idCount),
 		make(map[string]uint32),
 		}
 }
@@ -38,7 +38,7 @@ func (tm *TextureManager) Load(file string) {
 		}
 		rid = id
 	}
-	tm.repo[file] = RefCount{rid, cnt}
+	tm.repo[file] = idCount{rid, cnt}
 }
 
 // LoadAtlas loads the atlas with a description file.
@@ -105,7 +105,7 @@ func (tm *TextureManager) Atlas(file string) *gfx.Atlas {
 func (tm *TextureManager) Unload(file string) {
 	if v, ok := tm.repo[file]; ok {
 		if v.cnt > 1 {
-			tm.repo[file] = RefCount{v.rid, v.cnt -1}
+			tm.repo[file] = idCount{v.rid, v.cnt -1}
 		} else {
 			delete(tm.repo, file)
 			bk.R.Free(v.rid)

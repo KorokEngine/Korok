@@ -8,11 +8,11 @@ import (
 )
 
 type ShaderManager struct {
-	repo map[string]RefCount
+	repo map[string]idCount
 }
 
 func NewShaderManager() *ShaderManager {
-	return &ShaderManager{make(map[string]RefCount)}
+	return &ShaderManager{make(map[string]idCount)}
 }
 
 func (sm *ShaderManager) LoadDefaultShader() {
@@ -34,14 +34,14 @@ func (sm *ShaderManager) LoadShader(name string, vertex, color string) {
 		}
 		rid = id
 	}
-	sm.repo[name] = RefCount{rid, cnt + 1}
+	sm.repo[name] = idCount{rid, cnt + 1}
 }
 
 // 引用计数 -1
 func (sm *ShaderManager) Unload(name string) {
 	if v, ok := sm.repo[name]; ok {
 		if v.cnt > 1 {
-			sm.repo[name] = RefCount{v.rid, v.cnt - 1}
+			sm.repo[name] = idCount{v.rid, v.cnt - 1}
 		} else {
 			delete(sm.repo, name)
 			bk.R.Free(v.rid)

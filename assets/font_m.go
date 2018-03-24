@@ -7,26 +7,21 @@ import (
 	"korok.io/korok/gfx/font"
 )
 
-type FRefCount struct {
-	cnt int32
-	fnt *font.Font
-}
-
 type FontManager struct {
-	repo map[string]FRefCount
+	repo map[string]refCount
 }
 
 func NewFontManager() *FontManager {
-	return &FontManager{repo: make(map[string]FRefCount)}
+	return &FontManager{repo: make(map[string]refCount)}
 }
 
 func (fm *FontManager) LoadBitmap(name string, img, fc string) {
 	var cnt int32 = 0
-	var fnt *font.Font
+	var fnt interface{}
 
 	if v, ok := fm.repo[name]; ok {
 		cnt = v.cnt
-		fnt = v.fnt
+		fnt = v.ref
 	} else {
 		ir, err := os.Open(img)
 		if err != nil {
@@ -47,17 +42,17 @@ func (fm *FontManager) LoadBitmap(name string, img, fc string) {
 		fnt = f
 	}
 
-	fm.repo[name] = FRefCount{cnt + 1, fnt}
+	fm.repo[name] = refCount{fnt, cnt + 1}
 	fmt.Println("load bitmap font sucess...", name)
 }
 
 func (fm *FontManager) LoadTrueType(name string, fc string) {
 	var cnt int32 = 0
-	var fnt *font.Font
+	var fnt interface{}
 
 	if v, ok := fm.repo[name]; ok {
 		cnt = v.cnt
-		fnt = v.fnt
+		fnt = v.ref
 	} else {
 		fcr, err := os.Open(fc)
 		if err != nil {
@@ -65,7 +60,7 @@ func (fm *FontManager) LoadTrueType(name string, fc string) {
 			return
 		}
 
-		f, err := font.LoadTrueType(fcr, 1,  '0', 'z', 0)
+		f, err := font.LoadTrueType(fcr, 12,  '0', 'z', 0)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -73,24 +68,25 @@ func (fm *FontManager) LoadTrueType(name string, fc string) {
 		fnt = f
 	}
 
-	fm.repo[name] = FRefCount{cnt + 1, fnt}
+	fm.repo[name] = refCount{fnt, cnt + 1}
 	fmt.Println("load true-type font sucess...", name)
 }
 
 func (fm *FontManager) Unload(name string) {
 	if v, ok := fm.repo[name]; ok {
 		if v.cnt > 1 {
-			fm.repo[name] = FRefCount{v.cnt-1, v.fnt}
+			fm.repo[name] = refCount{v.ref, v.cnt-1}
 		} else {
 			delete(fm.repo, name)
-			v.fnt.Release()
+			// todo release font resource
+			// v.ref.().Release()
 		}
 	}
 }
 
-func (fm *FontManager) GetFont(name string) (fnt *font.Font) {
+func (fm *FontManager) GetFont(name string) (fnt font.Font) {
 	if v, ok := fm.repo[name]; ok {
-		fnt = v.fnt
+		fnt = v.ref.(font.Font)
 	}
 	return
 }

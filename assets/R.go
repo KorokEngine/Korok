@@ -1,8 +1,11 @@
 package assets
 
+type refCount struct {
+	ref interface{} // 资源引用
+	cnt int32       // 引用计数
+}
 
-
-type RefCount struct {
+type idCount struct {
 	rid uint16 	// 资源ID
 	cnt uint16  // 引用计数
 }
