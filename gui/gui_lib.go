@@ -3,13 +3,12 @@ package gui
 import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
-	"korok.io/korok/gfx/bk"
 	"korok.io/korok/hid/input"
 	"korok.io/korok/gfx/dbg"
+	"korok.io/korok/gfx/font"
 
 	"log"
 	"fmt"
-	"korok.io/korok/gfx/font"
 )
 
 type EventType uint8
@@ -96,13 +95,13 @@ func (ctx *Context) InputText(hint string, lyt LayoutManager, style *InputStyle)
 }
 
 // Widget: Image
-func (ctx *Context) Image(id ID, texId uint16, uv f32.Vec4, style *ImageStyle) {
+func (ctx *Context) Image(id ID, tex gfx.Tex2D, style *ImageStyle) {
 	var (
 		elem, ready = ctx.BeginElement(id)
 	)
 
 	if ready {
-		ctx.DrawImage(&elem.Bound, texId, uv, style)
+		ctx.DrawImage(&elem.Bound, tex, style)
 	} else {
 		size := ctx.Layout.Cursor.Bound
 		elem.W = size.W
@@ -177,8 +176,7 @@ func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Tex2D, style *ImageBu
 		} else {
 			tex = normal
 		}
-		rg := tex.Region()
-		ctx.DrawImage(bb, tex.Tex(), f32.Vec4{rg.X1, rg.Y1, rg.X2, rg.Y2}, &style.ImageStyle)
+		ctx.DrawImage(bb, tex, &style.ImageStyle)
 	} else {
 		size := ctx.Layout.Cursor.Bound
 		elem.W = size.W
@@ -423,13 +421,13 @@ func (ctx *Context) DrawCircle(x, y, radius float32, color uint32) {
 	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius, color, 12)
 }
 
-func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv f32.Vec4, style *ImageStyle) {
+func (ctx *Context) DrawImage(bound *Bound, tex gfx.Tex2D, style *ImageStyle) {
 	g := ctx.Layout.hGroup
 	min := f32.Vec2{g.X+bound.X, g.Y+bound.Y}
 	if bound.W == 0 {
-		if ok, tex := bk.R.Texture(texId); ok {
-			bound.W, bound.H = tex.Width, tex.Height
-		}
+		sz := tex.Size()
+		bound.W = sz.Width
+		bound.H = sz.Height
 	}
 	max := min.Add(f32.Vec2{bound.W, bound.H})
 	var color uint32
@@ -440,7 +438,8 @@ func (ctx *Context) DrawImage(bound *Bound, texId uint16, uv f32.Vec4, style *Im
 	}
 	min[0], min[1] = Gui2Game(min[0], min[1])
 	max[0], max[1] = Gui2Game(max[0], max[1])
-	ctx.DrawList.AddImage(texId, min, max, f32.Vec2{uv[0], uv[1]}, f32.Vec2{uv[2], uv[3]}, color)
+	rg := tex.Region()
+	ctx.DrawList.AddImage(tex.Tex(), min, max, f32.Vec2{rg.X1, rg.Y1}, f32.Vec2{rg.X2, rg.Y2}, color)
 }
 
 // 绘制元素, bb 存储相对于父容器的相对坐标..

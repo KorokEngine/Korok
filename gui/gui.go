@@ -1,7 +1,6 @@
 package gui
 
 import (
-	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
 	"korok.io/korok/gfx/font"
 )
@@ -98,8 +97,8 @@ func InputText(hint string, style *InputStyle) {
 }
 
 // Widget: Image
-func Image(id ID, texId uint16, uv f32.Vec4, style *ImageStyle) {
-	gContext.Image(id, texId, uv, style)
+func Image(id ID, tex gfx.Tex2D, style *ImageStyle) {
+	gContext.Image(id, tex, style)
 }
 
 // Widget: Button
