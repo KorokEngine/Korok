@@ -1,27 +1,11 @@
 package font
 
 import (
+	"korok.io/korok/math"
 	"image"
 	"fmt"
 	"image/color"
 )
-
-// Pow2 returns the first power-of-two value >= to n.
-// This can be used to create suitable Texture dimensions.
-func Pow2(x uint32) uint32 {
-	x--
-	x |= x >> 1
-	x |= x >> 2
-	x |= x >> 4
-	x |= x >> 8
-	x |= x >> 16
-	return x + 1
-}
-
-// IsPow2 returns true if the given value if a power-of-two.
-func IsPow2(x uint32) bool {
-	return (x & (x-1)) == 0
-}
 
 // Pow2Image returns the given image, scaled to the smallest power-of-two
 // dimensions larger or equal to the input dimensions.
@@ -33,11 +17,11 @@ func Pow2Image(src image.Image) image.Image {
 	sb := src.Bounds()
 	w, h := uint32(sb.Dx()), uint32(sb.Dy())
 
-	if IsPow2(w) && IsPow2(h) {
+	if math.IsPow2(w) && math.IsPow2(h) {
 		return src // Nothing to do.
 	}
 
-	rect := image.Rect(0, 0, int(Pow2(w)), int(Pow2(h)))
+	rect := image.Rect(0, 0, int(math.Pow2(w)), int(math.Pow2(h)))
 
 	switch src := src.(type) {
 	case *image.Alpha:

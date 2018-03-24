@@ -1,152 +1,101 @@
 package font
 
 import (
-	"image"
+	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx/bk"
+
+	"image"
 	"image/color"
+
 )
 
-// A Font allows rendering ofg text to an OpenGL context
-type Font struct {
-	config         *FontConfig // Character set for this font.
-	Texture        uint16      // Holds the glyph Texture id.
-	maxGlyphWidth  int         // Largest glyph width.
-	maxGlyphHeight int         // Largest glyph height.
-	TexWidth 	   float32
-	TexHeight 	   float32
-}
+// Direction represents the direction in which strings should be rendered.
+type Direction uint8
 
-// loadFont loads the given font data. This does not deal with font scaling.
-// Scaling should be handled by the independent Bitmap/TrueType loaders.
-// We therefore expect the supplied image and charset to already be adjusted
-// to the correct font scale
+// Known directions.
+const (
+	LeftToRight Direction = iota // E.g.: Latin
+	RightToLeft                  // E.g.: Arabic
+	TopToBottom                  // E.g.: Old-Chinese
+)
+
+// Font provides all the information needed to render a Rune.
 //
-// The image should hold a sprite sheet, define the graphical layout for
-// every glyph. The config describes font metadata
-func loadFont(img *image.RGBA, config *FontConfig) (f *Font, err error) {
-	f = new(Font)
-	f.config = config
-
-	// Resize image to enxt power-of-two.
-	img = Pow2Image(img).(*image.RGBA)
-	ib := img.Bounds()
-
-	// add a white pixel at (0, 0)
-	img.Set(0,0, color.White)
-
-	f.TexWidth = float32(ib.Dx())
-	f.TexHeight = float32(ib.Dy())
-
-	if id, _ := bk.R.AllocTexture(img); id != bk.InvalidId {
-		f.Texture = id
-	}
-	err = checkGLError()
-	return
+// Tex2D returns the low-level bk-texture.
+// Glyph returns the matrix of rune.
+// Bounds returns the largest width and height for any of the glyphs
+// in the fontAtlas.
+// SizeOf measure the text and returns the width and height.
+type Font interface {
+	Tex2D() (uint16, *bk.Texture2D)
+	Glyph(rune rune) (Glyph, bool)
+	Bounds() (int, int)
+	SizeOf(text string, fontSize float32) f32.Vec2
 }
 
-// Dir return the font's rendering orientation
-func (f *Font) Dir() Direction {
-	return f.config.Dir
+// A fontAtlas allows rendering ofg text to an OpenGL context
+type fontAtlas struct {
+	id uint16
+	width float32
+	height float32
+
+	glyphWidth  int         // Largest glyph width.
+	glyphHeight int         // Largest glyph height.
+
+	glyphs map[rune]Glyph
+	w, h uint16
+
+	regions []float32
+
+	// fallback
 }
 
-// Low returns the font's lower rune bound
-func (f *Font) Low() rune {
-	return f.config.Low
-}
-
-// High returns the font['s upper rune bound
-func (f *Font) High() rune {
-	return f.config.High
-}
-
-// Glyphs returns the font's glyph descriptions
-func (f *Font) Glyphs() Charset {
-	return f.config.Glyphs
-}
-
-// Release release font resources.
-// A font can no longer be used for rendering after this call completes
-func (f *Font) Release() {
-	bk.R.Free(f.Texture)
-	// gl.DeleteList display list TODO
-	f.config = nil
-}
-
-// Metrics returns the pixel width and height for the given string.
-// This takes the scale and rendering direction of the font into account.
-//
-// Unknown runes will be counted as having the maximum glyph bounds as
-// defined by Font.GlyphBounds().
-func (f *Font) Metrics(text string) (int, int) {
-	if len(text) == 0 {
-		return 0, 0
-	}
-
-	gw, gh := f.GlyphBounds()
-
-	if f.config.Dir == TopToBottom {
-		return gw, f.advanceSize(text)
-	}
-
-	return f.advanceSize(text), gh
-}
-
-// advanceSize compute the pixel width or height for the given single-line
-// input string. This iterate over all of its runes, finds the mathing
-// Charset entry and adds up the Advance values
-func (f *Font) advanceSize(line string) int {
-	gw, gh := f.GlyphBounds()
-	glyphs := f.config.Glyphs
-	low    := f.config.Low
-	indices:= []rune(line)
-
-	var size int
-	for _, r := range indices {
-		r -= low
-
-		if r >= 0 && int(r) < len(glyphs) {
-			size += glyphs[r].Advance
-			continue
-		}
-
-		if f.config.Dir == TopToBottom {
-			size += gh
-		} else {
-			size += gw
-		}
-	}
-
-	return size
-}
-
-// implement font-system
-func (f *Font) Glyph(rune rune) *Glyph {
-	return f.config.Find(rune)
-}
-
-func (f *Font) Tex() (id uint16, tex *bk.Texture2D) {
-	id = f.Texture
+func (f *fontAtlas) Tex2D() (id uint16, tex *bk.Texture2D) {
+	id = f.id
 	if ok, t := bk.R.Texture(id); ok {
 		tex = t
 	}
 	return
 }
 
-// Printf draws the given string at the specified coordinates.
-// It expects the string to be a single line. Line breaks are not
-// handled as line breaks and are rendered as glyphs.
-//
-// In order to render multi-line text, it is up to the caller to split
-// the text up into individual lines of adequate length and then call
-// this method for each line seperately.
-func (f *Font) Printf(x, y float32, fs string, argv ...interface{}) error {
-	return nil
+// implement fontAtlas-system
+func (f *fontAtlas) Glyph(rune rune) (g Glyph, ok bool) {
+	g, ok = f.glyphs[rune]
+	return
 }
 
-// GlyphBounds returns the largest width and height for any of the glyphs
-// in the font. This constitutes the largest possible bounding box
-// a single glyph will have
-func (f *Font) GlyphBounds() (int, int) {
-	return f.maxGlyphWidth, f.maxGlyphHeight
+func (f *fontAtlas) Bounds() (int, int) {
+	return f.glyphWidth, f.glyphHeight
+}
+
+// SizeOf returns the width and height for the given text. TODO:
+func (f *fontAtlas) SizeOf(text string, fontSize float32) f32.Vec2 {
+	return f32.Vec2{}
+}
+
+// Release release fontAtlas resources.
+func (f *fontAtlas) Release() {
+	bk.R.Free(f.id)
+}
+
+func (f *fontAtlas) addGlyphs(r rune, g Glyph) {
+	f.glyphs[r] = g
+}
+
+func (f *fontAtlas) loadTex(img *image.RGBA) error {
+	// Resize image to power-of-two.
+	img = Pow2Image(img).(*image.RGBA)
+	ib := img.Bounds()
+
+	// add a white pixel at (0, 0)
+	img.Set(0,0, color.White)
+
+	f.width = float32(ib.Dx())
+	f.height = float32(ib.Dy())
+
+	if id, _ := bk.R.AllocTexture(img); id != bk.InvalidId {
+		f.id = id
+	}
+	return checkGLError()
 }
 

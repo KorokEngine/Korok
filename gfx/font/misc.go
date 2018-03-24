@@ -2,6 +2,8 @@ package font
 
 import (
 	"image"
+	"fmt"
+	"github.com/go-gl/gl/v3.2-core/gl"
 )
 
 // toRGBA translate the given image to RGBA format if necessary.
@@ -39,5 +41,15 @@ func toRGBA(src image.Image, scale int) *image.RGBA {
 		}
 	}
 	return dst
+}
+
+// checkGLError returns an opengl error if one exists
+func checkGLError() error {
+	errno := gl.GetError()
+	if errno == gl.NO_ERROR {
+		return nil
+	}
+
+	return fmt.Errorf("GL error: %d", errno)
 }
 
