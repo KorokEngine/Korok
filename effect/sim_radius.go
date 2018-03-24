@@ -156,7 +156,7 @@ func (r *RadiusSimulator) newParticle(new int) {
 	}
 }
 
-func (r *RadiusSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite) {
+func (r *RadiusSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D) {
 	r.VisualController.Visualize(buf, tex, int(r.live))
 }
 

@@ -154,7 +154,7 @@ func (g *Game) Create(ratio float32) {
 	g.ScriptSystem = NewScriptSystem()
 	g.ScriptSystem.RequireTable(g.DB.Tables)
 
-	/// Sprite animation system
+	/// Tex2D animation system
 	g.AnimationSystem = anim.NewAnimationSystem()
 	g.AnimationSystem.RequireTable(g.DB.Tables)
 

@@ -16,7 +16,7 @@ type ParticleComp struct {
 	engi.Entity
 	sim Simulator
 
-	tex gfx.Sprite
+	tex gfx.Tex2D
 	color uint32
 	scale float32
 }
@@ -25,7 +25,7 @@ func (pc *ParticleComp) SetSimulator(sim Simulator) {
 	pc.sim = sim
 }
 
-func (pc *ParticleComp) SetTexture(tex gfx.Sprite) {
+func (pc *ParticleComp) SetTexture(tex gfx.Tex2D) {
 	pc.tex = tex
 }
 

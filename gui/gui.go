@@ -107,7 +107,7 @@ func Button(id ID, text string, style *ButtonStyle) (event EventType) {
 	return gContext.Button(id, text, style)
 }
 
-func ImageButton(id ID, normal, pressed gfx.Sprite, style *ImageButtonStyle) EventType{
+func ImageButton(id ID, normal, pressed gfx.Tex2D, style *ImageButtonStyle) EventType{
 	return gContext.ImageButton(id, normal, pressed, style)
 }
 

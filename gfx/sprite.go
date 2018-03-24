@@ -10,15 +10,7 @@ import (
 
 )
 
-// Sprite is a Texture or a SubTexture
-type Sprite interface {
-	// return texture id
-	Tex() uint16
-	// uv
-	Region() Region
-	// size
-	Size() Size
-}
+type Sprite Tex2D
 
 /// SpriteComp & SpriteTable
 /// Usually, sprite can be rendered with a BatchRenderer
@@ -122,7 +114,7 @@ func (st *SpriteTable) NewComp(entity engi.Entity) (sc *SpriteComp) {
 }
 
 // New SpriteComp with parameter
-func (st *SpriteTable) NewCompX(entity engi.Entity, spt Sprite) (sc *SpriteComp) {
+func (st *SpriteTable) NewCompX(entity engi.Entity, spt Tex2D) (sc *SpriteComp) {
 	sc = st.NewComp(entity)
 	sc.SetSprite(spt)
 	return

@@ -80,7 +80,7 @@ func (tm *TextureManager) LoadAtlasIndexed(file string, width, height float32, r
 }
 
 // Get returns the low-level Texture.
-func (tm *TextureManager) Get(file string) gfx.Sprite {
+func (tm *TextureManager) Get(file string) gfx.Tex2D {
 	rid := tm.repo[file]
 	return gfx.NewTex(rid.rid)
 }

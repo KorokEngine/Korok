@@ -11,7 +11,7 @@ import (
 // Batch Render:
 // Use PosTexColorVertex struct with P4C4 format
 
-/// A Sprite Batch TypeRender
+/// A Tex2D Batch TypeRender
 type BatchRender struct {
 	stateFlags uint64
 	rgba       uint32

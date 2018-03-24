@@ -56,7 +56,7 @@ type Simulator interface {
 	Play()
 
 	// Write the result to vertex-buffer.
-	Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite)
+	Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D)
 
 	// Return the size of the simulator.
 	Size() (live, cap int)
@@ -160,7 +160,7 @@ type VisualController struct {
 }
 
 // Visualize write the live particles to vertex-buffer.
-func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Sprite, live int) {
+func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D, live int) {
 	size := ctr.size
 	pose := ctr.pose
 

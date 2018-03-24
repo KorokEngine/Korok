@@ -161,7 +161,7 @@ func (ctx *Context) ImageBackground(eventType EventType) {
 
 }
 
-func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Sprite, style *ImageButtonStyle) ( event EventType) {
+func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Tex2D, style *ImageButtonStyle) ( event EventType) {
 	if style == nil {
 		style = &ctx.Style.ImageButton
 	}
@@ -171,7 +171,7 @@ func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Sprite, style *ImageB
 	)
 	if ready {
 		event = ctx.CheckEvent(id, bb, false)
-		var tex gfx.Sprite
+		var tex gfx.Tex2D
 		if event & EventDown != 0 {
 			tex = pressed
 		} else {

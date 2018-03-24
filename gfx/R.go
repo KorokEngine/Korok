@@ -5,6 +5,15 @@ import (
 	"unsafe"
 )
 
+// Tex2D is a Texture or a SubTexture
+type Tex2D interface {
+	// return texture id
+	Tex() uint16
+	// uv
+	Region() Region
+	// size
+	Size() Size
+}
 
 // Anchor type
 type Anchor uint8
@@ -45,7 +54,7 @@ func (tex bkTex) Size() (sz Size) {
 	return
 }
 
-func NewTex(id uint16) Sprite {
+func NewTex(id uint16) Tex2D {
 	return bkTex{id:id}
 }
 
