@@ -168,6 +168,12 @@ func (lyt *LayoutManager) Initialize() {
 	lyt.hGroup = &lyt.groupStack[ii]
 }
 
+func (lyt *LayoutManager) SetDefaultLayoutSize(w, h float32) {
+	if dft, ok := lyt.Element(0); ok {
+		dft.W, dft.H = w, h
+	}
+}
+
 // 创建新的Layout
 func (lyt *LayoutManager) NewElement(id ID) *Element {
 	ii := len(lyt.uiElements)
@@ -240,23 +246,17 @@ func (lyt *LayoutManager) SetPadding(top, left, right, bottom float32) *LayoutMa
 	return lyt
 }
 
-// AutoLayout System
-func (lyt *LayoutManager) NewLayout(id ID, xtype LayoutType) *Element {
-	return lyt.NewElement(id)
-}
+func (lyt *LayoutManager) BeginLayout(id ID, xtype LayoutType) (elem *Element, ok bool) {
+	// layout element
+	elem, ok = lyt.BeginElement(id)
 
-func (lyt *LayoutManager) FindLayout(id ID) (bb *Element, ok bool) {
-	return lyt.Element(id)
-}
-
-// Set as current layout
-func (lyt *LayoutManager) PushLayout(xtype LayoutType, bb *Element) {
+	// do layout
 	ii := len(lyt.groupStack)
 
 	// group-stack has a default parent
 	// so it's safe to index
 	parent := &lyt.groupStack[ii-1]
-	lyt.groupStack = append(lyt.groupStack, Group{LayoutType:xtype, Element: bb})
+	lyt.groupStack = append(lyt.groupStack, Group{LayoutType:xtype, Element: elem})
 	lyt.hGroup = &lyt.groupStack[ii]
 
 	// stash cursor state
@@ -266,11 +266,13 @@ func (lyt *LayoutManager) PushLayout(xtype LayoutType, bb *Element) {
 	// group's (x, y) is absolute coordinate
 	// f(x, y) = group(x, y) + cursor(x, y)
 	g := lyt.hGroup
-	g.X, g.Y = parent.X, parent.Y
-	g.X, g.Y = g.X+lyt.Cursor.X , g.Y+lyt.Cursor.Y
+	g.X, g.Y = g.X + parent.X, g.Y+parent.Y
+	//g.X, g.Y = g.X+lyt.Cursor.X , g.Y+lyt.Cursor.Y
+
 
 	// reset cursor
 	lyt.Cursor.X, lyt.Cursor.Y = 0, 0
+	return
 }
 
 // PopLayout, resume parent's state
@@ -295,12 +297,67 @@ func (lyt *LayoutManager) EndLayout() {
 
 	// 3. end layout, remove default spacing
 	elem := &Element{Bound:Bound{0, 0, size.W-lyt.spacing*2, size.H-lyt.spacing*2}}
-
-	lyt.Extend(elem)
-	lyt.Advance(elem)
+	lyt.EndElement(elem)
 
 	// 3. 清除当前布局的参数
 	lyt.Cursor.Reset()
+}
+
+func (lyt *LayoutManager) BeginElement(id ID) (elem *Element, ok bool){
+	if elem, ok = lyt.Element(id); !ok {
+		elem = lyt.NewElement(id)
+	} else {
+		// 计算偏移
+		elem.X = lyt.Cursor.X + lyt.spacing
+		elem.Y = lyt.Cursor.Y + lyt.spacing
+
+		// Gravity
+		var (
+			group = lyt.hGroup
+			gravity = group.Gravity
+		)
+
+		// Each element's property
+		if lyt.Cursor.owner == id {
+			// 计算 Margin 和 偏移
+			if lyt.Cursor.Flag & FlagMargin != 0 {
+				elem.Margin = lyt.Cursor.Margin
+				elem.X += elem.Left
+				elem.Y += elem.Top
+			}
+
+			// 计算大小
+			if lyt.Cursor.Flag & FlagSize != 0 {
+				elem.Bound.W = lyt.Cursor.W
+				elem.Bound.H = lyt.Cursor.H
+			}
+
+			// Overlap group's gravity
+			if lyt.Cursor.Flag & FlagGravity != 0 {
+				gravity = lyt.Cursor.Gravity
+			}
+
+			// 清空标记
+			lyt.Cursor.owner = -1
+			lyt.Cursor.Flag = 0
+		}
+
+		switch group.LayoutType {
+		case LinearHorizontal:
+			elem.Y += (group.H - elem.H) * gravity.Y
+		case LinearVertical:
+			elem.X += (group.W - elem.W) * gravity.X
+		case LinearOverLay:
+			elem.Y += (group.H - elem.H) * gravity.Y
+			elem.X += (group.W - elem.W) * gravity.X
+		}
+	}
+	return
+}
+
+func (lyt *LayoutManager) EndElement(elem *Element) {
+	lyt.Advance(elem)
+	lyt.Extend(elem)
 }
 
 // 重新计算父容器的大小

@@ -199,6 +199,12 @@ func SetFont(font font.Font) {
 	gContext.DrawList.PushTextureId(texFont)
 }
 
+func SetScreenSize(w, h float32) {
+	gContext.Layout.SetDefaultLayoutSize(w, h)
+	screen.Width = w
+	screen.Height = h
+}
+
 // gui init, render and destroy
 func Init() {
 

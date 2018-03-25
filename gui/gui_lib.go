@@ -482,89 +482,29 @@ func (ctx *Context) ColorBackground(event EventType, bb *Bound, round float32) {
 	}
 }
 
-
 // 计算单个UI元素
 // 如果有大小则记录出偏移和Margin
 // 否则只返回元素
 func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
-	lm := &ctx.Layout
-	if elem, ok = lm.Element(id); !ok {
-		elem = lm.NewElement(id)
-	} else {
-		// 计算偏移
-		elem.X = lm.Cursor.X + ctx.Layout.spacing
-		elem.Y = lm.Cursor.Y + ctx.Layout.spacing
-
-		// Each element's property
-		if lm.Cursor.owner == id {
-			// 计算 Margin 和 偏移
-			if lm.Cursor.Flag & FlagMargin != 0 {
-				elem.Margin = lm.Cursor.Margin
-				elem.X += elem.Left
-				elem.Y += elem.Top
-			}
-
-			// 计算大小
-			if lm.Cursor.Flag & FlagSize != 0 {
-				elem.Bound.W = lm.Cursor.W
-				elem.Bound.H = lm.Cursor.H
-			}
-
-			// 清空标记
-			lm.Cursor.owner = -1
-			lm.Cursor.Flag = 0
-		}
-
-		// Gravity
-		var (
-			group = lm.hGroup
-			gravity = group.Gravity
-		)
-
-		// Overlap group's gravity
-		if lm.Cursor.owner == id && (lm.Cursor.Flag & FlagGravity != 0) {
-			gravity = lm.Cursor.Gravity
-		}
-		switch group.LayoutType {
-		case LinearHorizontal:
-			elem.Y += (group.H - elem.H) * gravity.Y
-		case LinearVertical:
-			elem.X += (group.W - elem.W) * gravity.X
-		case LinearOverLay:
-			elem.Y += (group.H - elem.H) * gravity.Y
-			elem.X += (group.W - elem.W) * gravity.X
-		}
-	}
-	return
+	return ctx.Layout.BeginElement(id)
 }
 
 // 结束绘制, 每绘制完一个元素都要偏移一下光标
 func (ctx *Context) EndElement(elem *Element) {
-	ctx.Layout.Advance(elem)
-	ctx.Layout.Extend(elem)
+	ctx.Layout.EndElement(elem)
 }
 
 // Layout
 func (ctx *Context) BeginLayout(id ID, xtype LayoutType) {
-	var (
-		lm = &ctx.Layout;
-		ly, ok = lm.FindLayout(id)
-	)
-
-	if !ok {
-		ly = lm.NewLayout(id, xtype)
-	}
-
-	// debug draw - render group frame
-	if ok {
+	if elem, ok := ctx.Layout.BeginLayout(id, xtype); ok {
+		// debug-draw
+		lm := &ctx.Layout
 		var (
-			x = lm.hGroup.X + ctx.Layout.Cursor.X
-			y = lm.hGroup.Y + ctx.Layout.Cursor.Y
+			x = lm.hGroup.X + lm.Cursor.X
+			y = lm.hGroup.Y + lm.Cursor.Y
 		)
-		ctx.DrawDebugBorder(x, y, ly.W, ly.H, 0xFF00FF00)
+		ctx.DrawDebugBorder(x, y, elem.W, elem.H, 0xFF00FF00)
 	}
-
-	lm.PushLayout(xtype, ly)
 }
 
 func (ctx *Context) EndLayout() {
