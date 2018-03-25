@@ -10,11 +10,11 @@ import (
 
 )
 
+// Sprite is Tex2D
 type Sprite Tex2D
 
-/// SpriteComp & SpriteTable
-/// Usually, sprite can be rendered with a BatchRenderer
-
+// SpriteComp & SpriteTable
+// Usually, sprite can be rendered with a BatchRenderer
 type SpriteComp struct {
 	engi.Entity
 	Sprite

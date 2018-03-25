@@ -135,6 +135,7 @@ func (g *Game) Create(ratio float32) {
 	// gui system
 	g.UISystem = gui.NewUISystem(meshRender)
 	g.UISystem.RegisterContext(gui.DefaultContext())
+	gui.SetScreenSize(float32(g.W), float32(g.H))
 
 	/// init debug
 	dbg.Init()
