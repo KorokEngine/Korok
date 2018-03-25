@@ -155,11 +155,11 @@ type LayoutManager struct {
 	spacing float32
 }
 
-func (lyt *LayoutManager) Initialize() {
+func (lyt *LayoutManager) Initialize(style *Style) {
 	// init size, todo resize 会导致指针错误
 	lyt.uiElements = make([]Element, 0, 32)
 	lyt.groupStack = make([]Group, 0, 8)
-	lyt.spacing = 4
+	lyt.spacing = style.Spacing
 
 	// Create a default layout
 	bb := lyt.NewElement(0)
@@ -269,16 +269,26 @@ func (lyt *LayoutManager) BeginLayout(id ID, xtype LayoutType) (elem *Element, o
 	g.X, g.Y = g.X + parent.X, g.Y+parent.Y
 	//g.X, g.Y = g.X+lyt.Cursor.X , g.Y+lyt.Cursor.Y
 
+	//log.Println("group's elem:", g.Element)
 
 	// reset cursor
 	lyt.Cursor.X, lyt.Cursor.Y = 0, 0
 	return
 }
 
+// 此处 EndLayout 有点问题，首先要End之前的Element，这样可以得到当前Layout的大小，然后
+// 这是和之前 BeginGroup 配对的操作。
+// 之后还应该再End一次，
+// Group 其实相当于一个元素，对于它自己的Group还要再End一次，这样计算得到
+// 1. 结束本次布局的Layout
+// 2. 结束自己的父类的Layout
 // PopLayout, resume parent's state
 func (lyt *LayoutManager) EndLayout() {
-	// 1. Set size if not set explicitly
+	// 1. Set size if not set explicitly, end spacing
 	size := lyt.hGroup.Size
+	size.W += lyt.spacing
+	size.H += lyt.spacing
+
 	if !lyt.hGroup.hasSize || lyt.hGroup.W == 0 {
 		lyt.hGroup.W = size.W
 	}
@@ -296,7 +306,7 @@ func (lyt *LayoutManager) EndLayout() {
 	lyt.Cursor.X, lyt.Cursor.Y = g.Cursor.X, g.Cursor.Y
 
 	// 3. end layout, remove default spacing
-	elem := &Element{Bound:Bound{0, 0, size.W-lyt.spacing*2, size.H-lyt.spacing*2}}
+	elem := &Element{Bound:Bound{0, 0, size.W, size.H}}
 	lyt.EndElement(elem)
 
 	// 3. 清除当前布局的参数
@@ -315,6 +325,9 @@ func (lyt *LayoutManager) BeginElement(id ID) (elem *Element, ok bool){
 		var (
 			group = lyt.hGroup
 			gravity = group.Gravity
+			extra = struct {
+				W, H float32
+			}{lyt.spacing*2, lyt.spacing*2}
 		)
 
 		// Each element's property
@@ -324,6 +337,9 @@ func (lyt *LayoutManager) BeginElement(id ID) (elem *Element, ok bool){
 				elem.Margin = lyt.Cursor.Margin
 				elem.X += elem.Left
 				elem.Y += elem.Top
+
+				extra.W += elem.Left + elem.Right
+				extra.H += elem.Top + elem.Bottom
 			}
 
 			// 计算大小
@@ -344,12 +360,12 @@ func (lyt *LayoutManager) BeginElement(id ID) (elem *Element, ok bool){
 
 		switch group.LayoutType {
 		case LinearHorizontal:
-			elem.Y += (group.H - elem.H) * gravity.Y
+			elem.Y += (group.H - elem.H - extra.H) * gravity.Y
 		case LinearVertical:
-			elem.X += (group.W - elem.W) * gravity.X
+			elem.X += (group.W - elem.W - extra.W) * gravity.X
 		case LinearOverLay:
-			elem.Y += (group.H - elem.H) * gravity.Y
-			elem.X += (group.W - elem.W) * gravity.X
+			elem.Y += (group.H - elem.H - extra.H) * gravity.Y
+			elem.X += (group.W - elem.W - extra.W) * gravity.X
 		}
 	}
 	return
@@ -365,8 +381,8 @@ func (lyt *LayoutManager) EndElement(elem *Element) {
 func (lyt *LayoutManager) Extend(elem *Element) {
 	var (
 		g  = lyt.hGroup
-		dx = elem.W + elem.Left + elem.Right + lyt.spacing + lyt.spacing
-		dy = elem.H + elem.Top + elem.Bottom + lyt.spacing + lyt.spacing
+		dx = elem.W + elem.Left + elem.Right + lyt.spacing //+ lyt.spacing
+		dy = elem.H + elem.Top + elem.Bottom + lyt.spacing //+ lyt.spacing
 	)
 
 	switch g.LayoutType {
@@ -389,8 +405,8 @@ func (lyt *LayoutManager) Extend(elem *Element) {
 func (lyt *LayoutManager) Advance(elem *Element) {
 	var (
 		g, c  = lyt.hGroup, &lyt.Cursor
-		dx = elem.W + elem.Left + elem.Right + lyt.spacing + lyt.spacing
-		dy = elem.H + elem.Top + elem.Bottom + lyt.spacing + lyt.spacing
+		dx = elem.W + elem.Left + elem.Right + lyt.spacing// + lyt.spacing
+		dy = elem.H + elem.Top + elem.Bottom + lyt.spacing// + lyt.spacing
 	)
 
 	switch g.LayoutType {

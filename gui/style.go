@@ -137,7 +137,7 @@ func newLightTheme() *Style {
 		},
 		ColorNormal:0xFFCDCDCD,
 		ColorPressed:0xFFABABAB,
-		Spacing:2,
+		Spacing:4,
 	}
 }
 

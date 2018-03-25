@@ -59,7 +59,7 @@ func NewContext(style *Style) *Context {
 	c.state.isLastEventPointerType = false
 	c.state.pointerCapture = -1
 	c.DrawList.Initialize()
-	c.Layout.Initialize()
+	c.Layout.Initialize(style)
 	return c
 }
 
@@ -498,12 +498,7 @@ func (ctx *Context) EndElement(elem *Element) {
 func (ctx *Context) BeginLayout(id ID, xtype LayoutType) {
 	if elem, ok := ctx.Layout.BeginLayout(id, xtype); ok {
 		// debug-draw
-		lm := &ctx.Layout
-		var (
-			x = lm.hGroup.X + lm.Cursor.X
-			y = lm.hGroup.Y + lm.Cursor.Y
-		)
-		ctx.DrawDebugBorder(x, y, elem.W, elem.H, 0xFF00FF00)
+		ctx.DrawDebugBorder(elem.X, elem.Y, elem.W, elem.H, 0xFF00FF00)
 	}
 }
 
