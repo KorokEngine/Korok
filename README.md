@@ -10,7 +10,7 @@ About the state and progress of the project, see [Devlogs](https://github.com/Ko
 
 ## Getting Started
 
-`go get -insecure korok.io/korok`
+`go get korok.io/korok`
 
 ## Documentation and Demos
 
