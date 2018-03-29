@@ -23,6 +23,30 @@ const (
 )
 const EventNone = EventType(0)
 
+func (et EventType) JustPressed() bool {
+	return (et & EventWentDown) != 0
+}
+
+func (et EventType) JustReleased() bool {
+	return (et & EventWentUp) != 0
+}
+
+func (et EventType) Down() bool {
+	return (et & EventDown) != 0
+}
+
+func (et EventType) StartDrag() bool {
+	return (et & EventStartDrag) != 0
+}
+
+func (et EventType) EndDrag() bool {
+	return (et & EventEndDrag) != 0
+}
+
+func (et EventType) Dragging() bool {
+	return (et & EventDragging) != 0
+}
+
 // 一个Context维护UI层逻辑:
 // 1. 一个 DrawList，负责生成顶点
 // 2. 共享的 Style，指针引用，多个 Context 之间可以共享
@@ -281,9 +305,8 @@ func (ctx *Context) checkSlider(id ID, bound *Bound) (v float32, e EventType) {
 		p0 := bound.X + ctx.Layout.hGroup.X
 		v = (p1 - p0)/bound.W
 
-
-		dbg.Move(10, 300)
 		dbg.DrawStrScaled(fmt.Sprintf("p0: %v, p1: %v", p0, p1), .6 )
+		dbg.Return()
 
 		if v > 1 {
 			v = 1
@@ -495,11 +518,12 @@ func (ctx *Context) EndElement(elem *Element) {
 }
 
 // Layout
-func (ctx *Context) BeginLayout(id ID, xtype LayoutType) {
+func (ctx *Context) BeginLayout(id ID, xtype LayoutType) *Group {
 	if elem, ok := ctx.Layout.BeginLayout(id, xtype); ok {
 		// debug-draw
 		ctx.DrawDebugBorder(elem.X, elem.Y, elem.W, elem.H, 0xFF00FF00)
 	}
+	return ctx.Layout.hGroup
 }
 
 func (ctx *Context) EndLayout() {
