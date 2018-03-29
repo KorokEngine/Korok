@@ -1,4 +1,4 @@
-package assets
+package asset
 
 
 // GLShader for TextRender

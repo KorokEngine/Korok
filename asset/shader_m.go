@@ -1,4 +1,4 @@
-package assets
+package asset
 
 import (
 	"korok.io/korok/gfx/bk"

@@ -1,4 +1,4 @@
-package assets
+package asset
 
 type refCount struct {
 	ref interface{} // 资源引用

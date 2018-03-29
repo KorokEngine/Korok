@@ -6,7 +6,7 @@ import (
 	"korok.io/korok/gfx"
 	"korok.io/korok/effect"
 	"korok.io/korok/anim"
-	"korok.io/korok/assets"
+	"korok.io/korok/asset"
 	"korok.io/korok/hid/input"
 	"korok.io/korok/gfx/dbg"
 	"korok.io/korok/gui"
@@ -103,11 +103,11 @@ func (g *Game) Create(ratio float32) {
 	// set render
 	var vertex, color string
 
-	vertex, color = assets.Shader.GetShaderStr("batch")
+	vertex, color = asset.Shader.GetShaderStr("batch")
 	batchRender := gfx.NewBatchRender(vertex, color)
 	rs.RegisterRender(gfx.RenderType(0), batchRender)
 
-	vertex, color = assets.Shader.GetShaderStr("mesh")
+	vertex, color = asset.Shader.GetShaderStr("mesh")
 	meshRender := gfx.NewMeshRender(vertex, color)
 	rs.RegisterRender(gfx.RenderType(1), meshRender)
 

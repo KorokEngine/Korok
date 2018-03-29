@@ -1,4 +1,4 @@
-package assets
+package asset
 
 
 // shader for batch-system

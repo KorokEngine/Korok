@@ -1,4 +1,4 @@
-package assets
+package asset
 
 // GLShader for Particle-System
 // 粒子采用 GPU 计算的方式
