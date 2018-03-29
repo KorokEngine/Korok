@@ -13,7 +13,6 @@ import (
 
 	"log"
 	"reflect"
-	"fmt"
 )
 
 const (
@@ -43,7 +42,7 @@ type DB struct {
 var G *Game
 
 type Game struct {
-	Options; FPS; DB
+	Options; Stats; FPS; DB
 
 	// scene manager
 	SceneManager
@@ -135,7 +134,7 @@ func (g *Game) Create(ratio float32) {
 	gui.SetScreenSize(float32(g.W), float32(g.H))
 
 	/// init debug
-	dbg.Init()
+	dbg.Init(g.Options.W, g.Options.H)
 
 	/// input system
 	g.InputSystem = input.NewInputSystem()
@@ -235,24 +234,13 @@ func (g *Game) Update() {
 }
 
 func (g *Game) DrawProfile() {
-	//dbg.FPS(g.FPS.fps)
-	dbg.Move(5, 5)
+	// print info
+	g.Stats.printVerb()
 
-	dbg.Color(0xFF000000)
-	dbg.DrawRect(0, 0, 50, 6)
+	// dbg.FPS(g.FPS.fps)
+	g.Stats.printFPS(g.fps)
 
-	// format: RGBA
-	dbg.Color(0xFF00FF00)
-
-	w := float32(g.fps)/60 * 50
-	dbg.DrawRect(0, 0, w, 5)
-
-	// format: RGBA
-	dbg.Color(0xFF000000)
-
-	dbg.Move(5, 10)
-	dbg.DrawStrScaled(fmt.Sprintf("%d fps", g.fps), 0.6)
-
+	// Advance frame
 	dbg.NextFrame()
 }
 

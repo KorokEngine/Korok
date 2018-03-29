@@ -268,8 +268,8 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 
 	num := render.Flush()
 
-	dbg.Move(10, 300)
 	dbg.DrawStrScaled(fmt.Sprintf("Batch num: %d", num), .6)
+	dbg.Return()
 }
 
 // TODO uint32 = (z-order << 16 + batch-id)

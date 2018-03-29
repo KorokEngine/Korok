@@ -16,6 +16,11 @@ const (
 	CIRCLE
 )
 
+const step = 14
+var screen struct{
+	w, h float32
+}
+
 // dbg - draw debug info
 // provide self-contained, im-gui api
 // can be used to show debug info, fps..
@@ -31,11 +36,13 @@ type PosTexColorVertex struct {
 	RGBA       uint32
 }
 
-func Init() {
+func Init(w, h int) {
 	if g_render == nil {
 		g_render = NewDebugRender(vsh, fsh)
 		g_buffer = &g_render.Buffer
 	}
+	screen.w = float32(w)
+	screen.h = float32(h)
 }
 
 func Destroy() {
@@ -58,6 +65,10 @@ func FPS(fps int32) {
 
 func Move(x, y float32) {
 	g_buffer.x, g_buffer.y = x, y
+}
+
+func Return() {
+	g_buffer.y -= step
 }
 
 func Color(argb uint32) {
@@ -87,6 +98,7 @@ func NextFrame() {
 	g_buffer.Update()
 	g_render.Draw()
 	g_buffer.Reset()
+
 }
 
 
@@ -278,6 +290,8 @@ func (buff *TextShapeBuffer) Update() {
 
 func (buff *TextShapeBuffer) Reset() {
 	buff.pos = 0
+	buff.x = 10
+	buff.y = screen.h - step*1.5
 }
 
 func (buff *TextShapeBuffer) Destroy() {

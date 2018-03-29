@@ -123,9 +123,8 @@ func (b *Bound) InRange(p f32.Vec2) bool{
 }
 
 type LayoutManager struct {
-	Horizontal, Vertical Direction
 	Cursor               Params
-	Align
+	
 	// ui bound 是一直存储的，记录一些持久化的数据
 	uiElements           []Element // element uiElements
 

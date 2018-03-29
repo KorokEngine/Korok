@@ -11,7 +11,7 @@ func TestSpriteTable(t *testing.T) {
 	st := NewSpriteTable(1024)
 
 	e1 := em.New()
-	xf1 := st.NewComp(e1, nil)
+	xf1 := st.NewComp(e1)
 
 	if xf := st.Comp(e1); xf != xf1 {
 		t.Error("fail to create Comp")
@@ -30,7 +30,7 @@ func TestSpriteTable(t *testing.T) {
 	eList := make([]engi.Entity, 10)
 	for i := 0; i < 10; i++ {
 		e := em.New()
-		st.NewComp(e, nil)
+		st.NewComp(e)
 		eList[i] = e
 	}
 
@@ -70,7 +70,7 @@ func TestSpriteTableResize(t *testing.T) {
 	list30 := make([]engi.Entity, 30)
 	for i := 0; i < 30; i++ {
 		e := em.New()
-		st.NewComp(e, nil)
+		st.NewComp(e)
 		list30[i] = e
 	}
 
@@ -78,7 +78,7 @@ func TestSpriteTableResize(t *testing.T) {
 	list100 := make([]engi.Entity, 100)
 	for i := 0; i < 100; i++ {
 		e := em.New()
-		st.NewComp(e, nil)
+		st.NewComp(e)
 		list100[i] = e
 	}
 

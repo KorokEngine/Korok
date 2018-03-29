@@ -55,8 +55,12 @@ func (et EventType) Dragging() bool {
 // 在窗口内绘制的UI会受到窗口的管理.
 type Context struct {
 	DrawList
-	Layout LayoutManager
+	Params
 	*Style
+
+	Layout LayoutManager
+
+	// groups map[ID]LayoutManager
 
 	// ui global state
 	state struct{
