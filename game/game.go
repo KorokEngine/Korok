@@ -41,12 +41,14 @@ type DB struct {
 
 // 统一管理游戏各个子系统的创建和销毁的地方
 var G *Game
-var scenes = make(map[string]Scene)
-var current Scene
 
 type Game struct {
 	Options; FPS; DB
 
+	// scene manager
+	SceneManager
+
+	// system
 	*gfx.RenderSystem
 	*gui.UISystem
 	*input.InputSystem
@@ -79,11 +81,6 @@ func (g *Game) OnKeyEvent(key int, pressed bool) {
 
 func (g *Game) OnPointEvent(key int, pressed bool, x, y float32) {
 	g.InputSystem.SetPointerEvent(key, pressed, x, y)
-}
-
-func AddScene(scene Scene) {
-	scenes[scene.Name()] = scene
-	current = scene
 }
 
 // init subsystem
@@ -159,11 +156,8 @@ func (g *Game) Create(ratio float32) {
 	g.AnimationSystem = anim.NewAnimationSystem()
 	g.AnimationSystem.RequireTable(g.DB.Tables)
 
-	/// Customized scene
-	if current != nil {
-		current.Preload()
-		current.Setup(g)
-	}
+	/// setup scene manager
+	g.SceneManager.Setup(g)
 }
 
 // destroy subsystem
@@ -197,8 +191,7 @@ func (g *Game) loadTables() {
 }
 
 func (g *Game) Input(dt float32) {
-	if current != nil {
-	}
+
 }
 
 func (g *Game) Update() {
@@ -208,9 +201,9 @@ func (g *Game) Update() {
 	// update input-system
 	g.InputSystem.Frame()
 
-	if current != nil {
-		current.Update(dt)
-	}
+	// update scene
+	g.SceneManager.Update(dt)
+
 	// update script
 	g.ScriptSystem.Update(dt)
 

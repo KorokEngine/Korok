@@ -24,20 +24,18 @@ type Options struct {
 	Clear f32.Vec4
 }
 
-func RunScene(options *Options, sc game.Scene) {
-	PushScene(sc)
-	Run(options)
-}
-
-func Run(options *Options)  {
+func Run(options *Options, sc game.Scene)  {
 	log.Println("Game Start! " + options.Title)
 
 	g := &game.Game{}
-	G = g
 	g.Init(game.Options{options.Width, options.Height})
 
+	G = g
 	Entity = g.DB.EntityM
+	SceneMan = &g.SceneManager
+	SceneMan.SetDefault(sc)
 
+	// init table shortcut
 	for _, table := range g.DB.Tables {
 		switch t := table.(type) {
 		case *gfx.SpriteTable:
@@ -57,7 +55,7 @@ func Run(options *Options)  {
 		}
 	}
 
-	log.Printf("LoadBitmap table: %v", len(g.DB.Tables))
+	log.Printf("Load table: %v", len(g.DB.Tables))
 	for i, v := range g.DB.Tables {
 		log.Println(i, "table - ", reflect.TypeOf(v))
 	}
@@ -72,16 +70,13 @@ func Run(options *Options)  {
 	})
 }
 
-func PushScene(sc game.Scene) {
-	game.AddScene(sc)
-}
-
 func SetDebug(enable bool) {
 	if enable == false {
 		dbg.SetOutput(ioutil.Discard)
 	}
 }
 var G *game.Game
+var SceneMan *game.SceneManager
 
 ///// entity-api
 var Entity *engi.EntityManager
