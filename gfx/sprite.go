@@ -3,10 +3,8 @@ package gfx
 import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
-	"korok.io/korok/gfx/dbg"
 
 	"sort"
-	"fmt"
 
 )
 
@@ -266,10 +264,10 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 		render.End()
 	}
 
-	num := render.Flush()
+	render.Flush()
 
-	dbg.DrawStrScaled(fmt.Sprintf("Batch num: %d", num), .6)
-	dbg.Return()
+	//dbg.DrawStrScaled(fmt.Sprintf("Batch num: %d", num), .6)
+	//dbg.Return()
 }
 
 // TODO uint32 = (z-order << 16 + batch-id)
