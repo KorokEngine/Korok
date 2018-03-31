@@ -32,6 +32,28 @@ func (t *Texture2D) Create(image image.Image) (error) {
 	return nil
 }
 
+func (t *Texture2D) Update(img image.Image, xoff, yoff int32, w, h int32) (err error) {
+	rgba := image.NewRGBA(img.Bounds())
+	if rgba.Stride != rgba.Rect.Size().X*4 {
+		err = fmt.Errorf("unsupported stride")
+		return
+	}
+	draw.Draw(rgba, rgba.Bounds(), img, image.Point{0, 0}, draw.Src)
+
+	gl.ActiveTexture(gl.TEXTURE0)
+	gl.BindTexture(gl.TEXTURE_2D, t.Id);
+	gl.TexSubImage2D(gl.TEXTURE_2D,
+		0,
+		xoff,
+		yoff,
+		w,
+		h,
+		gl.RGBA,
+		gl.UNSIGNED_BYTE,
+		gl.Ptr(rgba.Pix))
+	return
+}
+
 func (t *Texture2D) Bind(stage int32) {
 	gl.ActiveTexture(gl.TEXTURE0 + uint32(stage))
 	gl.BindTexture(gl.TEXTURE_2D, t.Id)
@@ -48,6 +70,7 @@ func (t *Texture2D) Destroy() {
 	gl.DeleteTextures(1, &t.Id)
 }
 
+// TODO 提前转换图片格式
 func newTexture(img image.Image) (uint32, error) {
 	// 3. copy image
 	rgba := image.NewRGBA(img.Bounds())
