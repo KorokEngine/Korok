@@ -1,7 +1,7 @@
 package bk
 
 import (
-	"github.com/go-gl/gl/v3.2-core/gl"
+	"korok.io/korok/hid/gl"
 	"log"
 )
 
@@ -187,7 +187,8 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		/// 9. draw
 		if draw.indexBuffer != InvalidId {
 			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.R.indexBuffers[draw.indexBuffer].Id)
-			offset := gl.PtrOffset(int(draw.firstIndex) * 2) // 2 = sizeOf(unsigned_short)
+			// offset := gl.PtrOffset(int(draw.firstIndex) * 2) // 2 = sizeOf(unsigned_short)
+			offset := int(draw.firstIndex) * 2
 			gl.DrawElements(prim, int32(draw.num), gl.UNSIGNED_SHORT, offset)
 		} else {
 			gl.DrawArrays(prim, int32(draw.firstIndex), int32(draw.num))

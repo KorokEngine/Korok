@@ -1,11 +1,13 @@
+// +build windows, darwin
+
 package hid
 
 import (
+	"github.com/go-gl/glfw/v3.2/glfw"
+	"korok.io/korok/hid/gl"
+
 	"fmt"
 	"runtime"
-
-	"github.com/go-gl/glfw/v3.2/glfw"
-	"github.com/go-gl/gl/v3.2-core/gl"
 )
 
 var windowCallback WindowCallback
@@ -98,8 +100,8 @@ func CreateWindow(option *WindowOptions)  {
 	}
 
 	// 读取本机的 OpenGL 版本
-	version := gl.GoStr(gl.GetString(gl.VERSION))
-	fmt.Println("OpenGL version", version)
+	//version := gl.GoStr(gl.GetString(gl.VERSION))
+	//fmt.Println("OpenGL version", version)
 
 	// viewport size
 	w, h := window.GetFramebufferSize()

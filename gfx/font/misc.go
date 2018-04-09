@@ -1,9 +1,10 @@
 package font
 
 import (
+	"korok.io/korok/hid/gl"
+
 	"image"
 	"fmt"
-	"github.com/go-gl/gl/v3.2-core/gl"
 )
 
 // toRGBA translate the given image to RGBA format if necessary.

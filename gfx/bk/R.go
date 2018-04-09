@@ -1,7 +1,8 @@
 package bk
 
 import (
-	"github.com/go-gl/gl/v3.2-core/gl"
+	"korok.io/korok/hid/gl"
+
 	"log"
 	"unsafe"
 	"image"

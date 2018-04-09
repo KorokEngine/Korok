@@ -1,7 +1,7 @@
 package bk
 
 import (
-	"github.com/go-gl/gl/v3.2-core/gl"
+	"korok.io/korok/hid/gl"
 	"unsafe"
 )
 const (
@@ -36,7 +36,7 @@ type Uniform struct {
 }
 
 func (um *Uniform) create(program uint32, name string, xType UniformType, num uint32) (slot int32) {
-	slot = gl.GetUniformLocation(program, gl.Str(name))
+	slot = gl.GetUniformLocation(program, name)
 	um.Slot = uint8(slot)
 	um.Name = name
 	um.Type = xType

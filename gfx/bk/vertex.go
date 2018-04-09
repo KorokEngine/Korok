@@ -1,6 +1,6 @@
 package bk
 
-import "github.com/go-gl/gl/v3.2-core/gl"
+import "korok.io/korok/hid/gl"
 
 /// Vertex attribute type enum
 type AttrType uint8

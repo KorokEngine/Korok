@@ -1,11 +1,10 @@
 package bk
 
 import (
-	"fmt"
-	"strings"
-
-	"github.com/go-gl/gl/v3.2-core/gl"
+	"korok.io/korok/hid/gl"
 	"korok.io/korok/math/f32"
+
+	"fmt"
 	"log"
 )
 
@@ -57,7 +56,7 @@ func (sh *Shader) BindAttributes(R *ResManager, streams []Stream) {
 				norm = true
 			}
 			if offset < int(bindStride) {
-				gl.VertexAttribPointer(slot, num, xType, norm, int32(bindStride), gl.PtrOffset(int(offset)))
+				gl.VertexAttribPointer(slot, num, xType, norm, int32(bindStride), offset)
 			} else {
 				gl.DisableVertexAttribArray(slot)
 			}
@@ -75,7 +74,7 @@ type AttribBind struct {
 }
 
 func (sh *Shader) AddAttributeBinding(attr string, stream uint32, comp VertexComp) {
-	slot := gl.GetAttribLocation(sh.Program, gl.Str(attr))
+	slot := gl.GetAttribLocation(sh.Program, attr)
 
 	if slot < 0 {
 		log.Printf("fail to bind attribute: %s, %v", attr, comp)
@@ -108,7 +107,7 @@ func (s *GLShader) Use() {
 func (s *GLShader) Create(vsh, fsh string) error{
 	if program, err := Compile(vsh, fsh); err == nil {
 		s.Program = program
-		gl.BindFragDataLocation(program, 0, gl.Str("outputColor\x00"))
+		//gl.BindFragDataLocation(program, 0, "gl_FragColor\x00")
 		return nil
 	} else {
 		return err
@@ -120,46 +119,46 @@ func (s *GLShader) Destroy() {
 }
 
 func (s *GLShader) SetFloat(name string, value float32) {
-	location := gl.GetUniformLocation(s.Program, gl.Str(name))
+	location := gl.GetUniformLocation(s.Program, name)
 	gl.Uniform1f(location, value)
 }
 
 func (s *GLShader) SetInteger(name string, value int32) {
-	location := gl.GetUniformLocation(s.Program, gl.Str(name))
+	location := gl.GetUniformLocation(s.Program, name)
 	gl.Uniform1i(location, value)
 }
 
 func (s *GLShader) SetMatrix4(name string, mat4 f32.Mat4) {
-	location := gl.GetUniformLocation(s.Program, gl.Str(name))
+	location := gl.GetUniformLocation(s.Program, name)
 	gl.UniformMatrix4fv(location, 1, false, &mat4[0])
 }
 
 func (s *GLShader) SetVector2f(name string, x, y float32) {
-	location := gl.GetUniformLocation(s.Program, gl.Str(name))
+	location := gl.GetUniformLocation(s.Program, name)
 	gl.Uniform2f(location, x, y)
 }
 
 func (s *GLShader) SetVector3f(name string, x, y, z float32) {
-	location := gl.GetUniformLocation(s.Program, gl.Str(name))
+	location := gl.GetUniformLocation(s.Program, name)
 	gl.Uniform3f(location, x, y, z)
 }
 
 func (s *GLShader) SetVector4f(name string, x, y, z, w float32) {
-	location := gl.GetUniformLocation(s.Program, gl.Str(name))
+	location := gl.GetUniformLocation(s.Program, name)
 	gl.Uniform4f(location, x, y, z, w)
 }
 
 func (s *GLShader) SetVec4fArray(name string, array []float32, count int32) {
-	location := gl.GetUniformLocation(s.Program, gl.Str(name))
+	location := gl.GetUniformLocation(s.Program, name)
 	gl.Uniform4fv(location, count, &array[0])
 }
 
 func (s *GLShader) GetAttrLocation(attr string) uint32 {
-	return uint32(gl.GetAttribLocation(s.Program, gl.Str(attr)))
+	return uint32(gl.GetAttribLocation(s.Program, attr))
 }
 
 func (s *GLShader) GetUniformLocation(uniform string) uint32 {
-	return uint32(gl.GetUniformLocation(s.Program, gl.Str(uniform)))
+	return uint32(gl.GetUniformLocation(s.Program, uniform))
 }
 
 func GetErrors() string {
@@ -201,10 +200,7 @@ func Compile(vertex, fragment string) (uint32, error) {
 // 如果错误，提取错误信息并返回
 func compileShader(src string, shaderType uint32) (uint32, error) {
 	shader := gl.CreateShader(shaderType)
-
-	cstr, free := gl.Strs(src)
-	gl.ShaderSource(shader, 1, cstr, nil)
-	free()
+	gl.ShaderSource(shader, src)
 	gl.CompileShader(shader)
 
 	ok, err := getShaderStatus(shader)
@@ -221,12 +217,7 @@ func getShaderStatus(shader uint32) (bool, string) {
 	if status == gl.TRUE {
 		return true, ""
 	}
-
-	var logLength int32
-	gl.GetShaderiv(shader, gl.INFO_LOG_LENGTH, &logLength)
-
-	log := strings.Repeat("\x00", int(logLength+1))
-	gl.GetShaderInfoLog(shader, logLength, nil, gl.Str(log))
+	log := gl.GetShaderInfoLog(shader)
 	return false, log
 }
 
@@ -238,11 +229,7 @@ func getProgramStatus(program uint32) (bool, string) {
 		return true, ""
 	}
 
-	var logLength int32
-	gl.GetProgramiv(program, gl.INFO_LOG_LENGTH, &logLength)
-
-	log := strings.Repeat("\x00", int(logLength+1))
-	gl.GetProgramInfoLog(program, logLength, nil, gl.Str(log))
+	log := gl.GetProgramInfoLog(program)
 	return false, log
 }
 

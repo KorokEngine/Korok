@@ -7,8 +7,9 @@ import (
 	_ "image/jpeg"
 	_ "image/png"
 
-	"github.com/go-gl/gl/v3.2-core/gl"
+	"korok.io/korok/hid/gl"
 	"korok.io/korok/math/f32"
+	"unsafe"
 )
 
 /**
@@ -50,7 +51,7 @@ func (t *Texture2D) Update(img image.Image, xoff, yoff int32, w, h int32) (err e
 		h,
 		gl.RGBA,
 		gl.UNSIGNED_BYTE,
-		gl.Ptr(rgba.Pix))
+		unsafe.Pointer(&rgba.Pix[0]))
 	return
 }
 
@@ -101,7 +102,7 @@ func newTexture(img image.Image) (uint32, error) {
 		0,
 		gl.RGBA,
 		gl.UNSIGNED_BYTE,
-		gl.Ptr(rgba.Pix))
+		unsafe.Pointer(&rgba.Pix[0]))
 	return texture, nil
 }
 
