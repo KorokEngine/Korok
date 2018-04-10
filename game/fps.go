@@ -1,15 +1,21 @@
 package game
 
-import "github.com/go-gl/glfw/v3.2/glfw"
+import (
+	"time"
+)
 
 type FPS struct {
-	scale float32
-	curTime float32
-	preTime float64
+	startTime time.Time
+	curTime time.Duration
+	preTime time.Duration
 
-	dt float32
+	dt, scale float32
 	fps int32
 	pause bool
+}
+
+func (fps *FPS) initialize() {
+	fps.startTime = time.Now()
 }
 
 func (fps *FPS) SetScale(factor float32) {
@@ -17,9 +23,9 @@ func (fps *FPS) SetScale(factor float32) {
 }
 
 func (fps *FPS) Step() float32 {
-	time := glfw.GetTime()
-	dt := time - fps.preTime
-	fps.preTime = time
+	now := time.Since(fps.startTime)
+	dt := float32(now-fps.preTime)/float32(time.Second)
+	fps.preTime = now
 	fps.dt = float32(dt)
 	fps.fps = int32(1/dt)
 
@@ -27,9 +33,9 @@ func (fps *FPS) Step() float32 {
 }
 
 func (fps *FPS) Smooth() float32 {
-	time := glfw.GetTime()
-	dt := time - fps.preTime
-	fps.preTime = time
+	now := time.Since(fps.startTime)
+	dt := float32(now-fps.preTime)/float32(time.Second)
+	fps.preTime = now
 
 	predt := fps.dt
 	sdt := predt * .8 + float32(dt*.2)

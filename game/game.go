@@ -84,6 +84,7 @@ func (g *Game) OnPointEvent(key int, pressed bool, x, y float32) {
 
 // init subsystem
 func (g *Game) Create(ratio float32) {
+	g.FPS.initialize()
 	gfx.Init(ratio)
 
 	// render system
