@@ -1,10 +1,10 @@
-// +build darwin
+// +build windows
 // +build !android,!ios
 
 package gl
 
 import (
-	"github.com/go-gl/gl/v3.2-core/gl"
+	"github.com/go-gl/gl/v2.1/gl"
 	"unsafe"
 )
 
@@ -13,7 +13,7 @@ func Init() error {
 }
 
 func NeedVao() bool {
-	return true
+	return false
 }
 
 func GetError() uint32 {
@@ -232,10 +232,6 @@ func DisableVertexAttribArray(index uint32) {
 
 func GetAttribLocation(program uint32, name string) int32 {
 	return gl.GetAttribLocation(program, gl.Str(name))
-}
-
-func BindFragDataLocation(program uint32, color uint32, name string) {
-	gl.BindFragDataLocation(program, color, gl.Str(name))
 }
 
 // texture

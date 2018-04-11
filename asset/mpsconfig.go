@@ -1,14 +1,15 @@
 package asset
 
 import (
+	"golang.org/x/mobile/asset"
 	"korok.io/korok/effect"
 	"korok.io/korok/math/f32"
+	"korok.io/korok/math"
 
 	"io/ioutil"
-	"os"
 	"log"
 	"encoding/json"
-	"korok.io/korok/math"
+
 )
 
 // 粒子系统配置文件管理
@@ -54,7 +55,7 @@ func (pcm *ParticleConfigManager) Get(file string) (res interface{}, exist bool)
 }
 
 func (pcm *ParticleConfigManager) load(file string) (ref interface{}, err error) {
-	render, err := os.Open(file)
+	render, err := asset.Open(file)
 	defer render.Close()
 	if err != nil {
 		return

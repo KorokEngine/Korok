@@ -164,7 +164,7 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId&ID_MASK)
 		} else {
 			if (g_debug & DEBUG_R) != 0 {
-				log.Printf("alloc uniform: %s(%d, %d)", name, id&ID_MASK, um.Slot)
+				log.Printf("alloc uniform: (%d, %d) => %s", id&ID_MASK, um.Slot, name)
 			}
 		}
 	}

@@ -1,11 +1,11 @@
 package asset
 
 import (
+	"golang.org/x/mobile/asset"
 	"korok.io/korok/gfx/bk"
 	"korok.io/korok/gfx"
 
 	"log"
-	"os"
 	"fmt"
 	"image"
 	"errors"
@@ -116,7 +116,7 @@ func (tm *TextureManager) Unload(file string) {
 func (tm *TextureManager) loadTexture(file string)(uint16, error)  {
 	log.Println("load file:" + file)
 	// 1. load file
-	imgFile, err := os.Open(file)
+	imgFile, err := asset.Open(file)
 	if err != nil {
 		return bk.InvalidId, fmt.Errorf("texture %q not found: %v", file, err)
 	}
@@ -139,7 +139,7 @@ func (tm *TextureManager) loadAtlas(img, desc string)(id uint16, at *atlas, e er
 		e = err
 		return
 	}
-	file, err := os.Open(desc)
+	file, err := asset.Open(desc)
 	defer file.Close()
 
 	if err != nil {

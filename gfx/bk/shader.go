@@ -77,10 +77,10 @@ func (sh *Shader) AddAttributeBinding(attr string, stream uint32, comp VertexCom
 	slot := gl.GetAttribLocation(sh.Program, attr)
 
 	if slot < 0 {
-		log.Printf("fail to bind attribute: %s, %v", attr, comp)
+		log.Printf("fail to bind attribute: %v, %s", comp, attr)
 	} else {
 		if (g_debug & DEBUG_R) != 0 {
-			log.Printf("bind attr: %s => %d", attr, slot)
+			log.Printf("bind attr: %d => %s", slot, attr)
 		}
 	}
 
@@ -205,7 +205,7 @@ func compileShader(src string, shaderType uint32) (uint32, error) {
 
 	ok, err := getShaderStatus(shader)
 	if !ok {
-		return 0, fmt.Errorf("failed to compile %v: %v", src, err)
+		return 0, fmt.Errorf("failed to compile: %v, %v", err, src)
 	}
 	return shader, nil
 }

@@ -34,7 +34,7 @@ func NewRenderContext(r *ResManager, ub *UniformBuffer) *RenderContext {
 }
 
 func (ctx *RenderContext) Init() {
-	ctx.vaoSupport = true
+	ctx.vaoSupport = gl.NeedVao()
 	if ctx.vaoSupport {
 		gl.GenVertexArrays(1, &ctx.vao)
 	}
@@ -187,8 +187,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		/// 9. draw
 		if draw.indexBuffer != InvalidId {
 			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.R.indexBuffers[draw.indexBuffer].Id)
-			// offset := gl.PtrOffset(int(draw.firstIndex) * 2) // 2 = sizeOf(unsigned_short)
-			offset := int(draw.firstIndex) * 2
+			offset := int(draw.firstIndex) * 2 // 2 = sizeOf(unsigned_short)
 			gl.DrawElements(prim, int32(draw.num), gl.UNSIGNED_SHORT, offset)
 		} else {
 			gl.DrawArrays(prim, int32(draw.firstIndex), int32(draw.num))

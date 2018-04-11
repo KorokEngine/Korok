@@ -26,7 +26,7 @@ var screen struct{
 // can be used to show debug info, fps..
 // dependents: bk-api
 
-var P4C4 = []bk.VertexComp{
+var p2t2c4 = []bk.VertexComp{
 	{4, bk.ATTR_TYPE_FLOAT, 0, 0},
 	{4, bk.ATTR_TYPE_UINT8, 16, 1},
 }
@@ -43,6 +43,8 @@ func Init(w, h int) {
 	}
 	screen.w = float32(w)
 	screen.h = float32(h)
+
+	log.Println("dbg init w,h", w, h)
 }
 
 func Destroy() {
@@ -128,14 +130,14 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		sh.Use()
 
 		// setup attribute
-		sh.AddAttributeBinding("xyuv\x00", 0, P4C4[0])
-		sh.AddAttributeBinding("rgba\x00", 0, P4C4[1])
+		sh.AddAttributeBinding("xyuv\x00", 0, p2t2c4[0])
+		sh.AddAttributeBinding("rgba\x00", 0, p2t2c4[1])
 
 		p := f32.Ortho2D(0, 480, 0, 320)
 		s0 := int32(0)
 
 		// setup uniform
-		if pid, _ := bk.R.AllocUniform(id, "proj\x00", bk.UniformMat4, 1); pid != bk.InvalidId {
+		if pid, _ := bk.R.AllocUniform(id, "projection\x00", bk.UniformMat4, 1); pid != bk.InvalidId {
 			dr.umh_P = pid
 			bk.SetUniform(pid, unsafe.Pointer(&p[0]))
 		}
@@ -302,39 +304,3 @@ func (buff *TextShapeBuffer) Destroy() {
 var g_render *DebugRender
 var g_buffer *TextShapeBuffer
 
-
-//// frag & vertex shader
-var vsh = `
-#version 330
-
-uniform mat4 proj;
-
-in vec4 xyuv;
-in vec4 rgba;
-
-out vec4 outColor;
-out vec2 fragTexCoord;
-
-void main() {
-    outColor = rgba;
-	fragTexCoord = xyuv.zw;
-    gl_Position = proj * vec4(xyuv.xy, 1, 1);
-}
-` + "\x00"
-
-var fsh = `
-#version 330
-
-uniform sampler2D tex;
-
-in vec2 fragTexCoord;
-in vec4 outColor;
-out vec4 outputColor;
-void main() {
-	if (fragTexCoord.x == 2) {
-		outputColor = outColor;
-	} else {
-	    outputColor = outColor * texture(tex, fragTexCoord);
-	}
-}
-` + "\x00"

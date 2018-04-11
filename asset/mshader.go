@@ -18,8 +18,6 @@ func NewShaderManager() *ShaderManager {
 func (sm *ShaderManager) LoadDefaultShader() {
 	sm.LoadShader("dft", vertex, color)
 	sm.LoadShader("batch", bVertex, bColor)
-	sm.LoadShader("particle", pVertex, pColor)
-	sm.LoadShader("text", tVertex, tColor)
 }
 
 // 引用计数 +1
@@ -64,10 +62,6 @@ func (sm *ShaderManager) GetShaderStr(key string) (string, string) {
 		return vertex, color
 	case "batch":
 		return bVertex, bColor
-	case "particle":
-		return pVertex, pColor
-	case "text":
-		return tVertex, tColor
 	}
 	return "", ""
 }

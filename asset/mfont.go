@@ -1,10 +1,10 @@
 package asset
 
 import (
-	"os"
-	"fmt"
-
 	"korok.io/korok/gfx/font"
+	"golang.org/x/mobile/asset"
+
+	"fmt"
 )
 
 type FontManager struct {
@@ -23,12 +23,12 @@ func (fm *FontManager) LoadBitmap(name string, img, fc string) {
 		cnt = v.cnt
 		fnt = v.ref
 	} else {
-		ir, err := os.Open(img)
+		ir, err := asset.Open(img)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fcr, err := os.Open(fc)
+		fcr, err := asset.Open(fc)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -54,7 +54,7 @@ func (fm *FontManager) LoadTrueType(name string, fc string) {
 		cnt = v.cnt
 		fnt = v.ref
 	} else {
-		fcr, err := os.Open(fc)
+		fcr, err := asset.Open(fc)
 		if err != nil {
 			fmt.Println(err)
 			return

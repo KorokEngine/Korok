@@ -1,4 +1,4 @@
-// +build windows, darwin
+//+build !android,!ios
 
 package hid
 
