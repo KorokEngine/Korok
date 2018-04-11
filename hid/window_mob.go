@@ -84,6 +84,7 @@ func onStart(e lifecycle.Event) {
 
 func onStop() {
 	windowCallback.OnDestroy()
+	gl.Release()
 }
 
 func onResize(e size.Event) {

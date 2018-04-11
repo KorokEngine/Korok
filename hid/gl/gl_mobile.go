@@ -6,6 +6,7 @@ import (
 	"golang.org/x/mobile/gl"
 	"unsafe"
 	//"log"
+	"runtime"
 )
 
 var glc gl.Context
@@ -16,6 +17,10 @@ func NeedVao() bool {
 
 func InitContext(drawContext interface{}) {
 	glc = drawContext.(gl.Context)
+}
+
+func Release() {
+	glc = nil; runtime.GC()
 }
 
 func GetError() uint32 {
