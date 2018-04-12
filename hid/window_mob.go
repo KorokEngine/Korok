@@ -49,6 +49,9 @@ func CreateWindow(opt *WindowOptions) {
 					glctx = nil
 				}
 			case size.Event:
+				if glctx == nil {
+					continue
+				}
 				sz = e
 				onResize(e)
 			case paint.Event:
@@ -71,6 +74,9 @@ func CreateWindow(opt *WindowOptions) {
 }
 
 func onStart(e lifecycle.Event) {
+	if e.DrawContext == nil {
+		return
+	}
 	gl.InitContext(e.DrawContext)
 	bg := options.Clear
 	if bg[3] == 0 {
