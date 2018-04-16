@@ -11,13 +11,13 @@ const (
 	Gone
 )
 
-type Style struct {
-	Text TextStyle
-	Button ButtonStyle
-	Image ImageStyle
+type Theme struct {
+	Text        TextStyle
+	Button      ButtonStyle
+	Image       ImageStyle
 	ImageButton ImageButtonStyle
-	Rect RectStyle
-	Slider SliderStyle
+	Rect        BoxStyle
+	Slider      SliderStyle
 
 	// global config..
 	ColorNormal uint32
@@ -90,7 +90,7 @@ type SliderStyle struct {
 	Bar, Knob uint16
 }
 
-type RectStyle struct {
+type BoxStyle struct {
 	Stroke float32
 	FillColor uint32
 	StrokeColor uint32
@@ -99,8 +99,8 @@ type RectStyle struct {
 }
 
 //// 这样
-func newLightTheme() *Style {
-	return &Style{
+func newLightTheme() *Theme {
+	return &Theme{
 		Text:TextStyle{
 			Visibility:Visible,
 			Color:0xFF000000,
@@ -125,7 +125,7 @@ func newLightTheme() *Style {
 			},
 			Visible,
 		},
-		Rect:RectStyle{
+		Rect: BoxStyle{
 			2,
 			0xFFCDCDCD,
 			0xFF000000,
@@ -141,6 +141,6 @@ func newLightTheme() *Style {
 	}
 }
 
-func newDarkTheme() *Style {
-	return &Style{}
+func newDarkTheme() *Theme {
+	return &Theme{}
 }

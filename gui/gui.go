@@ -6,66 +6,61 @@ import (
 )
 
 //	Awesome GUI System
-//
-type LayoutType int
-
-const (
-	Vertical   LayoutType = iota
-	Horizontal
-	OverLay
-)
 
 // Widgets: Text
-func Text(id ID, bb Bound, text string, style *TextStyle) {
+func Text(id ID, bb Rect, text string, style *TextStyle) {
 	if style == nil {
-		style = &gContext.Style.Text
+		style = &gContext.Theme.Text
 	}
-	gContext.Text(id, text, bb, style)
+	gContext.Text(id, &bb, text, style)
 	return
 }
 
-func TextSizeColored(text string, color uint32, size float32) {
-
+func TextSizeColored(id ID, bb Rect, text string, color uint32, size float32) {
+	sty := gContext.Theme.Text
+	sty.Color = color
+	sty.Size = size
+	gContext.Text(id, &bb,text, &sty)
 }
 
 // Widgets: InputEditor
-func InputText(hint string, style *InputStyle) {
-
+func InputText(id ID, bb Rect, hint string, style *InputStyle) {
+	gContext.InputText(id, &bb, hint, style)
 }
 
 // Widget: Image
-func Image(id ID, bb Bound, tex gfx.Tex2D, style *ImageStyle) {
-	gContext.Image(id, tex, bb, style)
+func Image(id ID, bb Rect, tex gfx.Tex2D, style *ImageStyle) {
+	gContext.Image(id, &bb, tex, style)
 }
 
 // Widget: Button
-func Button(id ID, bb Bound, text string, style *ButtonStyle) (event EventType) {
-	return gContext.Button(id, text, &bb, style)
+func Button(id ID, bb Rect, text string, style *ButtonStyle) (event EventType) {
+	return gContext.Button(id, &bb, text, style)
 }
 
-func ImageButton(id ID, bb Bound, normal, pressed gfx.Tex2D, style *ImageButtonStyle) EventType{
+func ImageButton(id ID, bb Rect, normal, pressed gfx.Tex2D, style *ImageButtonStyle) EventType{
 	return gContext.ImageButton(id, normal, pressed, &bb, style)
 }
 
-func CheckBox(text string, style *CheckBoxStyle) bool {
+func CheckBox(id ID, bb Rect, text string, style *CheckBoxStyle) bool {
 	return false
 }
 
 // Widget: ProgressBar, Slider
-func ProgressBar(fraction float32, style *ProgressBarStyle) {
+func ProgressBar(id ID, bb Rect, fraction float32, style *ProgressBarStyle) {
 
 }
 
-func Slider(id ID, bb Bound, value *float32, style *SliderStyle) (v EventType){
-	return gContext.Slider(id, value, &bb, style)
+func Slider(id ID, bb Rect, value *float32, style *SliderStyle) (v EventType){
+	return gContext.Slider(id, &bb, value, style)
 }
 
-// Frame: Rect
-func Rect(w, h float32, style *RectStyle) {
+// Widget: Box
+func Box(bb Rect, style *BoxStyle) {
 	if style == nil {
-		style = &gContext.Style.Rect
+		style = &gContext.Theme.Rect
 	}
-	gContext.DrawRect(&Bound{0, 0, w,h}, style.FillColor, style.Rounding)
+	gContext.DrawRect(&bb, style.FillColor, style.Rounding)
 }
 
 // Widget: ListView TODO
@@ -73,25 +68,26 @@ func ListView() {
 
 }
 
-// 基于当前 Group 移动光标
+// Offset move the ui coordinate's origin by (dx, dy)
 func Offset(dx, dy float32) {
 	gContext.Cursor.X += dx
 	gContext.Cursor.Y += dy
 }
 
+// Move sets the ui coordinate's origin to (x, y)
 func Move(x, y float32) {
 	gContext.Cursor.X = x
 	gContext.Cursor.Y = y
 }
 
 // Theme:
-func UseTheme(style *Style) {
+func UseTheme(style *Theme) {
 	gContext.UseTheme(style)
 }
 
 func SetFont(font font.Font) {
-	gContext.Style.Text.Font = font
-	gContext.Style.Button.Font = font
+	gContext.Theme.Text.Font = font
+	gContext.Theme.Button.Font = font
 	texFont, _ := font.Tex2D()
 	gContext.DrawList.PushTextureId(texFont)
 }
@@ -101,25 +97,12 @@ func SetScreenSize(w, h float32) {
 	screen.Height = h
 }
 
-// gui init, render and destroy
-func Init() {
-
-}
-
-func Frame() {
-
-}
-
-func Destroy() {
-
-}
-
 func DefaultContext() *Context {
 	return gContext
 }
 
-var ThemeLight *Style
-var ThemeDark  *Style
+var ThemeLight *Theme
+var ThemeDark  *Theme
 
 ////////// implementation
 // 应该设计一种状态管理机制，用这套机制来维护状态
