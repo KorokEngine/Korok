@@ -16,11 +16,11 @@ const (
 )
 
 // Widgets: Text
-func Text(id ID, bb Bound, text string, style *TextStyle) {
+func Text(id ID, text string, style *TextStyle) {
 	if style == nil {
 		style = &gContext.Style.Text
 	}
-	gContext.Text(id, text, bb, style)
+	gContext.Text(id, text, style)
 	return
 }
 
@@ -34,17 +34,17 @@ func InputText(hint string, style *InputStyle) {
 }
 
 // Widget: Image
-func Image(id ID, bb Bound, tex gfx.Tex2D, style *ImageStyle) {
-	gContext.Image(id, tex, bb, style)
+func Image(id ID, tex gfx.Tex2D, style *ImageStyle) {
+	gContext.Image(id, tex, style)
 }
 
 // Widget: Button
-func Button(id ID, bb Bound, text string, style *ButtonStyle) (event EventType) {
-	return gContext.Button(id, text, &bb, style)
+func Button(id ID, text string, style *ButtonStyle) (event EventType) {
+	return gContext.Button(id, text, style)
 }
 
-func ImageButton(id ID, bb Bound, normal, pressed gfx.Tex2D, style *ImageButtonStyle) EventType{
-	return gContext.ImageButton(id, normal, pressed, &bb, style)
+func ImageButton(id ID, normal, pressed gfx.Tex2D, style *ImageButtonStyle) EventType{
+	return gContext.ImageButton(id, normal, pressed, style)
 }
 
 func CheckBox(text string, style *CheckBoxStyle) bool {
@@ -56,8 +56,8 @@ func ProgressBar(fraction float32, style *ProgressBarStyle) {
 
 }
 
-func Slider(id ID, bb Bound, value *float32, style *SliderStyle) (v EventType){
-	return gContext.Slider(id, value, &bb, style)
+func Slider(id ID, value *float32, style *SliderStyle) (v EventType){
+	return gContext.Slider(id, value, style)
 }
 
 // Frame: Rect
@@ -74,14 +74,25 @@ func ListView() {
 }
 
 // 基于当前 Group 移动光标
-func Offset(dx, dy float32) {
-	gContext.Cursor.X += dx
-	gContext.Cursor.Y += dy
+func Offset(x, y float32) {
+	gContext.Layout.Offset(x, y)
 }
 
 func Move(x, y float32) {
-	gContext.Cursor.X = x
-	gContext.Cursor.Y = y
+	gContext.Layout.Move(x, y)
+}
+//
+//func P() *Params {
+//	return &gContext.Layout.Cursor
+//}
+
+func Layout(id ID, gui func(g *Group, p *Params), w, h float32, xt LayoutType) {
+	gContext.BeginLayout(id, xt)
+	if w != 0 {
+		gContext.Layout.SetSize(w, h)
+	}
+	gui(gContext.Layout.hGroup, &gContext.Layout.Cursor)
+	gContext.EndLayout()
 }
 
 // Theme:
@@ -97,6 +108,7 @@ func SetFont(font font.Font) {
 }
 
 func SetScreenSize(w, h float32) {
+	gContext.Layout.SetDefaultLayoutSize(w, h)
 	screen.Width = w
 	screen.Height = h
 }

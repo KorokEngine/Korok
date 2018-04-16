@@ -21,6 +21,7 @@ const (
 	EventEndDrag
 	EventDragging
 )
+
 const EventNone = EventType(0)
 
 func (et EventType) JustPressed() bool {
@@ -47,6 +48,39 @@ func (et EventType) Dragging() bool {
 	return (et & EventDragging) != 0
 }
 
+// UI绘制边界
+type Bound struct {
+	X, Y float32
+	W, H float32
+}
+
+func (b *Bound) Offset(x, y float32) *Bound {
+	b.X, b.Y = x, y
+	return b
+}
+
+func (b *Bound) Size(w, h float32) {
+	b.W, b.H = w, h
+}
+
+func (b *Bound) SizeAuto() {
+	b.W, b.H = 0, 0
+}
+
+func (b *Bound) InRange(p f32.Vec2) bool{
+	if p[0] < b.X || p[0] > (b.X + b.W) {
+		return false
+	}
+	if p[1] < b.Y || p[1] > (b.Y + b.H) {
+		return false
+	}
+	return true
+}
+
+type Cursor struct {
+	X, Y float32
+}
+
 // 一个Context维护UI层逻辑:
 // 1. 一个 DrawList，负责生成顶点
 // 2. 共享的 Style，指针引用，多个 Context 之间可以共享
@@ -55,12 +89,8 @@ func (et EventType) Dragging() bool {
 // 在窗口内绘制的UI会受到窗口的管理.
 type Context struct {
 	DrawList
-	Params
 	*Style
-
-	Layout LayoutManager
-
-	// groups map[ID]LayoutManager
+	Cursor
 
 	// ui global state
 	state struct{
@@ -87,87 +117,49 @@ func NewContext(style *Style) *Context {
 	c.state.isLastEventPointerType = false
 	c.state.pointerCapture = -1
 	c.DrawList.Initialize()
-	c.Layout.Initialize(style)
 	return c
 }
 
-// Widgets: Text
-// 渲染阶段，取出大小，计算位置开始渲染
-// Layout: 1 2 3 4 ....
-// Draw:   ^ ^ ^ ^ ....
-// 布局阶段仅计算出大小
-//
-func (ctx *Context) Text(id ID, text string, style *TextStyle)  *Element {
-	var (
-		elem, ready = ctx.BeginElement(id)
-		size f32.Vec2
-	)
-
-	// draw text 最好返回最新的大小..
-	if ready {
-		size = ctx.DrawText(elem, text, style)
+func (ctx *Context) Text(id ID, text string, bb Bound, style *TextStyle) {
+	if bb.W != 0 {
+		ctx.DrawText(&bb, text, style)
 	} else {
-		size = ctx.CalcTextSize(text, 0, style.Font, style.Size)
+		sz := ctx.CalcTextSize(text, 0, style.Font, style.Size)
+		bb.W = sz[0]
+		bb.H = sz[1]
+		ctx.DrawText(&bb, text, style)
 	}
-
-	elem.Bound.W = size[0]
-	elem.Bound.H = size[1]
-
-	ctx.EndElement(elem)
-	return nil
+	return
 }
 
 // Widgets: InputEditor
-func (ctx *Context) InputText(hint string, lyt LayoutManager, style *InputStyle) {
+func (ctx *Context) InputText(hint string, style *InputStyle) {
 
 }
 
 // Widget: Image
-func (ctx *Context) Image(id ID, tex gfx.Tex2D, style *ImageStyle) {
-	var (
-		elem, ready = ctx.BeginElement(id)
-	)
-
-	if ready {
-		ctx.DrawImage(&elem.Bound, tex, style)
-	} else {
-		size := ctx.Layout.Cursor.Bound
-		elem.W = size.W
-		elem.H = size.H
-	}
-
-	ctx.EndElement(elem)
+func (ctx *Context) Image(id ID, tex gfx.Tex2D, bb Bound, style *ImageStyle) {
+	ctx.DrawImage(&bb, tex, style)
 }
 
 // Widget: Button
-func (ctx *Context) Button(id ID, text string, style *ButtonStyle) (event EventType) {
+func (ctx *Context) Button(id ID, text string, bb *Bound, style *ButtonStyle) (event EventType) {
 	if style == nil {
 		style = &ThemeLight.Button
 	}
 
 	var (
-		elem, ready = ctx.BeginElement(id)
 		round = ctx.Style.Button.Rounding
 	)
 
-	if ready {
-		bb := &elem.Bound
-		// Check Event
-		event = ctx.CheckEvent(id, bb, false)
+	// Check Event
+	event = ctx.CheckEvent(id, bb, false)
 
-		// Render Frame
-		ctx.ColorBackground(event, bb, round)
+	// Render Frame
+	ctx.ColorBackground(event, bb, round)
 
-		// Render Text
-		ctx.DrawText(elem, text, &style.TextStyle)
-	} else {
-		textStyle := ctx.Style.Text
-		textSize := ctx.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
-		extW := style.Padding.Left+style.Padding.Right
-		extH := style.Padding.Top+style.Padding.Bottom
-		elem.W, elem.H = textSize[0]+extW, textSize[1]+extH
-	}
-	ctx.EndElement(elem)
+	// Render Text
+	ctx.DrawText(bb, text, &style.TextStyle)
 	return
 }
 
@@ -182,87 +174,40 @@ func (ctx *Context) renderTextClipped(text string, bb *Bound, style *TextStyle) 
 	}
 }
 
-
-
 func (ctx *Context) ImageBackground(eventType EventType) {
 
 }
 
-func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Tex2D, style *ImageButtonStyle) ( event EventType) {
+func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Tex2D, bb *Bound, style *ImageButtonStyle) ( event EventType) {
 	if style == nil {
 		style = &ctx.Style.ImageButton
 	}
-	var (
-		elem, ready = ctx.BeginElement(id)
-		bb = &elem.Bound
-	)
-	if ready {
-		event = ctx.CheckEvent(id, bb, false)
-		var tex gfx.Tex2D
-		if event & EventDown != 0 {
-			tex = pressed
-		} else {
-			tex = normal
-		}
-		ctx.DrawImage(bb, tex, &style.ImageStyle)
+
+	event = ctx.CheckEvent(id, bb, false)
+	var tex gfx.Tex2D
+	if event & EventDown != 0 {
+		tex = pressed
 	} else {
-		size := ctx.Layout.Cursor.Bound
-		elem.W = size.W
-		elem.H = size.H
+		tex = normal
 	}
-	ctx.EndElement(elem)
+	ctx.DrawImage(bb, tex, &style.ImageStyle)
 	return
 }
 
-// Slider 的绘制很简单，分别绘制滑动条和把手即可
-// 难点在于跟踪把手的滑动距离
-// Slider的风格，没有想好怎么控制，暂时使用两张图片
-// 分别绘制Bar和Knob
-// Slider 需要保存混动的结果，否则
-//var bar, knob uint16
-//if style == nil {
-//	bar, knob = ctx.Style.Slider.Bar, ctx.Style.Slider.Knob
-//} else {
-//	bar, knob = style.Bar, style.Knob
-//}
-//
-//min, max := mgl32.Vec2{x, y}, mgl32.Vec2{x+w, y+h}
-//ctx.DrawList.AddImageNinePatch(bar, min, max, mgl32.Vec2{0, 0}, mgl32.Vec2{1, 1}, mgl32.Vec4{.5, .5, .5, .5}, 0xFFFFFFFF)
-//
-//
-//ctx.DrawList.AddImage()
-// Slider 需要设定一些自定义的属性，目前没有想好如何实现，先把逻辑实现了
-// 用两种颜色来绘制
-func (ctx *Context) Slider(id ID, value *float32, style *SliderStyle) (e EventType){
+func (ctx *Context) Slider(id ID, value *float32, bb *Bound, style *SliderStyle) (e EventType){
 	if style == nil {
 		style = &ctx.Style.Slider
 	}
 
-	var (
-		elem, ready = ctx.BeginElement(id)
-		bb = &elem.Bound
-	)
-
-	if ready {
-		// 说明滑动了，那么应该使用最新的值，而不是传入的值
-		if v, event := ctx.checkSlider(id, bb); event & EventDragging != 0 {
-			*value = v
-			e = event
-		}
-
-		ctx.DrawRect(bb, 0xFFCDCDCD, 5)
-		ctx.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, 0xFFABABAB)
-	} else {
-		// 设置默认的宽高
-		if elem.W == 0 {
-			elem.W = 100
-		}
-		if elem.H == 0 {
-			elem.H = 10
-		}
+	// 说明滑动了，那么应该使用最新的值，而不是传入的值
+	if v, event := ctx.checkSlider(id, bb); event & EventDragging != 0 {
+		*value = v
+		e = event
 	}
 
-	ctx.EndElement(elem)
+	ctx.DrawRect(bb, 0xFFCDCDCD, 5)
+	ctx.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, 0xFFABABAB)
+
 	return
 }
 
@@ -306,7 +251,7 @@ func (ctx *Context) checkSlider(id ID, bound *Bound) (v float32, e EventType) {
 	if (event & (EventDragging|EventWentDown)) != 0{
 		// default = Horizontal
 		p1 := input.PointerPosition(0).MousePos[0]
-		p0 := bound.X + ctx.Layout.hGroup.X
+		p0 := bound.X
 		v = (p1 - p0)/bound.W
 
 		dbg.DrawStrScaled(fmt.Sprintf("p0: %v, p1: %v", p0, p1), .6 )
@@ -339,10 +284,9 @@ func (ctx *Context) isLastEventPointerType() bool {
 func (ctx *Context) CheckEvent(id ID, bound *Bound, checkDragOnly bool) EventType {
 	var (
 		event = EventNone
-		g  = ctx.Layout.hGroup
 	)
 
-	bb := Bound{g.X+bound.X, g.Y + bound.Y, bound.W, bound.H}
+	bb := Bound{bound.X, bound.Y, bound.W, bound.H}
 	p  := input.PointerPosition(0)
 
 
@@ -415,9 +359,8 @@ func (ctx *Context) CheckEvent(id ID, bound *Bound, checkDragOnly bool) EventTyp
 
 func (ctx *Context) DrawRect(bb *Bound, color uint32, round float32) {
 	var (
-		g = ctx.Layout.hGroup
-		x = g.X + bb.X
-		y = g.Y + bb.Y
+		x = bb.X
+		y = bb.Y
 	)
 	x, y = Gui2Game(x, y)
 	min, max := f32.Vec2{x, y-bb.H}, f32.Vec2{x+bb.W, y}
@@ -426,9 +369,8 @@ func (ctx *Context) DrawRect(bb *Bound, color uint32, round float32) {
 
 func (ctx *Context) DrawBorder(bb *Bound, color uint32, round, thick float32) {
 	var (
-		g = ctx.Layout.hGroup
-		x = g.X + bb.X
-		y = g.Y + bb.Y
+		x = bb.X
+		y = bb.Y
 	)
 	x, y = Gui2Game(x, y)
 	min, max := f32.Vec2{x, y-bb.H}, f32.Vec2{x+bb.W, y}
@@ -443,14 +385,12 @@ func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {
 
 // default segment = 12 TODO
 func (ctx *Context) DrawCircle(x, y, radius float32, color uint32) {
-	g := ctx.Layout.hGroup
-	x, y = Gui2Game(g.X + x, g.Y + y)
+	x, y = Gui2Game(x, y)
 	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius, color, 12)
 }
 
 func (ctx *Context) DrawImage(bound *Bound, tex gfx.Tex2D, style *ImageStyle) {
-	g := ctx.Layout.hGroup
-	min := f32.Vec2{g.X+bound.X, g.Y+bound.Y}
+	min := f32.Vec2{bound.X, bound.Y}
 	if bound.W == 0 {
 		sz := tex.Size()
 		bound.W = sz.Width
@@ -470,12 +410,9 @@ func (ctx *Context) DrawImage(bound *Bound, tex gfx.Tex2D, style *ImageStyle) {
 }
 
 // 绘制元素, bb 存储相对于父容器的相对坐标..
-// Group 目前是绝对坐标
-// Group + Offset = 当前绝对坐标..
-func (ctx *Context) DrawText(bb *Element, text string, style *TextStyle) (size f32.Vec2) {
+func (ctx *Context) DrawText(bb *Bound, text string, style *TextStyle) (size f32.Vec2) {
 	// 1. 取出布局
-	group := ctx.Layout.hGroup
-	x, y := Gui2Game(group.X+bb.X+style.Left, group.Y+bb.Y+style.Top)
+	x, y := Gui2Game(bb.X+style.Left, bb.Y+style.Top)
 
 	// 2. 开始绘制
 	var (
@@ -507,36 +444,6 @@ func (ctx *Context) ColorBackground(event EventType, bb *Bound, round float32) {
 	} else {
 		ctx.DrawRect(bb, ThemeLight.ColorNormal, round)
 	}
-}
-
-// 计算单个UI元素
-// 如果有大小则记录出偏移和Margin
-// 否则只返回元素
-func (ctx *Context) BeginElement(id ID) (elem *Element, ok bool){
-	return ctx.Layout.BeginElement(id)
-}
-
-// 结束绘制, 每绘制完一个元素都要偏移一下光标
-func (ctx *Context) EndElement(elem *Element) {
-	ctx.Layout.EndElement(elem)
-}
-
-// Layout
-func (ctx *Context) BeginLayout(id ID, xtype LayoutType) *Group {
-	if elem, ok := ctx.Layout.BeginLayout(id, xtype); ok {
-		// debug-draw
-		ctx.DrawDebugBorder(elem.X, elem.Y, elem.W, elem.H, 0xFF00FF00)
-	}
-	return ctx.Layout.hGroup
-}
-
-func (ctx *Context) EndLayout() {
-	ctx.Layout.EndLayout()
-}
-
-// Reference System: VirtualBounds
-func (ctx *Context) PushVBounds(bounds f32.Vec4) {
-
 }
 
 // Clip:
