@@ -1,8 +1,8 @@
-package gui
+package auto
 
 import (
 	"korok.io/korok/gfx"
-	"korok.io/korok/gfx/font"
+	"korok.io/korok/gui"
 )
 
 //	Awesome GUI System
@@ -15,57 +15,80 @@ const (
 	OverLay
 )
 
+type ViewType int
+
+const (
+	Normal ViewType = iota
+	Popup
+)
+
+// Options: margin
+func Margin(top, left, right, bottom float32) *Options {
+	opt := &gLayoutMan.Options
+	opt.SetMargin(top, left, right, bottom)
+	return opt
+}
+
+// Options: gravity
+func Gravity(x, y float32) *Options {
+	opt := &gLayoutMan.Options
+	opt.SetGravity(x, y)
+	return opt
+}
+
+// Options: Size
+func Size(w, h float32) *Options {
+	opt := &gLayoutMan.Options
+	opt.SetSize(w, h)
+	return opt
+}
+
 // Widgets: Text
-func Text(id ID, text string, style *TextStyle) {
+func Text(id gui.ID, text string, style *gui.TextStyle, p *Options) {
 	if style == nil {
-		style = &gContext.Style.Text
+		style = &gContext.Theme.Text
 	}
-	gContext.Text(id, text, style)
+	gLayoutMan.Text(id, text, style, p)
 	return
 }
 
-func TextSizeColored(text string, color uint32, size float32) {
-
+func TextSizeColored(id gui.ID, text string, color uint32, size float32, opt *Options) {
+	sty := gContext.Theme.Text
+	sty.Color = color
+	sty.Size = size
+	gLayoutMan.Text(id, text, &sty, opt)
 }
 
 // Widgets: InputEditor
-func InputText(hint string, style *InputStyle) {
+func InputText(hint string, style *gui.InputStyle, p *Options) {
 
 }
 
 // Widget: Image
-func Image(id ID, tex gfx.Tex2D, style *ImageStyle) {
-	gContext.Image(id, tex, style)
+func Image(id gui.ID, tex gfx.Tex2D, style *gui.ImageStyle, p *Options) {
+	gLayoutMan.Image(id, tex, style, p)
 }
 
 // Widget: Button
-func Button(id ID, text string, style *ButtonStyle) (event EventType) {
-	return gContext.Button(id, text, style)
+func Button(id gui.ID, text string, style *gui.ButtonStyle, p *Options) (event gui.EventType) {
+	return gLayoutMan.Button(id, text, style, p)
 }
 
-func ImageButton(id ID, normal, pressed gfx.Tex2D, style *ImageButtonStyle) EventType{
-	return gContext.ImageButton(id, normal, pressed, style)
+func ImageButton(id gui.ID, normal, pressed gfx.Tex2D, style *gui.ImageButtonStyle, p *Options) gui.EventType{
+	return gLayoutMan.ImageButton(id, normal, pressed, style, p)
 }
 
-func CheckBox(text string, style *CheckBoxStyle) bool {
+func CheckBox(text string, style *gui.CheckBoxStyle) bool {
 	return false
 }
 
 // Widget: ProgressBar, Slider
-func ProgressBar(fraction float32, style *ProgressBarStyle) {
+func ProgressBar(fraction float32, style *gui.ProgressBarStyle, p *Options) {
 
 }
 
-func Slider(id ID, value *float32, style *SliderStyle) (v EventType){
-	return gContext.Slider(id, value, style)
-}
-
-// Frame: Rect
-func Rect(w, h float32, style *RectStyle) {
-	if style == nil {
-		style = &gContext.Style.Rect
-	}
-	gContext.DrawRect(&Bound{0, 0, w,h}, style.FillColor, style.Rounding)
+func Slider(id gui.ID, value *float32, style *gui.SliderStyle, p *Options) (v gui.EventType){
+	return gLayoutMan.Slider(id, value, style, p)
 }
 
 // Widget: ListView TODO
@@ -73,79 +96,34 @@ func ListView() {
 
 }
 
-// 基于当前 Group 移动光标
-func Offset(x, y float32) {
-	gContext.Layout.Offset(x, y)
+// Layout & Group
+
+// Define a view group
+func Define(name string, ) {
+	gLayoutMan.DefineLayout(name, Normal)
 }
 
-func Move(x, y float32) {
-	gContext.Layout.Move(x, y)
+func DefineType(name string, xt ViewType) {
+	gLayoutMan.DefineLayout(name, xt)
 }
-//
-//func P() *Params {
-//	return &gContext.Layout.Cursor
-//}
 
-func Layout(id ID, gui func(g *Group, p *Params), w, h float32, xt LayoutType) {
-	gContext.BeginLayout(id, xt)
+func Clear(names ...string) {
+	gLayoutMan.Clear(names...)
+}
+
+func Layout(id gui.ID, gui func(g *Group), w, h float32, xt LayoutType) {
+	gLayoutMan.BeginLayout(id, xt)
 	if w != 0 {
-		gContext.Layout.SetSize(w, h)
+		gLayoutMan.fallback.SetSize(w, h)
 	}
-	gui(gContext.Layout.hGroup, &gContext.Layout.Cursor)
-	gContext.EndLayout()
+	gui(gLayoutMan.fallback.hGroup)
+	gLayoutMan.EndLayout()
 }
 
-// Theme:
-func UseTheme(style *Style) {
-	gContext.UseTheme(style)
-}
-
-func SetFont(font font.Font) {
-	gContext.Style.Text.Font = font
-	gContext.Style.Button.Font = font
-	texFont, _ := font.Tex2D()
-	gContext.DrawList.PushTextureId(texFont)
-}
-
-func SetScreenSize(w, h float32) {
-	gContext.Layout.SetDefaultLayoutSize(w, h)
-	screen.Width = w
-	screen.Height = h
-}
-
-// gui init, render and destroy
-func Init() {
-
-}
-
-func Frame() {
-
-}
-
-func Destroy() {
-
-}
-
-func DefaultContext() *Context {
-	return gContext
-}
-
-var ThemeLight *Style
-var ThemeDark  *Style
-
-////////// implementation
-// 应该设计一种状态管理机制，用这套机制来维护状态
-// 比如：PopupWindow/Animation/Toast/
-// 这些控件的典型特点是状态是变化的，而且不方便用代码维护
-// 如果用一个专门的系统，问题可以减轻很多
-
-var gContext *Context
+var gLayoutMan *LayoutMan
+var gContext *gui.Context
 
 func init() {
-	// default theme
-	ThemeLight = newLightTheme()
-	ThemeDark  = newDarkTheme()
-
-	// default context
-	gContext = NewContext(ThemeLight)
+	gContext = gui.DefaultContext()
+	gLayoutMan = &LayoutMan{Context: gContext}; gLayoutMan.initialize()
 }
