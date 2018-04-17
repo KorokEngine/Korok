@@ -2,9 +2,9 @@ package ap
 
 import (
 	"golang.org/x/mobile/exp/audio/al"
+	"golang.org/x/mobile/asset"
 
 	"log"
-	"os"
 )
 
 type FileType uint8
@@ -72,7 +72,7 @@ func (am *AudioManger) LoadSound(name string, fType FileType, sType SourceType) 
 		log.Println("fail to init decoder, ", err)
 	}
 	if sType == Static {
-		file, err := os.Open(name)
+		file, err := asset.Open(name)
 		if err != nil {
 			log.Println(err)
 			return

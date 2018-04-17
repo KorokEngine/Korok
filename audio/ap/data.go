@@ -1,11 +1,13 @@
 package ap
 
-import "os"
+import (
+	"golang.org/x/mobile/asset"
+)
 
 // audio file decoder
 type Decoder interface {
 	// helper method for in-memory decode
-	FullDecode(file *os.File) (d []byte, numChan, bitDepth, freq int32, err error)
+	FullDecode(file asset.File) (d []byte, numChan, bitDepth, freq int32, err error)
 
 	// stream decode
 	Decode() int

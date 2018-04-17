@@ -1,12 +1,12 @@
 package ogg
 
 import (
-	"io/ioutil"
-	"os"
-	"unsafe"
-	"log"
-
+	"golang.org/x/mobile/asset"
 	"korok.io/vorbis"
+
+	"unsafe"
+	"io/ioutil"
+	"log"
 )
 
 /// 此处是双通道的代码示例！！
@@ -66,7 +66,7 @@ func (d *Decoder) ReachEnd() bool {
 	return false
 }
 
-func (*Decoder) FullDecode(file *os.File) (data []byte, numChan, bitDepth, freq int32, err error) {
+func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, freq int32, err error) {
 	b, err := ioutil.ReadAll(file)
 	defer file.Close()
 
@@ -89,7 +89,7 @@ func (*Decoder) FullDecode(file *os.File) (data []byte, numChan, bitDepth, freq 
 
 func (d *Decoder) Decode() int {
 	if d.vorb == nil {
-		f, err := os.Open(d.name)
+		f, err := asset.Open(d.name)
 		if err != nil {
 			return 0
 		}

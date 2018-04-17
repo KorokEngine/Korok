@@ -1,11 +1,10 @@
 package wav
 
 import (
-	"io"
+	"golang.org/x/mobile/asset"
 	"encoding/binary"
-	"os"
 	"io/ioutil"
-	"log"
+	"io"
 )
 
 const (
@@ -131,12 +130,12 @@ type Decoder struct {
 	size int32
 	offset int32
 
-	file *os.File
+	file asset.File
 	name string
 }
 
 // DON'T change decoder state! pure-virtual function
-func (*Decoder) FullDecode(file *os.File) (data []byte, numChan, bitDepth, freq int32, err error) {
+func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, freq int32, err error) {
 	h, err := decode(file)
 	defer file.Close()
 
@@ -159,7 +158,7 @@ func (*Decoder) FullDecode(file *os.File) (data []byte, numChan, bitDepth, freq 
 // streamed from disc
 func (d *Decoder) Decode() (decoded int) {
 	if d.file == nil {
-		file, err := os.Open(d.name)
+		file, err := asset.Open(d.name)
 		if err != nil {
 			return
 		}
@@ -173,10 +172,10 @@ func (d *Decoder) Decode() (decoded int) {
 		d.bitDepth    = int32(h.BitsPerSample)
 		d.buffer      = make([]byte, 16384)
 
-		fi, err := file.Stat()
-		if err == nil {
-			log.Println("init decoder context... file size:", fi.Size()/16384)
-		}
+		//fi, err := file.Stat()
+		//if err == nil {
+		//	log.Println("init decoder context... file size:", fi.Size()/16384)
+		//}
 	}
 	decoded, _ = io.ReadFull(d.file, d.buffer)
 	return
