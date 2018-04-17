@@ -111,11 +111,12 @@ func (tc *TextComp) fillData() {
 }
 
 // should have default font!!
-func (tc *TextComp) SetFont(fs font.Font) {
-	if fs != nil {
-		log.Println("set font success!!")
+func (tc *TextComp) SetFont(fnt font.Font) {
+	tc.font = fnt
+	if fnt != nil && tc.batchId != 0 {
+		tex, _ := fnt.Tex2D()
+		tc.batchId = int16(tex)
 	}
-	tc.font = fs
 }
 
 // TextTable
@@ -308,6 +309,7 @@ func (tbo textBatchObject) Fill(buf []PosTexColorVertex) {
 		v.Y = p[1] + char.yOffset
 		v.U = char.region.X1
 		v.V = char.region.Y2
+		v.RGBA = 0xFFFFFFFF
 
 		// index (1,0) <x,y,u,v>
 		v = &buf[vi+1]
@@ -315,6 +317,7 @@ func (tbo textBatchObject) Fill(buf []PosTexColorVertex) {
 		v.Y = p[1] + char.yOffset
 		v.U = char.region.X2
 		v.V = char.region.Y2
+		v.RGBA = 0xFFFFFFFF
 
 		// index(1,1) <x,y,u,v>
 		v = &buf[vi+2]
@@ -322,6 +325,7 @@ func (tbo textBatchObject) Fill(buf []PosTexColorVertex) {
 		v.Y = p[1] + char.yOffset + char.h
 		v.U = char.region.X2
 		v.V = char.region.Y1
+		v.RGBA = 0xFFFFFFFF
 
 		// index(0, 1) <x,y,u,v>
 		v = &buf[vi+3]
@@ -329,6 +333,7 @@ func (tbo textBatchObject) Fill(buf []PosTexColorVertex) {
 		v.Y = p[1] + char.yOffset + char.h
 		v.U = char.region.X1
 		v.V = char.region.Y1
+		v.RGBA = 0xFFFFFFFF
 	}
 }
 

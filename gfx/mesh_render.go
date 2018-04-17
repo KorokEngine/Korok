@@ -91,7 +91,7 @@ func (mr *MeshRender) Extract(visibleObjects []uint32) {
 func (mr *MeshRender) Draw(m *Mesh, mat4 *f32.Mat4) {
 	// state
 	bk.SetState(mr.stateFlags, mr.rgba)
-	bk.SetTexture(0, mr.umh_S0, uint16(m.TextureId), 0)
+	bk.SetTexture(0, mr.umh_S0, m.textureId, 0)
 
 	// set uniform - mvp
 	bk.SetUniform(mr.umh_M, unsafe.Pointer(&mat4[0]))

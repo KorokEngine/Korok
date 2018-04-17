@@ -16,23 +16,23 @@ type Sprite Tex2D
 type SpriteComp struct {
 	engi.Entity
 	Sprite
+	zOrder
+	batchId
 
-	scale float32
 	color uint32
+	flipX uint16
+	flipY uint16
 
 	width float32
 	height float32
 	gravity struct{
 		x, y float32
 	}
-
-	zOrder  int16
-	batchId int16
 }
 
 func (sc *SpriteComp) SetSprite(spt Sprite) {
 	sc.Sprite = spt
-	sc.batchId = int16(spt.Tex())
+	sc.batchId.value = spt.Tex()
 
 	// optional size
 	if sc.width == 0 || sc.height == 0 {
@@ -40,14 +40,6 @@ func (sc *SpriteComp) SetSprite(spt Sprite) {
 		sc.width = size.Width
 		sc.height = size.Height
 	}
-}
-
-func (sc *SpriteComp) SetZOrder(z int16) {
-	sc.zOrder = z
-}
-
-func (sc *SpriteComp) SetBatchId(b int16) {
-	sc.batchId = b
 }
 
 func (sc *SpriteComp) SetSize(w, h float32) {
@@ -72,12 +64,17 @@ func (sc *SpriteComp) SetColor(color uint32) {
 	sc.color = color
 }
 
-func (sc *SpriteComp) Scale() float32 {
-	return sc.scale
-}
-
-func (sc *SpriteComp) SetScale(sk float32)  {
-	sc.scale = sk
+func (sc *SpriteComp) Flip(flipX, flipY bool) {
+	if flipX {
+		sc.flipX = 1
+	} else {
+		sc.flipX = 0
+	}
+	if flipY {
+		sc.flipY = 1
+	} else {
+		sc.flipX = 0
+	}
 }
 
 type SpriteTable struct {
@@ -221,14 +218,9 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 		entity := sprite.Entity
 		xform  := xt.Comp(entity)
 
-		// sortId =  order << 16 + batch
-		sortId := uint32(int32(sprite.zOrder) + 0xFFFF>>1)
-		sortId = sortId << 16
-		sortId += uint32(sprite.batchId)
-
+		sortId := packSortId(sprite.zOrder.value, sprite.batchId.value)
 		bList[i] = spriteBatchObject{
 			sortId,
-			sprite.batchId,
 			sprite,
 			xform,
 		}
@@ -239,13 +231,13 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 		return bList[i].sortId < bList[j].sortId
 	})
 
-	var batchId int16 = 0x0FFF
+	var batchId uint16 = 0xFFFF
 	var begin = false
 	var render = srf.R
 
 	// batch draw!
 	for _, b := range bList{
-		bid := b.batchId
+		bid := uint16(b.sortId&0xFFFF)
 
 		if batchId != bid {
 			if begin {
@@ -253,8 +245,9 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 			}
 			batchId = bid
 			begin = true
-
-			render.Begin(b.SpriteComp.Sprite.Tex())
+			tex2d := b.SpriteComp.Sprite.Tex()
+			depth, _ := unpackSortId(b.sortId)
+			render.Begin(tex2d, depth)
 		}
 
 		render.Draw(b)
@@ -270,10 +263,8 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 	//dbg.Return()
 }
 
-// TODO uint32 = (z-order << 16 + batch-id)
 type spriteBatchObject struct {
 	sortId uint32
-	batchId int16
 	*SpriteComp
 	*Transform
 }
@@ -303,6 +294,12 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 		h = sbo.height
 	)
 	rg := c.Sprite.Region()
+	if c.flipY == 1 {
+		rg.Y1, rg.Y2 = rg.Y2, rg.Y1
+	}
+	if c.flipX == 1 {
+		rg.X1, rg.X2 = rg.X2, rg.X1
+	}
 
 	// Center of model
 	ox := w * c.gravity.x

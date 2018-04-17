@@ -193,14 +193,14 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 		comp.sim.Visualize(buf, comp.tex)
 
 		ro.Mesh = gfx.Mesh{
-			TextureId:comp.tex.Tex(),
-			IndexId:prf.BufferContext.indexId,
-			VertexId:prf.BufferContext.vertexId,
-			FirstVertex:uint16(vertexOffset),
-			NumVertex:uint16(vn),
-			FirstIndex:0,
-			NumIndex:uint16(in),
+			IndexId:     prf.BufferContext.indexId,
+			VertexId:    prf.BufferContext.vertexId,
+			FirstVertex: uint16(vertexOffset),
+			NumVertex:   uint16(vn),
+			FirstIndex:  0,
+			NumIndex:    uint16(in),
 		}
+		ro.Mesh.SetTexture(comp.tex.Tex())
 		vertexOffset += vn
 	}
 

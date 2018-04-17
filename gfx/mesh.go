@@ -5,7 +5,6 @@ import (
 	"korok.io/korok/gfx/bk"
 	"korok.io/korok/engi"
 
-	"fmt"
 	"unsafe"
 )
 
@@ -17,7 +16,7 @@ type Mesh struct {
 	index  []uint16
 
 	// res handle
-	TextureId uint16
+	textureId uint16
 	padding   uint16
 
 	IndexId   uint16
@@ -49,14 +48,15 @@ func (m *Mesh) Setup() {
 	if id, _:= bk.R.AllocIndexBuffer(mem_i); id != bk.InvalidId {
 		m.IndexId = id
 	}
+
+	m.FirstVertex = 0
+	m.NumVertex = uint16(len(m.vertex))
+	m.FirstIndex = 0
+	m.NumIndex = uint16(len(m.index))
 }
 
-func (m*Mesh) SRT(pos f32.Vec2, rot float32, scale f32.Vec2) {
-	for i := 0; i < 4; i++ {
-		v := &m.vertex[i]
-		v.X += pos[0]
-		v.Y += pos[1]
-	}
+func (m*Mesh) SetTexture(id uint16) {
+	m.textureId = id
 }
 
 func (m*Mesh) SetVertex(v []PosTexColorVertex) {
@@ -85,79 +85,9 @@ func (m*Mesh) Delete() {
 	if ok, vb := bk.R.VertexBuffer(m.VertexId); ok {
 		vb.Destroy()
 	}
-	if ok, tex := bk.R.Texture(m.TextureId); ok {
+	if ok, tex := bk.R.Texture(m.textureId); ok {
 		tex.Destroy()
 	}
-}
-
-// new mesh from Texture
-func NewQuadMesh(texId uint16) *Mesh{
-	m := new(Mesh)
-
-	m.TextureId = texId
-	_, tex := bk.R.Texture(texId)
-
-	fmt.Println("w:", tex.Width, " h:", tex.Height)
-
-	tex.Width = 50
-	tex.Height = 50
-
-	m.vertex = []PosTexColorVertex{
-		// Pos      	 // Tex
-		{0.0, tex.Height, 0.0, 1.0, 0},
-		{tex.Width, 0.0 , 1.0, 0.0, 0},
-		{0.0, 0.0  	   , 0.0, 0.0, 0},
-
-		{0.0, tex.Height, 0.0, 1.0, 0},
-		{tex.Width, tex.Height, 1.0, 1.0, 0},
-		{tex.Width, 0.0 , 1.0, 0.0, 0},
-	}
-	return m
-}
-
-// new mesh from SubTexture
-func NewQuadMeshSubTex(texId uint16, tex *bk.SubTex) *Mesh {
-	m := new(Mesh)
-
-	m.TextureId = texId
-	if tex.Texture2D == nil {
-		_, tex.Texture2D = bk.R.Texture(texId)
-	}
-
-	h, w := tex.Height, tex.Width
-	m.vertex = []PosTexColorVertex{
-		// pos 			 // tex
-		{0, h, tex.Min[0]/tex.Width, tex.Max[1]/tex.Height, 0},
-		{w, 0, tex.Max[0]/tex.Width, tex.Min[1]/tex.Height, 0},
-		{0, 0, tex.Min[0]/tex.Width, tex.Min[1]/tex.Height, 0},
-
-		{0, h, tex.Min[0]/tex.Width, tex.Max[1]/tex.Height, 0},
-		{w, h, tex.Max[0]/tex.Width, tex.Max[1]/tex.Height, 0},
-		{w, 0, tex.Max[0]/tex.Width, tex.Min[1]/tex.Height, 0},
-	}
-	return m
-}
-
-func NewIndexedMesh(texId uint16, tex *bk.Texture2D) *Mesh {
-	m := new(Mesh)
-
-	m.TextureId = texId
-	if tex == nil {
-		_, tex = bk.R.Texture(texId)
-	}
-
-	h, w := tex.Height, tex.Width
-	m.vertex = []PosTexColorVertex{
-		{0,  h,  0.0, 1.0, 0},
-		{w,  0,  1.0, 0.0, 0},
-		{0,  0,  0.0, 0.0, 0},
-		{w,  h,  1.0, 1.0, 0},
-	}
-	m.index = []uint16{
-		0, 1, 2,
-		0, 3, 1,
-	}
-	return m
 }
 
 // Configure VAO/VBO TODO
