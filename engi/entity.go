@@ -21,6 +21,9 @@ const IndexMask = (1<< IndexBits)-1
 const GenerationBits = 8
 const GenerationMask = (1<< GenerationBits)-1
 
+// An invalid entity
+const Ghost = Entity(0xFFFFFFFF)
+
 type ComponentType uint16
 
 type Entity uint32

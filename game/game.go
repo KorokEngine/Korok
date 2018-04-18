@@ -231,12 +231,21 @@ func (g *Game) Update() {
 	// fps & profile
 	g.DrawProfile()
 
-	gfx.Flush()
+	//bk.Dump()
+
+	// flush drawCall
+	num := gfx.Flush()
+
+	// drawCall = all-drawCall - camera-drawCall
+	g.Stats.drawCall = num - len(g.RenderSystem.RenderList)
 }
 
 func (g *Game) DrawProfile() {
 	// print info
 	g.Stats.printVerb()
+
+	// show drawCall
+	g.Stats.printDrawCall()
 
 	// dbg.FPS(g.FPS.fps)
 	g.Stats.printFPS(g.fps)

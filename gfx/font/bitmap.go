@@ -38,6 +38,7 @@ func LoadBitmap(img, config io.Reader, scale int) (Font, error) {
 	if err != nil {
 		return nil, err
 	}
+	var gh, gw int
 	// add glyphs
 	for _, g := range fc.Glyphs {
 		f.addGlyphs(g.Id, Glyph{
@@ -49,7 +50,15 @@ func LoadBitmap(img, config io.Reader, scale int) (Font, error) {
 			YOffset:uint16(g.YOffset),
 			Advance:g.Advance,
 		})
+		if g.Width > gw {
+			gw = g.Width
+		}
+		if g.Height > gh {
+			gh = g.Height
+		}
 	}
+	f.glyphWidth = gw
+	f.glyphHeight = gh
 	// log.Println("dump:", f)
 	return f, nil
 }

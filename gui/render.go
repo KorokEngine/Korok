@@ -63,7 +63,7 @@ func (ui *UISystem) Draw(dt float32) {
 			firstIndex += uint16(cmd.ElemCount)
 			ui.mesh.SetTexture(cmd.TextureId)
 
-			ui.MeshRender.Draw(&ui.mesh, &mat4)
+			ui.MeshRender.Draw(&ui.mesh, &mat4, 0)
 		}
 
 		//log.Println("cmds:", dl.Commands())

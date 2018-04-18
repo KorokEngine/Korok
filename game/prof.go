@@ -8,6 +8,7 @@ import (
 // Game internal state.
 type Stats struct {
 	verbs []string
+	drawCall int
 }
 
 func (st *Stats) V(str string) {
@@ -20,6 +21,11 @@ func (st *Stats) printVerb() {
 		dbg.DrawStrScaled(str, .6)
 		dbg.Return()
 	}
+}
+
+func (st *Stats) printDrawCall() {
+	dbg.Move(5, 25)
+	dbg.DrawStrScaled(fmt.Sprintf("drawCall: %d", st.drawCall), .6)
 }
 
 func (st *Stats) printFPS(fps int32) {

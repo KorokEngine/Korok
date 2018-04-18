@@ -88,7 +88,7 @@ func (mr *MeshRender) Extract(visibleObjects []uint32) {
 }
 
 // draw
-func (mr *MeshRender) Draw(m *Mesh, mat4 *f32.Mat4) {
+func (mr *MeshRender) Draw(m *Mesh, mat4 *f32.Mat4, depth int32) {
 	// state
 	bk.SetState(mr.stateFlags, mr.rgba)
 	bk.SetTexture(0, mr.umh_S0, m.textureId, 0)
@@ -100,5 +100,5 @@ func (mr *MeshRender) Draw(m *Mesh, mat4 *f32.Mat4) {
 	bk.SetVertexBuffer(0, m.VertexId, uint32(m.FirstVertex), uint32(m.NumVertex))
 	bk.SetIndexBuffer(m.IndexId, uint32(m.FirstIndex), uint32(m.NumIndex))
 	//
-	bk.Submit(0, mr.program, 0)
+	bk.Submit(0, mr.program, depth)
 }

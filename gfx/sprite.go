@@ -5,7 +5,6 @@ import (
 	"korok.io/korok/engi"
 
 	"sort"
-
 )
 
 // Sprite is Tex2D
@@ -216,14 +215,9 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 	for i := 0; i < n; i++ {
 		sprite := &st.comps[i]
 		entity := sprite.Entity
-		xform  := xt.Comp(entity)
-
+		xf := xt.Comp(entity)
 		sortId := packSortId(sprite.zOrder.value, sprite.batchId.value)
-		bList[i] = spriteBatchObject{
-			sortId,
-			sprite,
-			xform,
-		}
+		bList[i] = spriteBatchObject{sortId,sprite,xf}
 	}
 
 	// sort
@@ -231,36 +225,30 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 		return bList[i].sortId < bList[j].sortId
 	})
 
-	var batchId uint16 = 0xFFFF
-	var begin = false
-	var render = srf.R
+	var (
+		sortId = uint32(0xFFFFFFFF)
+		begin = false
+		render = srf.R
+	)
 
 	// batch draw!
 	for _, b := range bList{
-		bid := uint16(b.sortId&0xFFFF)
-
-		if batchId != bid {
+		if sid := b.sortId; sortId != sid {
 			if begin {
 				render.End()
 			}
-			batchId = bid
+			sortId = sid
 			begin = true
 			tex2d := b.SpriteComp.Sprite.Tex()
 			depth, _ := unpackSortId(b.sortId)
 			render.Begin(tex2d, depth)
 		}
-
 		render.Draw(b)
 	}
-
 	if begin {
 		render.End()
 	}
-
 	render.Flush()
-
-	//dbg.DrawStrScaled(fmt.Sprintf("Batch num: %d", num), .6)
-	//dbg.Return()
 }
 
 type spriteBatchObject struct {

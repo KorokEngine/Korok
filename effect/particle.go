@@ -15,26 +15,25 @@ import (
 type ParticleComp struct {
 	engi.Entity
 	sim Simulator
+	zOrder int16
 
 	tex gfx.Tex2D
-	color uint32
-	scale float32
 }
 
 func (pc *ParticleComp) SetSimulator(sim Simulator) {
 	pc.sim = sim
 }
 
+func (pc *ParticleComp) Simulator() Simulator {
+	return pc.sim
+}
+
 func (pc *ParticleComp) SetTexture(tex gfx.Tex2D) {
 	pc.tex = tex
 }
 
-func (pc *ParticleComp) SetColor(color uint32) {
-	pc.color = color
-}
-
-func (pc *ParticleComp) SetScale(scale float32) {
-	pc.scale = scale
+func (pc *ParticleComp) Texture() gfx.Tex2D {
+	return pc.tex
 }
 
 func (pc *ParticleComp) Play() {
@@ -43,6 +42,14 @@ func (pc *ParticleComp) Play() {
 
 func (pc *ParticleComp) Stop() {
 	pc.sim.Stop()
+}
+
+func (pc *ParticleComp) SetZOrder(z int16) {
+	pc.zOrder = z
+}
+
+func (pc *ParticleComp) Z() int16 {
+	return pc.zOrder
 }
 
 // component manager
@@ -185,6 +192,7 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 
 		ro := &renderObjs[i]
 		ro.Transform = xform
+		ro.depth = int32(comp.zOrder)
 		live, _ := comp.sim.Size()
 		vn, in := live * 4, live * 6
 
@@ -216,11 +224,12 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 		p := ro.Transform.Position()
 		mat.Set(0, 3, p[0])
 		mat.Set(1, 3, p[1])
-		mr.Draw(&ro.Mesh, &mat)
+		mr.Draw(&ro.Mesh, &mat, ro.depth)
 	}
 }
 
 type renderObject struct {
+	depth int32
 	gfx.Mesh
 	*gfx.Transform
 }

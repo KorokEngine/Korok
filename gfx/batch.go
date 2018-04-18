@@ -24,7 +24,7 @@ Batch 系统设计
  */
 type Batch struct {
 	TextureId uint16
-	padding   uint16 // not used
+	depth     int16
 
 	VertexId  uint16
 	IndexId   uint16

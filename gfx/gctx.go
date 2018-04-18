@@ -16,12 +16,13 @@ func Init(pixelRatio float32) {
 	bk.Reset(480, 320, pixelRatio)
 
 	// Enable debug text
-	bk.SetDebug(bk.DEBUG_R|bk.DEBUG_Q)
+	bk.SetDebug(bk.DebugResMan |bk.DebugQueue)
 }
 
-func Flush() {
-	bk.Flush()
+func Flush() (num int) {
+	num = bk.Flush()
 	Context.Step()
+	return
 }
 
 func Destroy() {
@@ -55,18 +56,25 @@ type context struct {
 
 // 一帧之后自动释放
 func (ctx *context) TempVertexBuffer(reqSize, stride int) (id uint16, size int, vb *bk.VertexBuffer){
+	var (
+		buffer tempBuffer
+		found bool
+	)
 	for i, tb := range ctx.temps {
 		if tb.use == 0 && tb.stride == stride && tb.size >= reqSize {
-			id, size, vb = tb.id, tb.size, tb.vb
 			ctx.temps[i].use = 1
-			return
+			buffer = tb;found = true; break
 		}
 	}
-
-	return ctx.newVertexBuffer(reqSize, stride)
+	if !found {
+		buffer = ctx.newVertexBuffer(reqSize, stride)
+		ctx.temps = append(ctx.temps, buffer)
+	}
+	id, size, vb = buffer.id, buffer.size, buffer.vb
+	return
 }
 
-func (ctx *context) newVertexBuffer(vertexSize,stride int) (id uint16, size int, vb *bk.VertexBuffer) {
+func (ctx *context) newVertexBuffer(vertexSize,stride int) tempBuffer {
 	{
 		vertexSize--
 		vertexSize |= vertexSize >> 1
@@ -76,13 +84,12 @@ func (ctx *context) newVertexBuffer(vertexSize,stride int) (id uint16, size int,
 		vertexSize |= vertexSize >> 16
 		vertexSize++
 	}
-	tb := &tempBuffer{size:vertexSize, stride: stride, use:1}
+	tb := tempBuffer{size:vertexSize, stride: stride, use:1}
 	if id, vb := bk.R.AllocVertexBuffer(bk.Memory{nil,uint32(vertexSize* stride)}, uint16(stride)); id != bk.InvalidId {
 		tb.id = id
 		tb.vb = vb
 	}
-	ctx.temps = append(ctx.temps, *tb)
-	return tb.id, tb.size, tb.vb
+	return tb
 }
 
 func (ctx *context) release() {

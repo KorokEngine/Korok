@@ -27,8 +27,8 @@ var screen struct{
 // dependents: bk-api
 
 var p2t2c4 = []bk.VertexComp{
-	{4, bk.ATTR_TYPE_FLOAT, 0, 0},
-	{4, bk.ATTR_TYPE_UINT8, 16, 1},
+	{4, bk.AttrFloat, 0, 0},
+	{4, bk.AttrUInt8, 16, 1},
 }
 
 type PosTexColorVertex struct {

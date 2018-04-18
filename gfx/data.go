@@ -15,10 +15,46 @@ type CompRef struct {
 	*SpriteComp
 }
 
+type zOrder struct {
+	value int16
+}
+
+func (zo *zOrder) SetZOrder(z int16) {
+	zo.value = z
+}
+
+func (zo *zOrder) Z() int16 {
+	return zo.value
+}
+
+type batchId struct {
+	value uint16
+}
+
+func (b *batchId) SetBatchId(id uint16) {
+	b.value = id
+}
+
+func (b *batchId) BatchId() uint16 {
+	return b.value
+}
+
+func packSortId(z int16, b uint16) (sid uint32) {
+	 sid = uint32(int32(z) + 0xFFFF>>1)
+	 sid = (sid << 16) + uint32(b)
+	 return
+}
+
+func unpackSortId(sortId uint32) (z int16, b uint16) {
+	b = uint16(sortId & 0xFFFF)
+	z = int16(int32(sortId>>16)-0xFFFF>>1)
+	return
+}
+
 // format <x,y,u,v rgba>
 var P4C4 = []bk.VertexComp{
-	{4, bk.ATTR_TYPE_FLOAT, 0, 0},
-	{4, bk.ATTR_TYPE_UINT8, 16, 1},
+	{4, bk.AttrFloat, 0, 0},
+	{4, bk.AttrUInt8, 16, 1},
 }
 
 // vertex struct

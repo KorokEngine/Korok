@@ -6,6 +6,7 @@ import (
 	"korok.io/korok/engi"
 
 	"unsafe"
+	"korok.io/korok/math"
 )
 
 /// MeshComp and MeshTable
@@ -32,6 +33,7 @@ type Mesh struct {
 type MeshComp struct {
 	engi.Entity
 	Mesh
+	zOrder
 }
 
 func (*Mesh) Type() int32{
@@ -215,26 +217,33 @@ func (srf *MeshRenderFeature) Register(rs *RenderSystem) {
 	rs.Accept(srf)
 }
 
-var mat4 = f32.Translate3D(300, 100, 0)
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (srf *MeshRenderFeature) Draw(filter []engi.Entity) {
 	xt, mt, n := srf.xt, srf.mt, srf.mt.index
 	mr := srf.R
+	mat4 := f32.Ident4()
 
 	for i := 0; i < n; i++ {
 		mesh := &mt.comps[i]
 		entity := mesh.Entity
-		xform  := xt.Comp(entity)
+		xf  := xt.Comp(entity)
+		srt := xf.world
 
-		// TODO transform!!
-		mat4.Set(0, 3, xform.world.Position[0])
-		mat4.Set(1, 3, xform.world.Position[1])
+		// construct matrix from scale/rotation/translate
+		c, s := math.Cos(srt.Rotation), math.Sin(srt.Rotation)
 
-		mr.Draw(&mesh.Mesh, &mat4)
+		mat4[0] = c*srt.Scale[0]
+		mat4[1] = s*srt.Scale[0]
+		mat4[4] = -s*srt.Scale[1]
+		mat4[5] = c*srt.Scale[1]
+		mat4[8] = srt.Position[0]
+		mat4[9] = srt.Position[1]
+
+		mat4[10] = 1
+		mat4[15] = 1
+
+		mr.Draw(&mesh.Mesh, &mat4, int32(mesh.zOrder.value))
 	}
 }
-
-
-
 
