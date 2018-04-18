@@ -205,7 +205,9 @@ func (lm *LayoutMan) BeginLayout(id g.ID, opt *Options, xtype LayoutType) {
 	lm.depth ++
 	if elem, ok := lm.current.BeginLayout(id, opt, xtype); ok {
 		// debug-draw
-		lm.DrawDebugBorder(elem.X, elem.Y, elem.W, elem.H, 0xFF00FF00)
+		if g.DebugDraw {
+			lm.DrawDebugBorder(elem.X, elem.Y, elem.W, elem.H, 0xFF00FF00)
+		}
 	}
 }
 

@@ -101,6 +101,8 @@ func DefaultContext() *Context {
 	return gContext
 }
 
+var DebugDraw = false
+
 var ThemeLight *Theme
 var ThemeDark  *Theme
 
@@ -111,6 +113,7 @@ var ThemeDark  *Theme
 // 如果用一个专门的系统，问题可以减轻很多
 
 var gContext *Context
+
 
 func init() {
 	// default theme
