@@ -65,26 +65,22 @@ func (ctx *RenderContext) AddClipRect(x, y, w, h uint16) uint16 {
 }
 
 func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList []RenderDraw) {
-	// 1. 绑定 VAO 和 FrameBuffer
+	// if vao support
 	if defaultVao := ctx.vao; 0 != defaultVao {
 		gl.BindVertexArray(defaultVao)
 	}
-	// gl.BindFramebuffer(gl.FRAMEBUFFER, ctx.backBufferFbo)
 
-	// 2. 更新分辨率
-	// ctx.updateResolution(&render.resolution)
+	// init per-draw state
+	var (
+		currentState = RenderDraw{}
+		shaderId     = InvalidId
+		key          = SortKey{}
+		primIndex    = uint8(uint64(0) >> ST.PT_SHIFT)
+		prim         = g_PrimInfo[primIndex]
+		stateBits    = ST.DEPTH_WRITE| ST.DEPTH_TEST_MASK| ST.RGB_WRITE| ST.ALPHA_WRITE| ST.BLEND_MASK| ST.PT_MASK
+	)
 
-	// 3. 初始化 per-draw state
-	currentState := RenderDraw{}
-
-	//
-	shaderId := InvalidId
-	key := SortKey{}
-	//
-	primIndex := uint8(uint64(0) >> ST.PT_SHIFT)
-	prim := g_PrimInfo[primIndex]
-
-	// 8. Render!!
+	// Let's Render!!
 	for item := range sortKeys {
 		encodedKey := sortKeys[item]
 		itemId := sortValues[item]
@@ -101,9 +97,8 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		changedStencil := currentState.stencil ^ draw.stencil
 		currentState.stencil = newStencil
 
-		// 2. Scissor?
-		scissor := draw.scissor
-		if currentState.scissor != scissor {
+		// 2. Scissor
+		if scissor := draw.scissor; currentState.scissor != scissor {
 			currentState.scissor = scissor
 			clip := ctx.clips[scissor]
 
@@ -115,44 +110,35 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 			}
 		}
 
-		// 3. stencil?
-		if 0 != changedStencil {
-			if 0 != newStencil {
-				if (g_debug & DEBUG_Q) != 0 {
+		// 3. stencil
+		if changedStencil != 0 {
+			if newStencil != 0 {
+				if (gDebug & DebugQueue) != 0 {
 					log.Println("Renderc disable stencil")
 				}
 				gl.Enable(gl.STENCIL_TEST)
-				//// stencil not supported!!!
 			} else {
 				gl.Disable(gl.STENCIL_TEST)
-				if (g_debug & DEBUG_Q) != 0 {
+				if (gDebug & DebugQueue) != 0 {
 					log.Println("Renderc enable stencil")
 				}
 			}
 		}
 
 		// 4. state binding
-		if 0 != (0|
-			ST.DEPTH_WRITE|
-			ST.DEPTH_TEST_MASK|
-			ST.RGB_WRITE|
-			ST.ALPHA_WRITE|
-			ST.BLEND_MASK|
-			ST.PT_MASK)&changedFlags {
-
+		if (stateBits&changedFlags) != 0 {
 			ctx.bindState(changedFlags, newFlags)
-
 			pt := newFlags & ST.PT_MASK
 			primIndex = uint8(pt >> ST.PT_SHIFT)
 			prim = g_PrimInfo[primIndex]
-		} /// End state change
+		}
 
 		var programChanged bool
 		//var bindAttribs bool
 		//var constantsChanged bool
 
-		/// 5. Update program
-		if key.Shader != shaderId { //TODO shader id err
+		// 5. Update program
+		if key.Shader != shaderId {
 			shaderId = key.Shader
 			var id = ctx.R.shaders[shaderId].GLShader.Program
 			gl.UseProgram(id)
@@ -162,12 +148,12 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 			//log.Println("bind program")
 		}
 
-		/// 6. uniform binding
+		// 6. uniform binding
 		if draw.uniformBegin < draw.uniformEnd {
 			ctx.bindUniform(uint32(draw.uniformBegin), uint32(draw.uniformEnd))
 		}
 
-		/// 7. texture binding 如果纹理的采样类型变化，也要重新绑定！！
+		// 7. texture binding 如果纹理的采样类型变化，也要重新绑定！！
 		for stage := 0; stage < 2; stage++ {
 			bind := draw.textures[stage]
 			current := currentState.textures[stage]
@@ -180,13 +166,17 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 			currentState.textures[stage] = bind
 		}
 
-		/// 8. vertex binding
+		// 8. index & vertex binding TODO 优化 attribute 绑定
 		shader := ctx.R.shaders[shaderId]
 		shader.BindAttributes(ctx.R, draw.vertexBuffers[:])
 
-		/// 9. draw
+		if ib := draw.indexBuffer; ib != InvalidId && ib != currentState.indexBuffer {
+			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.R.indexBuffers[ib].Id)
+			currentState.indexBuffer = ib
+		}
+
+		// 9. draw
 		if draw.indexBuffer != InvalidId {
-			gl.BindBuffer(gl.ELEMENT_ARRAY_BUFFER, ctx.R.indexBuffers[draw.indexBuffer].Id)
 			offset := int(draw.firstIndex) * 2 // 2 = sizeOf(unsigned_short)
 			gl.DrawElements(prim, int32(draw.num), gl.UNSIGNED_SHORT, offset)
 		} else {

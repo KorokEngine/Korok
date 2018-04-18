@@ -6,34 +6,34 @@ import "korok.io/korok/hid/gl"
 type AttrType uint8
 
 const (
-	ATTR_TYPE_INT8   AttrType = iota // byte
-	ATTR_TYPE_UINT8                  // uint8, unsigned byte
-	ATTR_TYPE_INT16                  // int16
-	ATTR_TYPE_UINT16                 // uint16
-	ATTR_TYPE_FIXED                  // fixed
-	ATTR_TYPE_FLOAT                  // float32
+	AttrInt8   AttrType = iota // byte
+	AttrUInt8                  // uint8, unsigned byte
+	AttrInt16                  // int16
+	AttrUInt16                 // uint16
+	AttrFixed                  // fixed
+	AttrFloat                  // float32
 
-	ATTR_TYPE_COUNT
+	AttrCount
 )
 
 // useful defines
 // <x,y, u,v, color>
 var P2T2C4 = []VertexComp{
-	{2, ATTR_TYPE_FLOAT, 0, 0},
-	{2, ATTR_TYPE_FLOAT, 8, 0},
-	{4, ATTR_TYPE_UINT8, 16, 1},
+	{2, AttrFloat, 0, 0},
+	{2, AttrFloat, 8, 0},
+	{4, AttrUInt8, 16, 1},
 }
 
 // <x,y, u,v>
 var P2T2 = []VertexComp{
-	{2, ATTR_TYPE_FLOAT, 0, 0},
-	{2, ATTR_TYPE_FLOAT, 8, 0},
+	{2, AttrFloat, 0, 0},
+	{2, AttrFloat, 8, 0},
 }
 
 // <x,y, color>
 var P2C4 = []VertexComp{
-	{2, ATTR_TYPE_FLOAT, 0, 0},
-	{4, ATTR_TYPE_UINT8, 8, 1},
+	{2, AttrFloat, 0, 0},
+	{4, AttrUInt8, 8, 1},
 }
 
 type VertexComp struct {

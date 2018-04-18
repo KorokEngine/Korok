@@ -27,7 +27,7 @@ type Shader struct {
 // 如果 AttrBinds 指定了一个 Stream，但是 Stream 并没有提供相应的数据(stride < Offset)
 // 此时应该 disable 当前 Attribute,
 func (sh *Shader) BindAttributes(R *ResManager, streams []Stream) {
-	var bindStream uint16 = UINT16_MAX
+	var bindStream uint16 = UInt16Max
 	var bindStride uint16
 	for i := uint32(0); i < sh.numAttr; i++ {
 		bind := sh.AttrBinds[i]
@@ -79,7 +79,7 @@ func (sh *Shader) AddAttributeBinding(attr string, stream uint32, comp VertexCom
 	if slot < 0 {
 		log.Printf("fail to bind attribute: %v, %s", comp, attr)
 	} else {
-		if (g_debug & DEBUG_R) != 0 {
+		if (gDebug & DebugResMan) != 0 {
 			log.Printf("bind attr: %d => %s", slot, attr)
 		}
 	}

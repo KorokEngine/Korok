@@ -124,7 +124,7 @@ func (rq *RenderQueue) SetState(state uint64, rgba uint32) {
 }
 
 func (rq *RenderQueue) SetIndexBuffer(id uint16, firstIndex, num uint16) {
-	rq.drawCall.indexBuffer = id & ID_MASK
+	rq.drawCall.indexBuffer = id & IdMask
 	rq.drawCall.firstIndex = firstIndex
 	rq.drawCall.num = num
 }
@@ -136,7 +136,7 @@ func (rq *RenderQueue) SetVertexBuffer(stream uint8, id uint16, firstVertex, num
 	}
 
 	vbStream := &rq.drawCall.vertexBuffers[stream]
-	vbStream.vertexBuffer = id & ID_MASK
+	vbStream.vertexBuffer = id & IdMask
 	vbStream.vertexFormat = InvalidId
 	vbStream.firstVertex = firstVertex
 	vbStream.numVertex = numVertex
@@ -148,7 +148,7 @@ func (rq *RenderQueue) SetTexture(stage uint8, samplerId uint16, texId uint16, f
 		return
 	}
 
-	rq.drawCall.textures[stage] = texId & ID_MASK
+	rq.drawCall.textures[stage] = texId & IdMask
 }
 
 // 复制简单数据的时候（比如：Sampler），采用赋值的方式可能更快 TODO
@@ -212,18 +212,17 @@ func (rq *RenderQueue) SetViewTransform(id uint8, view, proj *f32.Mat4, flags ui
 
 }
 
+// conversion: depth range [-int16, int16]
 func (rq *RenderQueue) Submit(id uint8, program uint16, depth int32) uint32 {
 	// uniform range
 	rq.uniformEnd = uint16(rq.ub.GetPos())
 
-//	log.Println("submit uniform end:", rq.uniformEnd)
-
 	// encode sort-key
 	sk := &rq.sk
 	sk.Layer = uint16(id)
-	sk.Order = uint16(depth)
+	sk.Order = uint16(depth+0xFFFF>>1)
 
-	sk.Shader = program & ID_MASK // trip type
+	sk.Shader = program & IdMask // trip type
 	sk.Blend = 0
 	sk.Texture = rq.drawCall.textures[0]
 
@@ -246,7 +245,7 @@ func (rq *RenderQueue) Submit(id uint8, program uint16, depth int32) uint32 {
 }
 
 /// 执行最终的绘制
-func (rq *RenderQueue) Flush() uint32 {
+func (rq *RenderQueue) Flush() int {
 	num := rq.drawCallNum
 
 	var (
@@ -268,7 +267,7 @@ func (rq *RenderQueue) Flush() uint32 {
 	rq.ub.Reset()
 	rq.ctx.Reset()
 
-	return uint32(num)
+	return int(num)
 }
 
 // For 2D games, batch-system will reduce draw-call obviously,

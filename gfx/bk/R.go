@@ -13,11 +13,11 @@ import (
 /// Id从1开始，0作为Invalid-Id比0xFFFF有很多天然的好处
 
 const InvalidId uint16 = 0x0000
-const UINT16_MAX uint16 = 0xFFFF
+const UInt16Max uint16 = 0xFFFF
 
 const (
-	ID_MASK       uint16 = 0x0FFF
-	ID_TYPE_SHIFT        = 12
+	IdMask      uint16 = 0x0FFF
+	IdTypeShift        = 12
 )
 
 type Memory struct {
@@ -30,22 +30,21 @@ type Memory struct {
 //    ^    ^
 //    |    +---- id value
 //    +--------- id type
-
 const (
-	ID_TYPE_INDEX uint16 = iota
-	ID_TYPE_VERTEX
-	ID_TYPE_TEXTURE
-	ID_TYPE_LAYOUT
-	ID_TYPE_UNIFORM
-	ID_TYPE_SHADER
+	IdTypeIndex   uint16 = iota
+	IdTypeVertex
+	IdTypeTexture
+	IdTypeLayout
+	IdTypeUniform
+	IdTypeShader
 )
 
 const (
-	MAX_INDEX   = 2 << 10
-	MAX_VERTEX  = 2 << 10
-	MAX_TEXTURE = 1 << 10
-	MAX_UNIFORM = 32 * 8
-	MAX_SHADER  = 32
+	MaxIndex   = 2 << 10
+	MaxVertex  = 2 << 10
+	MaxTexture = 1 << 10
+	MaxUniform = 32 * 8
+	MaxShader  = 32
 )
 
 type FreeList struct {
@@ -66,12 +65,12 @@ func (fl *FreeList) Push(slot uint16) {
 }
 
 type ResManager struct {
-	indexBuffers  [MAX_INDEX]IndexBuffer
-	vertexBuffers [MAX_VERTEX]VertexBuffer
-	textures      [MAX_TEXTURE]Texture2D
+	indexBuffers  [MaxIndex]IndexBuffer
+	vertexBuffers [MaxVertex]VertexBuffer
+	textures      [MaxTexture]Texture2D
 
-	uniforms [MAX_UNIFORM]Uniform
-	shaders  [MAX_SHADER]Shader
+	uniforms [MaxUniform]Uniform
+	shaders  [MaxShader]Shader
 
 	ibIndex uint16
 	vbIndex uint16
@@ -117,13 +116,13 @@ func (rm *ResManager) AllocIndexBuffer(mem Memory) (id uint16, ib *IndexBuffer) 
 		id, ib = rm.ibIndex, &rm.indexBuffers[rm.ibIndex]
 		rm.ibIndex++
 	}
-	id = id | (ID_TYPE_INDEX << ID_TYPE_SHIFT)
+	id = id | (IdTypeIndex << IdTypeShift)
 
 	if err := ib.Create(mem.Size, mem.Data, 0); err != nil {
 		log.Println("fail to alloc index-buffer, ", err)
 	} else {
-		if g_debug&DEBUG_R != 0 {
-			log.Printf("alloc index-buffer: (%d, %d)", id&ID_MASK, ib.Id)
+		if gDebug&DebugResMan != 0 {
+			log.Printf("alloc index-buffer: (%d, %d)", id&IdMask, ib.Id)
 		}
 	}
 	return
@@ -138,12 +137,12 @@ func (rm *ResManager) AllocVertexBuffer(mem Memory, stride uint16) (id uint16, v
 		id, vb = rm.vbIndex, &rm.vertexBuffers[rm.vbIndex]
 		rm.vbIndex++
 	}
-	id = id | (ID_TYPE_VERTEX << ID_TYPE_SHIFT)
+	id = id | (IdTypeVertex << IdTypeShift)
 	if err := vb.Create(mem.Size, mem.Data, stride, 0); err != nil {
 		log.Println("fail to alloc vertex-buffer, ", err)
 	} else {
-		if  g_debug&DEBUG_R != 0 {
-			log.Printf("alloc vertex-buffer: (%d, %d)", id&ID_MASK, vb.Id)
+		if  gDebug&DebugResMan != 0 {
+			log.Printf("alloc vertex-buffer: (%d, %d)", id&IdMask, vb.Id)
 		}
 	}
 	return
@@ -158,13 +157,13 @@ func (rm *ResManager) AllocUniform(shId uint16, name string, xType UniformType, 
 		id, um = rm.umIndex, &rm.uniforms[rm.umIndex]
 		rm.umIndex++
 	}
-	id = id | (ID_TYPE_UNIFORM << ID_TYPE_SHIFT)
+	id = id | (IdTypeUniform << IdTypeShift)
 	if ok, sh := rm.Shader(shId); ok {
 		if um.create(sh.Program, name, xType, num) < 0 {
-			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId&ID_MASK)
+			log.Printf("fail to alloc uniform - %s, make sure shader %d in use", name, shId&IdMask)
 		} else {
-			if (g_debug & DEBUG_R) != 0 {
-				log.Printf("alloc uniform: (%d, %d) => %s", id&ID_MASK, um.Slot, name)
+			if (gDebug & DebugResMan) != 0 {
+				log.Printf("alloc uniform: (%d, %d) => %s", id&IdMask, um.Slot, name)
 			}
 		}
 	}
@@ -180,12 +179,12 @@ func (rm *ResManager) AllocTexture(img image.Image) (id uint16, tex *Texture2D) 
 		id, tex = rm.ttIndex, &rm.textures[rm.ttIndex]
 		rm.ttIndex ++
 	}
-	id = id | (ID_TYPE_TEXTURE << ID_TYPE_SHIFT)
+	id = id | (IdTypeTexture << IdTypeShift)
 	if err := tex.Create(img); err != nil {
 		log.Printf("fail to alloc texture, %s", err)
 	} else {
-		if (g_debug & DEBUG_R) != 0 {
-			log.Printf("alloc texture id: (%d, %d)", id&ID_MASK, tex.Id)
+		if (gDebug & DebugResMan) != 0 {
+			log.Printf("alloc texture id: (%d, %d)", id&IdMask, tex.Id)
 		}
 	}
 	return
@@ -200,13 +199,13 @@ func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 		id, sh = rm.shIndex, &rm.shaders[rm.shIndex]
 		rm.shIndex++
 	}
-	id = id | (ID_TYPE_SHADER << ID_TYPE_SHIFT)
+	id = id | (IdTypeShader << IdTypeShift)
 
 	if err := sh.Create(vsh, fsh); err != nil {
 		log.Println("fail to alloc shader, ", err)
 	} else {
-		if (g_debug & DEBUG_R) != 0 {
-			log.Printf("alloc shader id:(%d, %d) ", id&ID_MASK, sh.Program)
+		if (gDebug & DebugResMan) != 0 {
+			log.Printf("alloc shader id:(%d, %d) ", id&IdMask, sh.Program)
 		}
 	}
 	return
@@ -215,24 +214,24 @@ func (rm *ResManager) AllocShader(vsh, fsh string) (id uint16, sh *Shader) {
 // Free free all resource managed by R. Including index-buffer, vertex-buffer,
 // texture, uniform and shader program.
 func (rm *ResManager) Free(id uint16) {
-	t := (id >> ID_TYPE_SHIFT) & 0x000F
-	v := id & ID_MASK
+	t := (id >> IdTypeShift) & 0x000F
+	v := id & IdMask
 
 	switch t {
-	case ID_TYPE_INDEX:
+	case IdTypeIndex:
 		rm.indexBuffers[v].Destroy()
 		rm.ibFrees.Push(v)
-	case ID_TYPE_VERTEX:
+	case IdTypeVertex:
 		rm.vertexBuffers[v].Destroy()
 		rm.vbFrees.Push(v)
-	case ID_TYPE_TEXTURE:
+	case IdTypeTexture:
 		rm.textures[v].Destroy()
 		rm.ttFrees.Push(v)
-	case ID_TYPE_LAYOUT:
+	case IdTypeLayout:
 		// todo
-	case ID_TYPE_UNIFORM:
+	case IdTypeUniform:
 		rm.umFrees.Push(v)
-	case ID_TYPE_SHADER:
+	case IdTypeShader:
 		rm.shaders[v].Destroy()
 		rm.shFrees.Push(v)
 	}
@@ -240,8 +239,8 @@ func (rm *ResManager) Free(id uint16) {
 
 // IndexBuffer returns the low-level IndexBuffer struct.
 func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
-	if t != ID_TYPE_INDEX || v >= MAX_INDEX {
+	t, v := id>>IdTypeShift, id&IdMask
+	if t != IdTypeIndex || v >= MaxIndex {
 		return false, nil
 	}
 	return true, &rm.indexBuffers[v]
@@ -249,8 +248,8 @@ func (rm *ResManager) IndexBuffer(id uint16) (ok bool, ib *IndexBuffer) {
 
 // VertexBuffer returns the low-level VertexBuffer struct.
 func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
-	if t != ID_TYPE_VERTEX || v >= MAX_VERTEX {
+	t, v := id>>IdTypeShift, id&IdMask
+	if t != IdTypeVertex || v >= MaxVertex {
 		return false, nil
 	}
 	return true, &rm.vertexBuffers[v]
@@ -258,8 +257,8 @@ func (rm *ResManager) VertexBuffer(id uint16) (ok bool, vb *VertexBuffer) {
 
 // Texture returns the low-level Texture struct.
 func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
-	t, v := id >>ID_TYPE_SHIFT, id&ID_MASK
-	if t != ID_TYPE_TEXTURE || v >= MAX_TEXTURE {
+	t, v := id >>IdTypeShift, id&IdMask
+	if t != IdTypeTexture || v >= MaxTexture {
 		return false, nil
 	}
 	return true, &rm.textures[v]
@@ -267,8 +266,8 @@ func (rm *ResManager) Texture(id uint16) (ok bool, tex *Texture2D) {
 
 // Uniform returns the low-level Uniform struct.
 func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
-	if t != ID_TYPE_UNIFORM || v >= MAX_UNIFORM {
+	t, v := id>>IdTypeShift, id&IdMask
+	if t != IdTypeUniform || v >= MaxUniform {
 		return false, nil
 	}
 	return true, &rm.uniforms[v]
@@ -276,9 +275,9 @@ func (rm *ResManager) Uniform(id uint16) (ok bool, um *Uniform) {
 
 // Shader returns the low-level Shader struct.
 func (rm *ResManager) Shader(id uint16) (ok bool, sh *Shader) {
-	t, v := id>>ID_TYPE_SHIFT, id&ID_MASK
-	if t != ID_TYPE_SHADER || v >= MAX_SHADER {
-		if (g_debug & DEBUG_R) != 0 {
+	t, v := id>>IdTypeShift, id&IdMask
+	if t != IdTypeShader || v >= MaxShader {
+		if (gDebug & DebugResMan) != 0 {
 			log.Printf("Invalid shader id:(%d, %d, %d)", id, t, v)
 		}
 		return false, nil
