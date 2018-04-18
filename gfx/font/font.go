@@ -33,6 +33,10 @@ type Font interface {
 	SizeOf(text string, fontSize float32) f32.Vec2
 }
 
+type Disposer interface {
+	Dispose()
+}
+
 // A fontAtlas allows rendering ofg text to an OpenGL context
 type fontAtlas struct {
 	id uint16
@@ -74,7 +78,7 @@ func (f *fontAtlas) SizeOf(text string, fontSize float32) f32.Vec2 {
 }
 
 // Release release fontAtlas resources.
-func (f *fontAtlas) Release() {
+func (f *fontAtlas) Dispose() {
 	bk.R.Free(f.id)
 }
 

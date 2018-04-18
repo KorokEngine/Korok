@@ -32,7 +32,7 @@ var Font *FontManager
 var PSConfig *ParticleConfigManager
 
 func init() {
-	Shader = NewShaderManager()
+	Shader = &ShaderManager{}
 	Texture = NewTextureManager()
 	Font = NewFontManager()
 	PSConfig = NewParticleConfigManager()

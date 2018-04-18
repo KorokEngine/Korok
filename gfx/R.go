@@ -134,6 +134,8 @@ func (at *Atlas) AddItem(x, y, w, h float32, name string) {
 }
 
 func (at *Atlas) GetByName(name string) (tex SubTex, ok bool) {
+	if at != nil {
+	}
 	for i := range at.names {
 		if at.names[i] == name {
 			ok = true
@@ -199,6 +201,7 @@ func (tm *TexManager) Delete(name string) {
 	if ii, ok := tm.names[name]; ok {
 		tm.atlases[ii].release()
 		tm.frees = append(tm.frees, uint16(ii))
+		delete(tm.names, name)
 	}
 }
 

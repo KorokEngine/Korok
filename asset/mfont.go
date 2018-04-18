@@ -5,6 +5,7 @@ import (
 	"golang.org/x/mobile/asset"
 
 	"fmt"
+	"log"
 )
 
 type FontManager struct {
@@ -77,16 +78,19 @@ func (fm *FontManager) Unload(name string) {
 		if v.cnt > 1 {
 			fm.repo[name] = refCount{v.ref, v.cnt-1}
 		} else {
+			ref := fm.repo[name].ref
 			delete(fm.repo, name)
-			// todo release font resource
-			// v.ref.().Release()
+			fnt := ref.(font.Disposer)
+			fnt.Dispose()
+
+			log.Println("dispose font:", name)
 		}
 	}
 }
 
-func (fm *FontManager) GetFont(name string) (fnt font.Font) {
+func (fm *FontManager) GetFont(name string) (fnt font.Font, ok  bool) {
 	if v, ok := fm.repo[name]; ok {
-		fnt = v.ref.(font.Font)
+		fnt, ok = v.ref.(font.Font)
 	}
 	return
 }

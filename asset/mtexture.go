@@ -30,6 +30,7 @@ func (tm *TextureManager) Load(file string) {
 	var rid, cnt uint16
 	if v, ok := tm.repo[file]; ok {
 		cnt = v.cnt
+		rid = v.rid
 	} else {
 		// create bk.Texture2D
 		id, err := tm.loadTexture(file)
@@ -38,45 +39,77 @@ func (tm *TextureManager) Load(file string) {
 		}
 		rid = id
 	}
-	tm.repo[file] = idCount{rid, cnt}
+	tm.repo[file] = idCount{rid, cnt+1}
+}
+
+// Unload delete raw Texture and any related SubTextures.
+func (tm *TextureManager) Unload(file string) {
+	if v, ok := tm.repo[file]; ok {
+		if v.cnt > 1 {
+			tm.repo[file] = idCount{v.rid, v.cnt -1}
+		} else {
+			delete(tm.repo, file)
+			bk.R.Free(v.rid)
+			// maybe it's a atlas, try to delete
+			gfx.R.Delete(file)
+
+			log.Println("refCont == 0, delete resoruce!!")
+		}
+	}
 }
 
 // LoadAtlas loads the atlas with a description file.
 // The SubTexture can be found by SubTexture's name.
-func (tm *TextureManager) LoadAtlas(img, desc string) {
-	id, data, err := tm.loadAtlas(img, desc)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	size := len(data.Frames)
+func (tm *TextureManager) LoadAtlas(file, desc string) {
+	var rid, cnt uint16
+	if v, ok := tm.repo[file]; ok {
+		cnt = v.cnt
+		rid = v.rid
+	} else {
+		id, data, err := tm.loadAtlas(file, desc)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+		size := len(data.Frames)
 
-	// new atlas
-	at := gfx.R.NewAtlas(id, size, img)
+		// new atlas
+		at := gfx.R.NewAtlas(id, size, file)
 
-	// fill
-	for _, f := range data.Frames {
-		at.AddItem(float32(f.Frame.X), float32(f.Frame.Y), float32(f.Frame.W), float32(f.Frame.H), f.Filename)
+		// fill
+		for _, f := range data.Frames {
+			at.AddItem(float32(f.Frame.X), float32(f.Frame.Y), float32(f.Frame.W), float32(f.Frame.H), f.Filename)
+		}
+		rid = id
 	}
+	tm.repo[file] = idCount{rid, cnt+1}
 }
+
 
 // LoadAtlasIndexed loads the atlas with specified with/height/num.
 func (tm *TextureManager) LoadAtlasIndexed(file string, width, height float32, row, col int) {
-	id, err := tm.loadTexture(file)
-	if err != nil {
-		log.Println(err)
-	}
-	size := row * col
+	var rid, cnt uint16
+	if v, ok := tm.repo[file]; ok {
+		cnt = v.cnt
+		rid = v.rid
+	} else {
+		id, err := tm.loadTexture(file)
+		if err != nil {
+			log.Println(err)
+		}
+		size := row * col
 
-	// new atlas
-	at := gfx.R.NewAtlas(id, size, file)
+		// new atlas
+		at := gfx.R.NewAtlas(id, size, file)
 
-	// fill
-	for i := 0; i < row; i ++ {
-		for j := 0; j < col; j ++ {
-			at.AddItem(float32(j)*width, float32(i)*height, width, height, "")
+		// fill
+		for i := 0; i < row; i ++ {
+			for j := 0; j < col; j ++ {
+				at.AddItem(float32(j)*width, float32(i)*height, width, height, "")
+			}
 		}
 	}
+	tm.repo[file] = idCount{rid, cnt+1}
 }
 
 // Get returns the low-level Texture.
@@ -95,23 +128,15 @@ func (tm *TextureManager) GetRaw(file string) (uint16, *bk.Texture2D)  {
 	return bk.InvalidId, nil
 }
 
-
 // Atlas returns the Atlas.
-func (tm *TextureManager) Atlas(file string) *gfx.Atlas {
-	return gfx.R.Atlas(file)
+func (tm *TextureManager) Atlas(file string) (at *gfx.Atlas, ok bool) {
+	if _, ok := tm.repo[file]; ok {
+		at = gfx.R.Atlas(file)
+		ok = at != nil
+	}
+	return
 }
 
-// Unload delete raw Texture and any related SubTextures.
-func (tm *TextureManager) Unload(file string) {
-	if v, ok := tm.repo[file]; ok {
-		if v.cnt > 1 {
-			tm.repo[file] = idCount{v.rid, v.cnt -1}
-		} else {
-			delete(tm.repo, file)
-			bk.R.Free(v.rid)
-		}
-	}
-}
 
 func (tm *TextureManager) loadTexture(file string)(uint16, error)  {
 	log.Println("load file:" + file)
