@@ -89,12 +89,12 @@ func (br *BatchRender) submit(bList []Batch) {
 		bk.SetIndexBuffer(b.IndexId, uint32(b.firstIndex), uint32(b.numIndex))
 
 		// submit draw-call
-		bk.Submit(0, br.program, 0)
+		bk.Submit(0, br.program, int32(b.depth))
 	}
 }
 
-func (br *BatchRender) Begin(tex uint16) {
-	br.BatchContext.begin(tex)
+func (br *BatchRender) Begin(tex uint16, depth int16) {
+	br.BatchContext.begin(tex, depth)
 }
 
 func (br *BatchRender) Draw(b BatchObject) {
@@ -128,56 +128,34 @@ func (br *BatchRender) Flush() (num int) {
 
 // ~ 640k per-batch, 32k vertex, 8k quad
 const MAX_BATCH_QUAD_SIZE   = uint32(8<<10)
-const MAX_BATCH_INDEX_SIZE  = 6 * MAX_BATCH_QUAD_SIZE
 const MAX_BATCH_VERTEX_SIZE = 4 * MAX_BATCH_QUAD_SIZE
 
 // 管理一或多个Batch实例
 // 最多可以生成 128 个 Batch 分组
 // 最多可以使用 8 个 VBO 缓存
 type BatchContext struct {
-	// shared index
-	ib *bk.IndexBuffer
-	indexId   uint16
-	index   []uint16
-
 	vertex []PosTexColorVertex
 	vertexPos uint32
 	firstVertex uint32
 
-	//
-	vb *bk.VertexBuffer
-	vertexId uint16
-
 	// state
 	batchUsed int
 	texId     uint16
+	depth     int16
 
 	// batch-list
 	BatchList [128]Batch
 }
 
 func (bc *BatchContext)init() {
-	// init shared index
-	bc.index = make([]uint16, MAX_BATCH_INDEX_SIZE)
-	iFormat := [6]uint16 {3, 0, 1, 3, 1, 2}
-	for i := uint32(0); i < MAX_BATCH_INDEX_SIZE; i += 6 {
-		copy(bc.index[i:], iFormat[:])
-		iFormat[0] += 4
-		iFormat[1] += 4
-		iFormat[2] += 4
-		iFormat[3] += 4
-		iFormat[4] += 4
-		iFormat[5] += 4
-	}
-	bc.indexId ,bc.ib = bk.R.AllocIndexBuffer(bk.Memory{unsafe.Pointer(&bc.index[0]), MAX_BATCH_INDEX_SIZE * 2})
-
 	// init shared vertex
 	bc.vertex = make([]PosTexColorVertex, MAX_BATCH_VERTEX_SIZE)
 	bc.batchUsed = 0
 }
 
-func (bc *BatchContext) begin(tex uint16) {
+func (bc *BatchContext) begin(tex uint16, depth int16) {
 	bc.texId = tex
+	bc.depth = depth
 	bc.firstVertex = bc.vertexPos
 }
 
@@ -212,12 +190,11 @@ func (bc *BatchContext) end() {
 
 	batch := &bc.BatchList[bc.batchUsed]
 	batch.TextureId = bc.texId
+	batch.depth = bc.depth
 
-	batch.VertexId = bc.vertexId
+	batch.VertexId = bk.InvalidId
 	batch.firstVertex = uint16(bc.firstVertex)
 	batch.numVertex = uint16(bc.vertexPos-bc.firstVertex)
-
-	batch.IndexId = bc.indexId
 	batch.firstIndex = uint16(batch.firstVertex/4 * 6)
 	batch.numIndex = uint16(batch.numVertex/4 * 6)
 
@@ -239,10 +216,19 @@ func (bc *BatchContext) flushBuffer() {
 		reqSize = int(bc.vertexPos)
 		stride = 20
 	)
-	id, _, vb := Context.TempVertexBuffer(reqSize, stride)
-	vb.Update(0, bc.vertexPos * 20, unsafe.Pointer(&bc.vertex[0]), false)
 
-	bc.vertexId = id
-	bc.vb = vb
+	iid, _ := Context.SharedIndexBuffer()
+	vid, _, vb := Context.TempVertexBuffer(reqSize, stride)
+
+	// flush vertex-buffer
+	vb.Update(0, bc.vertexPos * uint32(stride), unsafe.Pointer(&bc.vertex[0]), false)
+
+	// backward rewrite vertex-buffer id
+	for i := bc.batchUsed; i >= 0; i-- {
+		if b := &bc.BatchList[i]; b.VertexId == bk.InvalidId {
+			b.VertexId = vid
+			b.IndexId  = iid
+		}
+	}
 }
 
