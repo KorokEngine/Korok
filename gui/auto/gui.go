@@ -25,21 +25,21 @@ const (
 // Options: margin
 func Margin(top, left, right, bottom float32) *Options {
 	opt := &gLayoutMan.Options
-	opt.SetMargin(top, left, right, bottom)
+	opt.Margin(top, left, right, bottom)
 	return opt
 }
 
 // Options: gravity
 func Gravity(x, y float32) *Options {
 	opt := &gLayoutMan.Options
-	opt.SetGravity(x, y)
+	opt.Gravity(x, y)
 	return opt
 }
 
 // Options: Size
 func Size(w, h float32) *Options {
 	opt := &gLayoutMan.Options
-	opt.SetSize(w, h)
+	opt.Size(w, h)
 	return opt
 }
 
@@ -112,13 +112,27 @@ func Clear(names ...string) {
 }
 
 func Layout(id gui.ID, gui func(g *Group), w, h float32, xt LayoutType) {
-	gLayoutMan.BeginLayout(id, xt)
+	gLayoutMan.BeginLayout(id, nil, xt)
 	if w != 0 || h != 0 {
 		gLayoutMan.current.SetSize(w, h)
 	}
 	gui(gLayoutMan.current.hGroup)
 	gLayoutMan.EndLayout()
 }
+
+func LayoutX(id gui.ID, gui func(g *Group), opt *Options, xt LayoutType) {
+	gLayoutMan.BeginLayout(id, opt, xt)
+	if opt != nil {
+		if w, h := opt.W, opt.H; w != 0 || h != 0 {
+			gLayoutMan.current.SetSize(w, h)
+		}
+		gLayoutMan.current.SetGravity(opt.gravity.X, opt.gravity.Y)
+
+	}
+	gui(gLayoutMan.current.hGroup)
+	gLayoutMan.EndLayout()
+}
+
 
 var gLayoutMan *LayoutMan
 var gContext *gui.Context

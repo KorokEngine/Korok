@@ -48,28 +48,28 @@ const (
 type Options struct {
 	gui.Rect
 	margin
-	Gravity gravity
+	gravity
 	Flag    DirtyFlag // dirty flag
 }
 
 // set flag
-func (p *Options) SetMargin(top, left, right, bottom float32) *Options {
+func (p *Options) Margin(top, left, right, bottom float32) *Options {
 	p.Flag |= FlagMargin
 	p.margin = margin{top, left, bottom, right}
 	return p
 }
 
-func (p *Options) SetSize(w, h float32) *Options {
+func (p *Options) Size(w, h float32) *Options {
 	p.Flag |= FlagSize
 	p.Rect.W = w
 	p.Rect.H = h
 	return p
 }
 
-func (p *Options) SetGravity(x, y float32) *Options {
+func (p *Options) Gravity(x, y float32) *Options {
 	p.Flag |= FlagGravity
-	p.Gravity.X = x
-	p.Gravity.Y = y
+	p.gravity.X = x
+	p.gravity.Y = y
 	return p
 }
 
@@ -178,9 +178,9 @@ func (lyt *layout) SetPadding(top, left, right, bottom float32) *layout {
 	return lyt
 }
 
-func (lyt *layout) BeginLayout(id gui.ID, xtype LayoutType) (elem *Element, ok bool) {
+func (lyt *layout) BeginLayout(id gui.ID, opt *Options, xtype LayoutType) (elem *Element, ok bool) {
 	// layout element
-	elem, ok = lyt.BeginElement(id, nil)
+	elem, ok = lyt.BeginElement(id, opt)
 
 	// do layout
 	ii := len(lyt.groupStack)
@@ -260,13 +260,17 @@ func (lyt *layout) BeginElement(id gui.ID, opt *Options) (elem *Element, ok bool
 
 			// 计算大小
 			if opt.Flag & FlagSize != 0 {
-				elem.Rect.W = opt.W
-				elem.Rect.H = opt.H
+				if opt.W > 0 {
+					elem.Rect.W = opt.W
+				}
+				if opt.H > 0 {
+					elem.Rect.H = opt.H
+				}
 			}
 
 			// Overlap group's gravity
 			if opt.Flag & FlagGravity != 0 {
-				gravity = opt.Gravity
+				gravity = opt.gravity
 			}
 
 			// Clear flag
