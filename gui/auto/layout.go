@@ -169,9 +169,7 @@ func (lyt *layout) SetGravity(x, y float32) *layout {
 }
 
 func (lyt *layout) SetSize(w, h float32) *layout {
-	lyt.hGroup.Rect.W = w
-	lyt.hGroup.Rect.H = h
-	lyt.hGroup.hasSize = true
+	lyt.hGroup.SetSize(w, h)
 	return lyt
 }
 
@@ -204,17 +202,20 @@ func (lyt *layout) BeginLayout(id gui.ID, xtype LayoutType) (elem *Element, ok b
 
 // PopLayout, resume parent's state
 func (lyt *layout) EndLayout() {
-	// 1. Set size if not set explicitly, end spacing
-	size := lyt.hGroup.Size
-	size.W += lyt.spacing
-	size.H += lyt.spacing
-
-	if !lyt.hGroup.hasSize || lyt.hGroup.W == 0 {
-		lyt.hGroup.W = size.W
+	// 1. Set size with external spacing
+	v := lyt.hGroup
+	if v.fixedWidth > 0 {
+		v.W = v.fixedWidth
+	} else {
+		v.W = v.Size.W
 	}
-	if !lyt.hGroup.hasSize || lyt.hGroup.H == 0 {
-		lyt.hGroup.H = size.H
+	if v.fixedHeight > 0 {
+		v.H = v.fixedHeight
+	} else {
+		v.H = v.Size.H
 	}
+	v.W += lyt.spacing
+	v.H += lyt.spacing
 
 	// 2. return to parent
 	if size := len(lyt.groupStack); size > 1 {
@@ -225,8 +226,8 @@ func (lyt *layout) EndLayout() {
 	g := lyt.hGroup
 	lyt.Cursor.X, lyt.Cursor.Y = g.Cursor.X, g.Cursor.Y
 
-	// 3. end layout, remove default spacing
-	elem := &Element{Rect:gui.Rect{0, 0, size.W, size.H}}
+	// 3. end layout
+	elem := &Element{Rect:gui.Rect{0, 0, v.W, v.H}}
 	lyt.EndElement(elem)
 }
 
@@ -358,7 +359,8 @@ type Group struct {
 	Gravity struct{X, Y float32}
 
 	// true if group has a predefined size
-	hasSize bool
+	fixedWidth float32
+	fixedHeight float32
 }
 
 func (g *Group) SetGravity(x, y float32) {
@@ -371,7 +373,6 @@ func (g *Group) SetPadding(top, left, right, bottom float32) {
 }
 
 func (g *Group) SetSize(w, h float32) {
-	g.Rect.W = w
-	g.Rect.H = h
-	g.hasSize = true
+	g.fixedWidth = w
+	g.fixedHeight = h
 }

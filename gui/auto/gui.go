@@ -113,7 +113,7 @@ func Clear(names ...string) {
 
 func Layout(id gui.ID, gui func(g *Group), w, h float32, xt LayoutType) {
 	gLayoutMan.BeginLayout(id, xt)
-	if w != 0 {
+	if w != 0 || h != 0 {
 		gLayoutMan.current.SetSize(w, h)
 	}
 	gui(gLayoutMan.current.hGroup)
