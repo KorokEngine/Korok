@@ -114,9 +114,9 @@ func Clear(names ...string) {
 func Layout(id gui.ID, gui func(g *Group), w, h float32, xt LayoutType) {
 	gLayoutMan.BeginLayout(id, xt)
 	if w != 0 {
-		gLayoutMan.fallback.SetSize(w, h)
+		gLayoutMan.current.SetSize(w, h)
 	}
-	gui(gLayoutMan.fallback.hGroup)
+	gui(gLayoutMan.current.hGroup)
 	gLayoutMan.EndLayout()
 }
 
