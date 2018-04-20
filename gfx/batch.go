@@ -40,3 +40,8 @@ type BatchObject interface {
 	Fill(vertex []PosTexColorVertex)
 	Size() int
 }
+
+type sortObject struct {
+	sortId uint32
+	value int
+}

@@ -209,15 +209,13 @@ func (srf *SpriteRenderFeature) Register(rs *RenderSystem) {
 // BatchRender 需要的是一组排过序的渲染对象！！！
 func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 	xt, st, n := srf.xt, srf.st, srf.st.index
-	bList := make([]spriteBatchObject, n)
+	bList := make([]sortObject, n)
 
 	// get batch list
 	for i := 0; i < n; i++ {
 		sprite := &st.comps[i]
-		entity := sprite.Entity
-		xf := xt.Comp(entity)
 		sortId := packSortId(sprite.zOrder.value, sprite.batchId.value)
-		bList[i] = spriteBatchObject{sortId,sprite,xf}
+		bList[i] = sortObject{sortId,i}
 	}
 
 	// sort
@@ -232,18 +230,22 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 	)
 
 	// batch draw!
+	var spriteBatchObject = spriteBatchObject{}
 	for _, b := range bList{
+		ii := b.value
 		if sid := b.sortId; sortId != sid {
 			if begin {
 				render.End()
 			}
 			sortId = sid
 			begin = true
-			tex2d := b.SpriteComp.Sprite.Tex()
+			tex2d := st.comps[ii].Sprite.Tex()
 			depth, _ := unpackSortId(b.sortId)
 			render.Begin(tex2d, depth)
 		}
-		render.Draw(b)
+		spriteBatchObject.SpriteComp = &st.comps[ii]
+		spriteBatchObject.Transform = xt.Comp(st.comps[ii].Entity)
+		render.Draw(spriteBatchObject)
 	}
 	if begin {
 		render.End()
@@ -252,7 +254,6 @@ func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
 }
 
 type spriteBatchObject struct {
-	sortId uint32
 	*SpriteComp
 	*Transform
 }

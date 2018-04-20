@@ -249,15 +249,13 @@ func (trf *TextRenderFeature) Register(rs *RenderSystem) {
 
 func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 	xt, tt, n := trf.xt, trf.tt, trf.tt.index
-	bList := make([]textBatchObject, n)
+	bList := make([]sortObject, n)
 
 	// get batch list
 	for i := 0; i < n; i++ {
 		text := &tt.comps[i]
-		entity := text.Entity
-		xform  := xt.Comp(entity)
 		sortId := packSortId(text.zOrder.value, text.batchId.value)
-		bList[i] = textBatchObject{sortId, text, xform}
+		bList[i] = sortObject{sortId, i}
 	}
 
 	// sort
@@ -272,18 +270,22 @@ func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 	)
 
 	// batch draw!
+	var textBatchObject = textBatchObject{}
 	for _, b := range bList{
+		ii := b.value
 		if sid := b.sortId; sortId != sid {
 			if begin {
 				render.End()
 			}
 			sortId = sid
 			begin = true
-			tex2d, _ := b.TextComp.font.Tex2D()
+			tex2d, _ := tt.comps[ii].font.Tex2D()
 			depth, _ := unpackSortId(b.sortId)
 			render.Begin(tex2d, depth)
 		}
-		render.Draw(b)
+		textBatchObject.TextComp = &tt.comps[ii]
+		textBatchObject.Transform = xt.Comp(tt.comps[ii].Entity)
+		render.Draw(textBatchObject)
 	}
 	if begin {
 		render.End()
@@ -292,7 +294,6 @@ func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
 }
 
 type textBatchObject struct {
-	sortId uint32
 	*TextComp
 	*Transform
 }
