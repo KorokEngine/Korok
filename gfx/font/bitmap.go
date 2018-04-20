@@ -43,11 +43,11 @@ func LoadBitmap(img, config io.Reader, scale int) (Font, error) {
 	for _, g := range fc.Glyphs {
 		f.addGlyphs(g.Id, Glyph{
 			Rune: g.Id,
-			X: uint16(g.X), Y: uint16(g.Y),
-			Width:uint16(g.Width),
-			Height:uint16(g.Height),
-			XOffset:uint16(g.XOffset),
-			YOffset:uint16(g.YOffset),
+			X: float32(g.X), Y: float32(g.Y),
+			Width:float32(g.Width),
+			Height:float32(g.Height),
+			XOffset:float32(g.XOffset),
+			YOffset:float32(g.YOffset),
 			Advance:g.Advance,
 		})
 		if g.Width > gw {
@@ -57,8 +57,8 @@ func LoadBitmap(img, config io.Reader, scale int) (Font, error) {
 			gh = g.Height
 		}
 	}
-	f.glyphWidth = gw
-	f.glyphHeight = gh
+	f.glyphWidth = float32(gw)
+	f.glyphHeight = float32(gh)
 	// log.Println("dump:", f)
 	return f, nil
 }

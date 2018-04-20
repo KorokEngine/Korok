@@ -29,7 +29,7 @@ const (
 type Font interface {
 	Tex2D() (uint16, *bk.Texture2D)
 	Glyph(rune rune) (Glyph, bool)
-	Bounds() (int, int)
+	Bounds() (float32, float32)
 	SizeOf(text string, fontSize float32) f32.Vec2
 }
 
@@ -43,8 +43,8 @@ type fontAtlas struct {
 	width float32
 	height float32
 
-	glyphWidth  int         // Largest glyph width.
-	glyphHeight int         // Largest glyph height.
+	glyphWidth  float32         // Largest glyph width.
+	glyphHeight float32        // Largest glyph height.
 
 	glyphs map[rune]Glyph
 	w, h uint16
@@ -68,7 +68,7 @@ func (f *fontAtlas) Glyph(rune rune) (g Glyph, ok bool) {
 	return
 }
 
-func (f *fontAtlas) Bounds() (int, int) {
+func (f *fontAtlas) Bounds() (float32, float32) {
 	return f.glyphWidth, f.glyphHeight
 }
 

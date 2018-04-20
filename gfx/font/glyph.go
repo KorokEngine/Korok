@@ -11,14 +11,15 @@ type Point struct {
 // Advance determines the distance to the next glyph.
 // This is used to properly align non-monospaced fonts.
 type Glyph struct {
-	Rune     rune
+	Rune rune
 
-	X, Y    uint16
-	Width  uint16
-	Height uint16
+	X      float32
+	Y      float32
+	Width  float32
+	Height float32
 
-	XOffset uint16
-	YOffset uint16
+	XOffset float32
+	YOffset float32
 
 	Advance int
 }
