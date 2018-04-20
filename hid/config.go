@@ -6,4 +6,5 @@ type WindowOptions struct{
 	Title string
 	Width, Height int
 	Clear f32.Vec4
+	VsyncOff bool
 }

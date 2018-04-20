@@ -55,7 +55,11 @@ func CreateWindow(option *WindowOptions)  {
 	// make the window's context current
 	window.MakeContextCurrent()
 
-	glfw.SwapInterval(1)
+	if option.VsyncOff {
+		glfw.SwapInterval(0)
+	} else {
+		glfw.SwapInterval(1)
+	}
 
 	// Handle input callback
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {

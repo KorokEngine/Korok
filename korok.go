@@ -22,6 +22,7 @@ type Options struct {
 	Title string
 	Width, Height int
 	Clear f32.Vec4
+	VsyncOff bool
 }
 
 func Run(options *Options, sc game.Scene)  {
@@ -67,6 +68,7 @@ func Run(options *Options, sc game.Scene)  {
 		options.Width,
 		options.Height,
 		options.Clear,
+		options.VsyncOff,
 	})
 }
 
