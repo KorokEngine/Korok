@@ -2,12 +2,10 @@ package gfx
 
 import (
 	"korok.io/korok/engi"
-	"korok.io/korok/gfx/bk"
 	"korok.io/korok/gfx/font"
+	"korok.io/korok/math/f32"
 
 	"sort"
-	"log"
-	"korok.io/korok/math/f32"
 )
 
 // 文字应该采用 BatchRender 绘制
@@ -78,44 +76,40 @@ func (tc *TextComp) SetFontSize(sz float32) {
 // 		+----------+
 // 1 * 1 quad for each char
 func (tc *TextComp) fillData() {
-	var xOffset float32
-	var yOffset float32
-
 	chars := make([]TextQuad, len(tc.text))
 	tc.vertex = chars
-	id, tex := tc.font.Tex2D()
 	_, gh := tc.font.Bounds()
 
-	log.Println("get font bounds:", gh)
+	var (
+		size = struct { w, h float32}{}
+		scale = tc.size/gh
+		xOffset float32
+		yOffset float32
+	)
 
-	if id == bk.InvalidId {
-		log.Println("fail to get font texture!!")
-	}
-
-	var size = struct {
-		w, h float32
-	}{}
-	var scale = tc.size/float32(gh)
 	if tc.size == 0 {
 		scale = 1.0
+		yOffset += gh
+	} else {
+		yOffset += tc.size
 	}
 
 	for i, r := range tc.text {
 		if glyph, ok := tc.font.Glyph(r); ok {
 			advance := float32(glyph.Advance) * scale
-			vw := glyph.Width
-			vh := glyph.Height
+			vw := glyph.Width * scale
+			vh := glyph.Height * scale
+			ox := glyph.XOffset * scale
+			oy := glyph.YOffset * scale
 
-			min := font.Point{float32(glyph.X) / tex.Width, float32(glyph.Y) / tex.Height}
-			max := font.Point{float32(glyph.X+glyph.Width)/ tex.Width, float32(glyph.Y+glyph.Height) / tex.Height}
-
+			u1, v1, u2, v2 := tc.font.Frame(r)
 			char := &chars[i]
 
-			char.xOffset = xOffset
-			char.yOffset = yOffset
-			char.w, char.h = float32(vw) * scale, float32(vh) * scale
-			char.region.X1, char.region.Y1 = min.X, min.Y
-			char.region.X2, char.region.Y2 = max.X, max.Y
+			char.xOffset = xOffset + ox
+			char.yOffset = yOffset - (oy+vh)
+			char.w, char.h = vw, vh
+			char.region.X1, char.region.Y1 = u1, v1
+			char.region.X2, char.region.Y2 = u2, v2
 
 			// left to right shit
 			xOffset += advance

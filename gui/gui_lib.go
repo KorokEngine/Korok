@@ -440,12 +440,8 @@ func (ctx *Context) DrawText(bb *Rect, text string, style *TextStyle) (size f32.
 	return
 }
 
-func (ctx *Context) CalcTextSize(text string, wrapWidth float32, font font.Font, fontSize float32) f32.Vec2 {
-	fr := &FontRender{
-		font: font,
-		fontSize:fontSize,
-	}
-	return fr.CalculateTextSize1(text)
+func (ctx *Context) CalcTextSize(text string, wrapWidth float32, fnt font.Font, fontSize float32) f32.Vec2 {
+	return font.CalculateTextSize(text, fnt, fontSize)
 }
 
 // 偷师 flat-ui 中的设计，把空间的前景和背景分离，背景单独根据事件来变化..

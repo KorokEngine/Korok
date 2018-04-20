@@ -57,8 +57,8 @@ func LoadBitmap(img, config io.Reader, scale int) (Font, error) {
 			gh = g.Height
 		}
 	}
-	f.glyphWidth = float32(gw)
-	f.glyphHeight = float32(gh)
+	f.gWidth = float32(gw)
+	f.gHeight = float32(gh)
 	// log.Println("dump:", f)
 	return f, nil
 }

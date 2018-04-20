@@ -102,14 +102,14 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 	}
 
 	// set bounds
-	f.glyphWidth = fixed2f32(gw)
-	f.glyphHeight = fixed2f32(gh)
+	f.gWidth = fixed2f32(gw)
+	f.gHeight = fixed2f32(gh)
 
 	// load image
 	f.loadTex(img)
 
 	// save baked fontAtlas-image
-	savePng(img)
+	//savePng(img)
 	return f, nil
 }
 

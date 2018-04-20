@@ -61,7 +61,7 @@ func (fm *FontManager) LoadTrueType(name string, fc string) {
 			return
 		}
 
-		f, err := font.LoadTrueType(fcr, 24,  '0', 'z', 0)
+		f, err := font.LoadTrueType(fcr, 24,  32, 126, 0)
 		if err != nil {
 			fmt.Println(err)
 			return
