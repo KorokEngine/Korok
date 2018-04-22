@@ -52,11 +52,11 @@ func (buf *BufferAL) Destroy() {
 }
 
 type StreamBuffer struct {
-	Buffer [MAX_STREAM_BUFFER]al.Buffer
+	Buffer [MaxStreamBuffer]al.Buffer
 }
 
 func (stream *StreamBuffer) Create() {
-	array := al.GenBuffers(MAX_STREAM_BUFFER)
+	array := al.GenBuffers(MaxStreamBuffer)
 	copy(stream.Buffer[:], array)
 }
 

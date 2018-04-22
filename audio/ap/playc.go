@@ -16,7 +16,7 @@ import (
 /// 最终播放.
 
 const (
-	MAX_CHANNEL_SIZE = 8
+	MaxChannelSize = 8
 )
 
 type playCall struct {
@@ -45,9 +45,9 @@ type PlayContext struct {
 	pIndex int
 
 	// underlying data
-	p_ref  [MAX_CHANNEL_SIZE]chanRef
-	p_call [MAX_CHANNEL_SIZE]playCall
-	p_chan [MAX_CHANNEL_SIZE]Channel
+	p_ref  [MaxChannelSize]chanRef
+	p_call [MaxChannelSize]playCall
+	p_chan [MaxChannelSize]Channel
 }
 
 func NewPlayContext(am *AudioManger) *PlayContext {
@@ -78,7 +78,7 @@ func (pc *PlayContext) Init() error{
 	if err := pc.p_chan[0].Create(Stream);err != nil {
 		return err
 	}
-	for i := 1; i < MAX_CHANNEL_SIZE; i++ {
+	for i := 1; i < MaxChannelSize; i++ {
 		if err := pc.p_chan[i].Create(Static); err != nil {
 			return err
 		}
@@ -106,7 +106,7 @@ func (pc *PlayContext) Play(id uint16, priority uint16) {
 	// 得到优先级
 	p := priority
 	if p == 0 {
-		if ok, sound := pc.R.Sound(id); ok {
+		if sound, ok := pc.R.Sound(id); ok {
 			p = sound.Priority
 		} else {
 			log.Println("Invalid source id")
@@ -124,7 +124,7 @@ func (pc *PlayContext) Play(id uint16, priority uint16) {
 
 	log.Println("insert position:", insert, " res id:", id)
 
-	if insert < MAX_CHANNEL_SIZE {
+	if insert < MaxChannelSize {
 		// queue is full
 		if insert == pc.pIndex {
 			pc.pQueue[insert] = play
@@ -156,7 +156,7 @@ func (pc *PlayContext) NextFrame() {
 	})
 
 	// play priority queue
-	for i,j := 0, 0; i < pc.pIndex && j < MAX_CHANNEL_SIZE; i,j = i+1, j+1 {
+	for i,j := 0, 0; i < pc.pIndex && j < MaxChannelSize; i,j = i+1, j+1 {
 		if play, ref := pc.pQueue[i], pc.playChan[j];play.p > ref.p {
 			channel := ref.ref
 			if channel.State != STOP {

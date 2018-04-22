@@ -2,53 +2,53 @@ package ap
 
 /// Initialize the AudioPlayer
 func Init() error{
-	return g_ctx.Init()
+	return ctx.Init()
 }
 
 /// Destroy AudioPlayer
 func Destroy() {
-	g_ctx.Destroy()
+	ctx.Destroy()
 }
 
 // Mute the AudioPlayer
 func Mute(mute bool) {
-	g_ctx.Mute(mute)
+	ctx.Mute(mute)
 }
 
 // Pause the AudioPlayer
 func Pause(pause bool) {
-	g_ctx.Pause(pause)
+	ctx.Pause(pause)
 }
 
 /// Play a sound (by id)
 ///
 /// default:priority=0
 func Play(id uint16, priority uint16) {
-	g_ctx.Play(id, priority)
+	ctx.Play(id, priority)
 }
 
 func Stop(id uint16) {
-	g_ctx.Stop(id)
+	ctx.Stop(id)
 }
 
 // advance to next frame
 func NextFrame() {
-	g_ctx.NextFrame()
+	ctx.NextFrame()
 }
 
 func SetDecoderFactory(factory DecoderFactory) {
-	g_df = factory
+	factory = factory
 }
 
 ////////// static & global filed
 
 var R *AudioManger
-var g_ctx *PlayContext
-var g_df DecoderFactory
+var ctx *PlayContext
+var factory DecoderFactory
 
 func init() {
 	R = NewAudioManager()
-	g_ctx = NewPlayContext(R)
+	ctx = NewPlayContext(R)
 }
 
 

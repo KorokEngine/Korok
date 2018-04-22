@@ -9,7 +9,8 @@ import (
 
 type FileType uint8
 const (
-	WAV 	FileType = iota
+	None FileType = iota
+	WAV
 	VORB
 
 	// NOT IMPLEMENT YET
@@ -21,26 +22,25 @@ const (
 
 type FormatEnum uint8
 const (
-	Mono8 FormatEnum = iota
+	FormatNone FormatEnum = iota
+	Mono8
 	Mono16
 	Stereo8
 	Stereo16
-
-	FORMAT_END
 )
 
 
-const MAX_SOUND_POOL_SIZE = 128 // 128=96+32
-const MAX_STATIC_DATA = 96
-const MAX_STREAM_DATA = 32
+const MaxSoundPoolSize = 128 // 128=96+32
+const MaxStaticData = 96
+const MaxStreamData = 32
 
 type AudioManger struct {
 	// sound array
-	soundPool [MAX_SOUND_POOL_SIZE]Sound
+	soundPool [MaxSoundPoolSize]Sound
 
 	// data pool
-	staticData [MAX_STATIC_DATA]StaticData
-	streamData [MAX_STREAM_DATA]StreamData
+	staticData [MaxStaticData]StaticData
+	streamData [MaxStreamData]StreamData
 
 	indexPool   uint16
 	indexStatic uint16
@@ -67,7 +67,7 @@ func (am *AudioManger) LoadSound(name string, fType FileType, sType SourceType) 
 	am.indexPool ++
 	sound.Type = sType
 
-	d, err := g_df.NewDecoder(name, fType)
+	d, err := factory.NewDecoder(name, fType)
 	if err != nil {
 		log.Println("fail to init decoder, ", err)
 	}
@@ -83,7 +83,7 @@ func (am *AudioManger) LoadSound(name string, fType FileType, sType SourceType) 
 			return
 		}
 		format := getFormat(numChan, bitDepth)
-		if format == FORMAT_END {
+		if format == FormatNone {
 			log.Println("invalid audio format")
 			return
 		}
@@ -128,11 +128,11 @@ func (am *AudioManger) UnloadSound(id uint16) {
 
 }
 
-func (am *AudioManger) Sound(id uint16) (ok bool, sound *Sound) {
-	if id >= MAX_SOUND_POOL_SIZE {
-		return false, nil
+func (am *AudioManger) Sound(id uint16) (sound *Sound, ok bool) {
+	if id >= MaxSoundPoolSize {
+		return nil, false
 	}
-	return false, &am.soundPool[id]
+	return &am.soundPool[id], true
 }
 
 func getFormat(channels, depth int32) FormatEnum {
@@ -147,7 +147,7 @@ func getFormat(channels, depth int32) FormatEnum {
 	case channels == 2 && depth == 16:
 		format = Stereo16
 	default:
-		format = FORMAT_END
+		format = FormatNone
 	}
 	return format
 }

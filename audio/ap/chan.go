@@ -5,7 +5,7 @@ import (
 	"log"
 )
 
-const MAX_STREAM_BUFFER = 24
+const MaxStreamBuffer = 24
 
 type Channel struct {
 	State SourceState
@@ -32,7 +32,7 @@ func (ch *Channel) Play(sound *Sound) {
 
 		var usedBuffers = 0
 		d := sound.Data.(*StreamData)
-		for i := 0; i < MAX_STREAM_BUFFER; i++ {
+		for i := 0; i < MaxStreamBuffer; i++ {
 			if num := ch.fill(d.Stream.Buffer[i], d.Decoder); num == 0 {
 				break
 			}
@@ -118,7 +118,7 @@ func (ch *Channel) fill(buffer al.Buffer, d Decoder) (num int) {
 
 	if decoded > 0 {
 		fmt := getFormat(d.NumOfChan(), d.BitDepth())
-		if fmt != FORMAT_END {
+		if fmt != FormatNone {
 			buffer.BufferData(formatCodes[fmt], d.Buffer(), d.SampleRate())
 		} else {
 			decoded = 0
