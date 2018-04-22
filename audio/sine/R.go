@@ -1,4 +1,4 @@
-package ap
+package sine
 
 import (
 	"golang.org/x/mobile/exp/audio/al"
@@ -154,6 +154,7 @@ func getFormat(channels, depth int32) FormatEnum {
 
 ///////// static and global field
 var formatCodes = []uint32{
+	0, // none
 	al.FormatMono8,
 	al.FormatMono16,
 	al.FormatStereo8,

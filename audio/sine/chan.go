@@ -1,4 +1,4 @@
-package ap
+package sine
 
 import (
 	"golang.org/x/mobile/exp/audio/al"
@@ -17,6 +17,7 @@ type Channel struct {
 
 func (ch *Channel) Create(xType SourceType) error{
 	array := al.GenSources(1)
+
 	ch.Source = array[0]
 	return nil
 }

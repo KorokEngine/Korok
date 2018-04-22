@@ -1,4 +1,4 @@
-package ap
+package sine
 
 import (
 	"golang.org/x/mobile/exp/audio/al"
@@ -140,6 +140,14 @@ func (pc *PlayContext) Stop(id uint16) {
 
 }
 
+// 此处的算法:
+// 先把所有的 play 消息放到一个队列里面（提前排好序）,
+// 同样对正在播放的通道也进行排序，然后启动一个循环，
+// 比较正在播放的通道中的优先级和待播放的数据的优先级，如果小于则用这个通道进行播放。
+// call: 1 2 3 4 5 6
+// chan: 0 3 5 6 7 8
+// 两者都排序可以保证最低优先级的数据肯定会被停掉以让位给高优先级的数据。
+// 这个算法挺复杂的，马上干掉！！
 // play
 func (pc *PlayContext) NextFrame() {
 	// update channel state

@@ -1,4 +1,4 @@
-package ap
+package sine
 
 import (
 	"golang.org/x/mobile/exp/audio/al"

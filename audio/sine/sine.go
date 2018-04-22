@@ -1,6 +1,8 @@
-package ap
+// Sine is our low-level audio system. (named by https://en.wikipedia.org/wiki/Sine_wave)
 
-/// Initialize the AudioPlayer
+package sine
+
+// Initialize the AudioPlayer
 func Init() error{
 	return ctx.Init()
 }
@@ -15,14 +17,16 @@ func Mute(mute bool) {
 	ctx.Mute(mute)
 }
 
+// 采用默认约束：
+// Stream 只能在 Music 通道上播放
+// Static 只能在 Sampler 通道上播放
+
 // Pause the AudioPlayer
 func Pause(pause bool) {
 	ctx.Pause(pause)
 }
 
-/// Play a sound (by id)
-///
-/// default:priority=0
+// Play a sound (by id), default:priority=0
 func Play(id uint16, priority uint16) {
 	ctx.Play(id, priority)
 }
@@ -36,8 +40,8 @@ func NextFrame() {
 	ctx.NextFrame()
 }
 
-func SetDecoderFactory(factory DecoderFactory) {
-	factory = factory
+func SetDecoderFactory(df DecoderFactory) {
+	factory = df
 }
 
 ////////// static & global filed
