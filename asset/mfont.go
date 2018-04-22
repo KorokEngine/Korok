@@ -88,7 +88,7 @@ func (fm *FontManager) Unload(name string) {
 	}
 }
 
-func (fm *FontManager) GetFont(name string) (fnt font.Font, ok  bool) {
+func (fm *FontManager) Get(name string) (fnt font.Font, ok  bool) {
 	if v, ok := fm.repo[name]; ok {
 		fnt, ok = v.ref.(font.Font)
 	}

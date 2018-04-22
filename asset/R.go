@@ -30,9 +30,11 @@ var Shader *ShaderManager
 var Texture *TextureManager
 var Font *FontManager
 var PSConfig *ParticleConfigManager
+var Audio *AudioManager
 
 func init() {
 	Shader = &ShaderManager{}
+	Audio = NewAudioManager()
 	Texture = NewTextureManager()
 	Font = NewFontManager()
 	PSConfig = NewParticleConfigManager()
