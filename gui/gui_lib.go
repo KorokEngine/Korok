@@ -260,7 +260,7 @@ func (ctx *Context) CheckSlider(id ID, bound *Rect) (v float32, e EventType) {
 	// Update the knob position
 	if (event & (EventDragging|EventWentDown)) != 0{
 		// default = Horizontal
-		p1 := input.PointerPosition(0).MousePos[0]
+		p1 := (input.PointerPosition(0).MousePos[0])/screen.scaleX
 		p0 := bound.X + ctx.Cursor.X
 		v = (p1 - p0)/bound.W
 
@@ -297,7 +297,11 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 		cursor = ctx.Cursor
 	)
 
-	bb := Rect{cursor.X+bound.X, cursor.Y+bound.Y, bound.W, bound.H}
+	bb := Rect{
+		(cursor.X+bound.X) * screen.scaleX,
+		(cursor.Y+bound.Y) * screen.scaleY,
+		bound.W * screen.scaleX,
+		bound.H * screen.scaleY}
 	p  := input.PointerPosition(0)
 
 
@@ -374,7 +378,8 @@ func (ctx *Context) DrawRect(bb *Rect, color uint32, round float32) {
 		y = bb.Y + ctx.Cursor.Y
 	)
 	x, y = Gui2Game(x, y)
-	min, max := f32.Vec2{x, y-bb.H}, f32.Vec2{x+bb.W, y}
+	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
+	max := f32.Vec2{(x+bb.W) * screen.scaleX, y * screen.scaleY}
 	ctx.DrawList.AddRectFilled(min, max, color, round, FlagCornerAll)
 }
 
@@ -384,21 +389,25 @@ func (ctx *Context) DrawBorder(bb *Rect, color uint32, round, thick float32) {
 		y = bb.Y + ctx.Cursor.Y
 	)
 	x, y = Gui2Game(x, y)
-	min, max := f32.Vec2{x, y-bb.H}, f32.Vec2{x+bb.W, y}
+	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
+	max := f32.Vec2{(x+bb.W) * screen.scaleX, y * screen.scaleY}
 	ctx.DrawList.AddRect(min, max, color, round, FlagCornerAll, thick)
 }
 
 func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {
 	x, y = Gui2Game(x + ctx.Cursor.X, y + ctx.Cursor.Y)
-	min, max := f32.Vec2{x, y-h}, f32.Vec2{x+w, y}
+	min := f32.Vec2{x * screen.scaleX, (y-h) * screen.scaleY}
+	max := f32.Vec2{(x+w) * screen.scaleX, y * screen.scaleY}
 	ctx.DrawList.AddRect(min, max, color, 0, FlagCornerNone, 1)
 }
 
-// default segment = 12 TODO
+// default segment = 12 TODO, circle scale factor
 func (ctx *Context) DrawCircle(x, y, radius float32, color uint32) {
 	c := ctx.Cursor
 	x, y = Gui2Game(x + c.X, y + c.Y)
-	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius, color, 12)
+	x = x * screen.scaleX
+	y = y * screen.scaleY
+	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius * screen.scaleX, color, 12)
 }
 
 func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
@@ -418,6 +427,11 @@ func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
 	}
 	min[0], min[1] = Gui2Game(min[0], min[1])
 	max[0], max[1] = Gui2Game(max[0], max[1])
+
+	// scale
+	min[0], min[1] = min[0] * screen.scaleX, min[1] * screen.scaleY
+	max[0], max[1] = max[0] * screen.scaleX, max[1] * screen.scaleY
+
 	rg := tex.Region()
 	ctx.DrawList.AddImage(tex.Tex(), min, max, f32.Vec2{rg.X1, rg.Y1}, f32.Vec2{rg.X2, rg.Y2}, color)
 }
@@ -431,10 +445,10 @@ func (ctx *Context) DrawText(bb *Rect, text string, style *TextStyle) (size f32.
 	// 2. 开始绘制
 	var (
 		font = style.Font
-		fontSize = style.Size
+		fontSize = style.Size * screen.scaleX // TODO 字体缩放不能这么简单的考虑
 		color = style.Color
-		wrapWidth = bb.W + 10
-		pos = f32.Vec2{x, y}
+		wrapWidth = (bb.W + 10) * screen.scaleX
+		pos = f32.Vec2{x * screen.scaleX, y * screen.scaleY}
 	)
 	size = ctx.DrawList.AddText(pos, text, font, fontSize, color, wrapWidth)
 	return
@@ -467,18 +481,16 @@ func (ctx *Context) UseTheme(style *Theme) {
 }
 
 func Gui2Game(x, y float32) (x1, y1 float32) {
-	return x, screen.Height - y
+	return x, screen.vtHeight - y
 }
 
 func Game2Gui(x, y float32) (x1, y1 float32) {
-	return x, screen.Height - y
+	return x, screen.vtHeight - y
 }
 
-var screen struct{
-	Width, Height float32
+type screenSize struct{
+	rlWidth, rlHeight float32
+	vtWidth, vtHeight float32
+	scaleX, scaleY float32
 }
-
-func init() {
-	screen.Width = 480
-	screen.Height = 320
-}
+var screen screenSize

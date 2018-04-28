@@ -92,9 +92,45 @@ func SetFont(font font.Font) {
 	gContext.DrawList.PushTextureId(texFont)
 }
 
+// for internal usage, DO NOT call.
 func SetScreenSize(w, h float32) {
-	screen.Width = w
-	screen.Height = h
+	screen = screenSize{w,h,w,h,1,1}
+}
+
+// ScreenSize return the physical width&height of the screen.
+func ScreenSize() (w, h float32) {
+	return screen.rlWidth, screen.rlHeight
+}
+
+func VirtualSize() (w, h float32) {
+	return screen.vtWidth, screen.vtHeight
+}
+
+// SetVirtualResolution set the virtual resolution.
+func SetVirtualResolution(w, h float32) {
+	if w == 0 && h == 0 {
+		screen.vtWidth = screen.rlWidth
+		screen.vtHeight = screen.rlHeight
+		screen.scaleX = 1
+		screen.scaleY = 1
+	} else if w == 0 {
+		f := screen.rlHeight/h
+		screen.scaleY = f
+		screen.scaleX = f
+		screen.vtHeight = h
+		screen.vtWidth = screen.rlWidth/f
+	} else if h == 0 {
+		f := screen.rlWidth/w
+		screen.scaleY = f
+		screen.scaleX = f
+		screen.vtWidth = w
+		screen.vtHeight = screen.rlHeight/f
+	} else {
+		screen.scaleX = screen.rlWidth/w
+		screen.scaleY = screen.rlHeight/h
+		screen.vtWidth = w
+		screen.vtHeight = h
+	}
 }
 
 func DefaultContext() *Context {
