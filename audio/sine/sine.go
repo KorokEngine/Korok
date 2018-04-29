@@ -1,58 +1,76 @@
-// Sine is our low-level audio system. (named by https://en.wikipedia.org/wiki/Sine_wave)
-
 package sine
 
-// Initialize the AudioPlayer
-func Init() error{
-	return ctx.Init()
+func Init(df DecoderFactory) {
+	factory = df
+	engine = &Engine{}; engine.Initialize()
+	bufferPlayer = &BufferPlayer{}; bufferPlayer.initialize(engine)
+	streamPlayer = &StreamPlayer{}; streamPlayer.initialize(engine)
 }
 
-/// Destroy AudioPlayer
 func Destroy() {
-	ctx.Destroy()
+	engine.Destroy()
 }
 
-// Mute the AudioPlayer
-func Mute(mute bool) {
-	ctx.Mute(mute)
+func Tick() {
+	streamPlayer.Tick()
 }
 
-// 采用默认约束：
-// Stream 只能在 Music 通道上播放
-// Static 只能在 Sampler 通道上播放
-
-// Pause the AudioPlayer
-func Pause(pause bool) {
-	ctx.Pause(pause)
-}
-
-// Play a sound (by id), default:priority=0
-func Play(id uint16, priority uint16) {
-	ctx.Play(id, priority)
+func Play(id uint16) {
+	if sound, ok := R.Sound(id); ok {
+		switch d :=  sound.Data.(type) {
+		case *StaticData:
+			PlayStatic(d)
+		case *StreamData:
+			PlayStream(d)
+		}
+	}
 }
 
 func Stop(id uint16) {
-	ctx.Stop(id)
+
 }
 
-// advance to next frame
-func NextFrame() {
-	ctx.NextFrame()
+func Pause(id uint16) {
+
 }
 
-func SetDecoderFactory(df DecoderFactory) {
-	factory = df
+func Resume(id uint16) {
+
 }
 
-////////// static & global filed
+func PlayStream(d *StreamData) *StreamPlayer{
+	streamPlayer.Play(d)
+	return streamPlayer
+}
 
-var R *AudioManger
-var ctx *PlayContext
-var factory DecoderFactory
+func PlayStatic(d *StaticData) *BufferPlayer {
+	bufferPlayer.Play(d)
+	return bufferPlayer
+}
 
 func init() {
 	R = NewAudioManager()
-	ctx = NewPlayContext(R)
 }
 
+// public field
+var R *AudioManger
+
+// private field
+var engine *Engine
+var factory DecoderFactory
+
+var bufferPlayer *BufferPlayer
+var streamPlayer *StreamPlayer
+
+func NewBufferPlayer() *BufferPlayer {
+	bufferPlayer = &BufferPlayer{}
+	bufferPlayer.initialize(engine)
+	return bufferPlayer
+}
+
+func NewStreamPlayer() *StreamPlayer {
+	streamPlayer = &StreamPlayer{}
+	streamPlayer.initialize(engine)
+	return streamPlayer;
+}
 

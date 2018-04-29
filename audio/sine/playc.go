@@ -1,5 +1,5 @@
 package sine
-
+/*
 import (
 	"golang.org/x/mobile/exp/audio/al"
 
@@ -176,3 +176,4 @@ func (pc *PlayContext) NextFrame() {
 	// reset queue
 	pc.pIndex = 0
 }
+*/

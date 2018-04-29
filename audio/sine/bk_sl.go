@@ -44,24 +44,9 @@ SLresult Sine_init(SineEngine *engine) {
 	return SL_RESULT_SUCCESS;
 }
 
-int lala(SineEngine *engine) {
-	return 3;
-}
-
 void Sine_close(SineEngine *engine) {
 
 }
-
-//SLresult Sine_createAudioPlayer(SLObjectItf *objectItf,
-//                            SLDataSource *audioSource,
-//                            SLDataSink *audioSink) {
-//	const SLInterfaceID ids[] = {SL_IID_BUFFERQUEUE};
-//    const SLboolean reqs[] = {SL_BOOLEAN_TRUE};
-//
-//    return (*mEngineInterface)->CreateAudioPlayer(mEngineInterface, objectItf, audioSource,
-//                                                  audioSink,
-//                                                  sizeof(ids) / sizeof(ids[0]), ids, reqs);
-//}
 
 typedef struct SineBufferPlayer {
 	// data
@@ -76,19 +61,19 @@ typedef struct SineBufferPlayer {
 	SLBufferQueueItf bufferQueue;
 } SineBufferPlayer;
 
-SLresult SineBufferPlayer_init(SineBufferPlayer *p, SineEngine *engine) {
-	SLDataLocator_AndroidSimpleBufferQueue locatorBufferQueue;
-	locatorBufferQueue.locatorType = SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE;
-	locatorBufferQueue.numBuffers = 16;
-
-	SLDataFormat_PCM format;
-	format.formatType = SL_DATAFORMAT_PCM;
-	format.numChannels = 2;
-	format.samplesPerSec = SL_SAMPLINGRATE_44_1;
-	format.bitsPerSample = SL_PCMSAMPLEFORMAT_FIXED_16;
-	format.containerSize = SL_PCMSAMPLEFORMAT_FIXED_16;
-	format.channelMask   = SL_SPEAKER_FRONT_LEFT|SL_SPEAKER_FRONT_RIGHT;
-	format.endianness    = SL_BYTEORDER_LITTLEENDIAN;
+SLresult SineBufferPlayer_init(SineBufferPlayer *p, SineEngine *engine, SLuint32 numBuffers, SLuint32 numChannels) {
+	SLDataLocator_AndroidSimpleBufferQueue locatorBufferQueue = {
+		SL_DATALOCATOR_ANDROIDSIMPLEBUFFERQUEUE, numBuffers
+	};
+	SLDataFormat_PCM format = {
+		SL_DATAFORMAT_PCM,
+		numChannels,
+		SL_SAMPLINGRATE_44_1,
+		SL_PCMSAMPLEFORMAT_FIXED_16,
+		SL_PCMSAMPLEFORMAT_FIXED_16,
+		SL_SPEAKER_FRONT_LEFT|SL_SPEAKER_FRONT_RIGHT,
+		SL_BYTEORDER_LITTLEENDIAN
+	};
 
 	p->audioSrc.pLocator = &locatorBufferQueue;
 	p->audioSrc.pFormat  = &format;
@@ -129,9 +114,9 @@ SLresult SineBufferPlayer_init(SineBufferPlayer *p, SineEngine *engine) {
 	return SL_RESULT_SUCCESS;
 }
 
-//void SineBufferPlayer_close(SineBufferPlayer *p) {
-//	stream.mObjectInterface.Destroy(stream.mObjectInterface);
-//}
+void SineBufferPlayer_close(SineBufferPlayer *p) {
+	(*p->playerObj)->Destroy(p->playerObj);
+}
 
 SLresult SineBufferPlayer_play(SineBufferPlayer *p, void* buffer, SLuint32 size) {
 	// enqueue data
@@ -152,11 +137,12 @@ SLresult SineBufferPlayer_play(SineBufferPlayer *p, void* buffer, SLuint32 size)
 	return SL_RESULT_SUCCESS;
 }
 
-int Simple1(SineBufferPlayer *p) {
-	return 1;
-}
-
 SLresult SineBufferPlayer_stop(SineBufferPlayer *p) {
+	SLresult ret;
+	ret = (*p->player)->SetPlayState(p->player, SL_PLAYSTATE_STOPPED);
+	if (ret != SL_RESULT_SUCCESS) {
+		return ret;
+	}
 	return SL_RESULT_SUCCESS;
 }
 
@@ -198,23 +184,18 @@ SLresult SineBufferPlayer_state(SineBufferPlayer *p, SLuint32 *state) {
 	}
 	return SL_RESULT_SUCCESS;
 }
-//
-//void SineStream_setVolume(stream *SineStream, v float) {
-//	//tood gain_to_attenuation... 不知道何意
-//	stream.fdPlayerVolume->SetVolumeLevel(stream.fdPlayerVolume, )
-//}
-//
-//float SineStream getVolume(stream *SineStream) {
-//	SLmillibel millibel;
-//	fbPlayerVolume->GetVolumeLevel(stream.fdPlayerVolume, &millibel);
-//	// todo
-//	return
-//}
+
+SLresult SineBufferPlayer_setVolume(SineBufferPlayer *p, float v) {
+	return SL_RESULT_SUCCESS;
+}
+
+SLresult SineBufferPlayer_getVolume(SineBufferPlayer *p, float *v) {
+	return SL_RESULT_SUCCESS;
+}
 
 typedef struct SineStreamPlayer {
 
 } SineStreamPlayer;
-//
 
  */
 import "C"
@@ -260,14 +241,10 @@ func (eng *Engine) Initialize() {
 	if ret := C.Sine_init(&eng.engine); ret != OK {
 		log.Println("fail to initialize opensl")
 	}
-
-
-	r3 := C.lala(&eng.engine)
-	log.Println("lala:", r3)
 }
 
 func (eng *Engine) Destroy() {
-
+	C.Sine_close(&eng.engine)
 }
 
 // BufferPlayer can play audio loaded as StaticData.
@@ -276,21 +253,20 @@ type BufferPlayer struct {
 }
 
 func (p *BufferPlayer) initialize(engine *Engine) {
-	if ret := C.SineBufferPlayer_init(&p.player, &engine.engine); ret != OK {
+	var (
+		numBuffers = C.SLuint32(2)
+		numChannels = C.SLuint32(2)
+	)
+	if ret := C.SineBufferPlayer_init(&p.player, &engine.engine, numBuffers, numChannels); ret != OK {
 		log.Println("buffer-player init err:", ret)
 	}
 }
 
+func (p *BufferPlayer) destroy() {
+	C.SineBufferPlayer_close(&p.player)
+}
+
 func (p *BufferPlayer) Play(d *StaticData) {
-	//if p == nil {
-	//	log.Println("p is nil")
-	//}
-	//if d == nil {
-	//	log.Println("d is nil")
-	//}
-	//if d.bits == nil {
-	//	log.Println("bits is nil")
-	//}
 	if ret := C.SineBufferPlayer_play(&p.player, unsafe.Pointer(&d.bits[0]), C.SLuint32(len(d.bits))); ret != OK {
 		log.Println("buffer-player play err:", ret)
 	}
@@ -312,6 +288,12 @@ func (p *BufferPlayer) Resume() {
 	if ret := C.SineBufferPlayer_resume(&p.player); ret != OK {
 		log.Println("buffer-player resume err:", ret)
 	}
+}
+
+func (p *BufferPlayer) State() (st int) {
+	var state C.SLuint32
+	C.SineBufferPlayer_state(&p.player, &state)
+	return int(state)
 }
 
 // StreamPlayer can play audio loaded as StreamData.
