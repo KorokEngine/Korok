@@ -20,8 +20,8 @@ type BatchRender struct {
 	program uint16
 
 	// uniform handle
-	umh_PJ uint16 	// Projection
-	umh_S0 uint16 	// Sampler0
+	umhProjection uint16 // Projection
+	umhSampler0   uint16 // Sampler0
 
 	// batch context
 	BatchContext
@@ -42,16 +42,13 @@ func NewBatchRender(vsh, fsh string) *BatchRender {
 		sh.AddAttributeBinding("xyuv\x00", 0, P4C4[0])
 		sh.AddAttributeBinding("rgba\x00", 0, P4C4[1])
 
-		p := f32.Ortho2D(0, 480, 0, 320)
 		s0 := int32(0)
-
 		// setup uniform
 		if id, _ := bk.R.AllocUniform(shId, "proj\x00", bk.UniformMat4, 1); id != bk.InvalidId {
-			br.umh_PJ = id
-			bk.SetUniform(id, unsafe.Pointer(&p[0]))
+			br.umhProjection = id
 		}
 		if id, _ := bk.R.AllocUniform(shId, "tex\x00", bk.UniformSampler, 1); id != bk.InvalidId {
-			br.umh_S0 = id
+			br.umhSampler0 = id
 			bk.SetUniform(id, unsafe.Pointer(&s0))
 		}
 		//bk.Touch(0)
@@ -71,7 +68,7 @@ func (br *BatchRender) SetCamera(camera *Camera) {
 	p := f32.Ortho2D(left, right, bottom, top)
 
 	// setup uniform
-	bk.SetUniform(br.umh_PJ, unsafe.Pointer(&p[0]))
+	bk.SetUniform(br.umhProjection, unsafe.Pointer(&p[0]))
 	bk.Submit(0, br.program, 0)
 }
 
@@ -82,7 +79,7 @@ func (br *BatchRender) submit(bList []Batch) {
 
 		// state
 		bk.SetState(br.stateFlags, br.rgba)
-		bk.SetTexture(0, br.umh_S0, b.TextureId, 0)
+		bk.SetTexture(0, br.umhSampler0, b.TextureId, 0)
 
 		// set vertex
 		bk.SetVertexBuffer(0, b.VertexId, uint32(b.firstVertex), uint32(b.numVertex) )

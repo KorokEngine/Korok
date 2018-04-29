@@ -10,9 +10,15 @@ import (
 	"golang.org/x/mobile/event/touch"
 
 	"korok.io/korok/hid/gl"
+	"sync"
 )
 
 var options *WindowOptions
+
+var (
+	once sync.Once
+	w, h float32
+)
 
 var (
 	windowCallback WindowCallback
@@ -84,8 +90,9 @@ func onStart(e lifecycle.Event) {
 	} else {
 		gl.ClearColor(bg[0], bg[1], bg[2], bg[3])
 	}
-	// Todo pixel ratio
-	windowCallback.OnCreate(1)
+	once.Do(func() {
+		windowCallback.OnCreate(1)
+	})
 }
 
 func onStop() {
@@ -94,8 +101,10 @@ func onStop() {
 }
 
 func onResize(e size.Event) {
-	sz := e
-	gl.Viewport(0, 0, int32(sz.WidthPx), int32(sz.HeightPx))
+	iw, ih := int32(e.WidthPx), int32(e.HeightPx)
+	w, h = float32(w), float32(h)
+	gl.Viewport(0, 0, iw, ih)
+	windowCallback.OnResize(iw, ih)
 }
 
 func onPaint(e paint.Event, sz size.Event) {

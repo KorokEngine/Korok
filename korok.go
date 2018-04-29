@@ -29,7 +29,7 @@ func Run(options *Options, sc game.Scene)  {
 	log.Println("Game Start! " + options.Title)
 
 	g := &game.Game{}
-	g.Init(game.Options{options.Width, options.Height})
+	g.Init()
 
 	G = g
 	Entity = g.DB.EntityM

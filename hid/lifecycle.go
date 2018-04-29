@@ -5,6 +5,9 @@ type WindowCallback interface {
 	// 窗口创建
 	OnCreate(pixelRatio float32)
 
+	// Resize...
+	OnResize(w, h int32)
+
 	// 窗口循环
 	OnLoop()
 

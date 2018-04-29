@@ -10,6 +10,7 @@ import (
 	"korok.io/korok/hid/input"
 	"korok.io/korok/gfx/dbg"
 	"korok.io/korok/gui"
+	"korok.io/korok/audio"
 
 	"log"
 	"reflect"
@@ -82,22 +83,31 @@ func (g *Game) OnPointEvent(key int, pressed bool, x, y float32) {
 	g.InputSystem.SetPointerEvent(key, pressed, x, y)
 }
 
+func (g *Game) OnResize(w, h int32) {
+	g.setGameSize(float32(w), float32(h))
+}
+
+func (g *Game) setGameSize(w, h float32) {
+	// setup camera
+	min, max := -math.MaxFloat32, math.MaxFloat32
+	camera := &g.MainCamera
+	camera.SetViewPort(w, h)
+	camera.SetBound(min, max, max, min)
+
+	// gui real screen size
+	gui.SetScreenSize(w, h)
+}
+
 // init subsystem
 func (g *Game) Create(ratio float32) {
 	g.FPS.initialize()
 	gfx.Init(ratio)
+	audio.Init()
 
 	// render system
 	rs := gfx.NewRenderSystem()
 	g.RenderSystem = rs
 
-	min, max := -math.MaxFloat32, math.MaxFloat32
-	// setup camera
-	c := &rs.MainCamera
-	c.SetViewPort(float32(g.Options.W), float32(g.Options.H))
-	c.SetBound(min, max, max, min)
-
-	//
 	// set table
 	rs.RequireTable(g.DB.Tables)
 	// set render
@@ -132,7 +142,6 @@ func (g *Game) Create(ratio float32) {
 	// gui system
 	g.UISystem = gui.NewUISystem(meshRender)
 	g.UISystem.RegisterContext(gui.DefaultContext())
-	gui.SetScreenSize(float32(g.W), float32(g.H))
 
 	/// init debug
 	dbg.Init(g.Options.W, g.Options.H)
@@ -156,6 +165,8 @@ func (g *Game) Create(ratio float32) {
 	g.AnimationSystem = anim.NewAnimationSystem()
 	g.AnimationSystem.RequireTable(g.DB.Tables)
 
+	// audio system
+
 	/// setup scene manager
 	g.SceneManager.Setup(g)
 }
@@ -163,10 +174,10 @@ func (g *Game) Create(ratio float32) {
 // destroy subsystem
 func (g *Game) Destroy() {
 	g.RenderSystem.Destroy()
+	audio.Destroy()
 }
 
-func (g *Game) Init(op Options) {
-	g.Options = op
+func (g *Game) Init() {
 	g.loadTables()
 }
 
@@ -232,6 +243,7 @@ func (g *Game) Update() {
 	g.DrawProfile()
 
 	//bk.Dump()
+	audio.AdvanceFrame()
 
 	// flush drawCall
 	num := gfx.Flush()

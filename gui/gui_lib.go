@@ -481,16 +481,61 @@ func (ctx *Context) UseTheme(style *Theme) {
 }
 
 func Gui2Game(x, y float32) (x1, y1 float32) {
-	return x, screen.vtHeight - y
+	return x, screen.hintY - y
 }
 
 func Game2Gui(x, y float32) (x1, y1 float32) {
-	return x, screen.vtHeight - y
+	return x, screen.hintY - y
 }
 
 type screenSize struct{
 	rlWidth, rlHeight float32
 	vtWidth, vtHeight float32
-	scaleX, scaleY float32
+	// hint
+	hintX, scaleX float32
+	hintY, scaleY float32
 }
+
+func (sc *screenSize) SetRealSize(w, h float32) {
+	sc.rlWidth, sc.rlHeight = w, h
+	sc.updateHint()
+}
+
+func (sc *screenSize) SetVirtualSize(w, h float32) {
+	sc.vtWidth, sc.vtHeight = w, h
+	sc.updateHint()
+}
+
+func (sc *screenSize) updateHint() {
+	if screen.rlWidth == 0 || screen.rlHeight == 0 {
+		return
+	}
+	// update hint
+	w := screen.vtWidth
+	h := screen.vtHeight
+	if w == 0 && h == 0 {
+		screen.hintX = screen.rlWidth
+		screen.hintY = screen.rlHeight
+		screen.scaleX = 1
+		screen.scaleY = 1
+	} else if w == 0 {
+		f := screen.rlHeight/h
+		screen.scaleY = f
+		screen.scaleX = f
+		screen.hintY = h
+		screen.hintX = screen.rlWidth/f
+	} else if h == 0 {
+		f := screen.rlWidth/w
+		screen.scaleY = f
+		screen.scaleX = f
+		screen.hintX = w
+		screen.hintY = screen.rlHeight/f
+	} else {
+		screen.scaleX = screen.rlWidth/w
+		screen.scaleY = screen.rlHeight/h
+		screen.hintX = w
+		screen.hintY = h
+	}
+}
+
 var screen screenSize

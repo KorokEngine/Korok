@@ -18,9 +18,9 @@ type MeshRender struct {
 	program uint16
 
 	// uniform handle
-	umh_P  uint16 // Projection
-	umh_M  uint16 // Model
-	umh_S0 uint16 // Sampler0
+	umhProjection uint16 // Projection
+	umhModel      uint16 // Model
+	umhSampler0   uint16 // Sampler0
 }
 
 func NewMeshRender(vsh, fsh string) *MeshRender {
@@ -37,23 +37,18 @@ func NewMeshRender(vsh, fsh string) *MeshRender {
 		sh.AddAttributeBinding("xyuv\x00", 0, P4C4[0])
 		sh.AddAttributeBinding("rgba\x00", 0, P4C4[1])
 
-		p := f32.Ortho2D(0, 480, 0, 320)
-		m := f32.Translate3D(240, 160, 0)
 		s0 := int32(0)
-
 		// setup uniform
 		if pid, _ := bk.R.AllocUniform(id, "proj\x00", bk.UniformMat4, 1); pid != bk.InvalidId {
-			mr.umh_P = pid
-			bk.SetUniform(pid, unsafe.Pointer(&p[0]))
+			mr.umhProjection = pid
 		}
 
 		if mid, _ := bk.R.AllocUniform(id, "model\x00", bk.UniformMat4, 1); mid != bk.InvalidId {
-			mr.umh_M = mid
-			bk.SetUniform(mid, unsafe.Pointer(&m[0]))
+			mr.umhModel = mid
 		}
 
 		if sid,_ := bk.R.AllocUniform(id, "tex\x00", bk.UniformSampler, 1); sid != bk.InvalidId {
-			mr.umh_S0 = sid
+			mr.umhSampler0 = sid
 			bk.SetUniform(sid, unsafe.Pointer(&s0))
 		}
 
@@ -73,7 +68,7 @@ func (mr *MeshRender) SetCamera(camera *Camera) {
 	p := f32.Ortho2D(left, right, bottom, top)
 
 	// setup uniform
-	bk.SetUniform(mr.umh_P, unsafe.Pointer(&p[0]))
+	bk.SetUniform(mr.umhProjection, unsafe.Pointer(&p[0]))
 	bk.Submit(0, mr.program, 0)
 }
 
@@ -91,10 +86,10 @@ func (mr *MeshRender) Extract(visibleObjects []uint32) {
 func (mr *MeshRender) Draw(m *Mesh, mat4 *f32.Mat4, depth int32) {
 	// state
 	bk.SetState(mr.stateFlags, mr.rgba)
-	bk.SetTexture(0, mr.umh_S0, m.textureId, 0)
+	bk.SetTexture(0, mr.umhSampler0, m.textureId, 0)
 
 	// set uniform - mvp
-	bk.SetUniform(mr.umh_M, unsafe.Pointer(&mat4[0]))
+	bk.SetUniform(mr.umhModel, unsafe.Pointer(&mat4[0]))
 
 	// set vertex
 	bk.SetVertexBuffer(0, m.VertexId, uint32(m.FirstVertex), uint32(m.NumVertex))
