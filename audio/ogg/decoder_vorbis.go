@@ -2,48 +2,26 @@ package ogg
 
 import (
 	"golang.org/x/mobile/asset"
-	"korok.io/vorbis"
+	"github.com/jfreymuth/oggvorbis"
 
 	"unsafe"
-	"io/ioutil"
+	"io"
 	"log"
 )
 
-/// 此处是双通道的代码示例！！
-//func Read(b []byte) (int, error) {
-//	buf := make([]float32, len(b)/2)
-//	n, err := s.reader.Read(buf)
-//	if err != nil {
-//		return -1, err
-//	}
-//	for i := 0; i < n; i++ {
-//		v := int16(buf[i] * (1<<15 - 1))
-//		b[i*2 + 0] = uint8(v)
-//		b[i*2 + 1] = uint8(v>>8)
-//	}
-//	return n*2, nil
-//}
-
-/** impl:
-type Decoder interface {
-	FullDecode() (d []byte, numChan, freq int32, err error)
-
-	Decode() int
-	NumOfChan() int
-	BitDepth() int
-	SampleRate() int32
-	Static() []byte
-	ReachEnd() bool
-}
- */
 type Decoder struct {
 	numChannels   int32
 	sampleRate    int32
 	bitDepth      int32
 
-	buffer []byte
+	i16buffer []int16
+	f32buffer []float32
+	size int
+
 	name string
-	vorb *vorbis.Vorbis
+	file asset.File
+	reader *oggvorbis.Reader
+	reachEnd bool
 }
 
 func (d *Decoder) NumOfChan() int32 {
@@ -59,69 +37,84 @@ func (d *Decoder) SampleRate() int32 {
 }
 
 func (d *Decoder) Buffer() []byte {
-	return d.buffer
+	return ((*[1<<31]byte)(unsafe.Pointer(&d.i16buffer[0])))[:d.size*2]
 }
 
 func (d *Decoder) ReachEnd() bool {
-	return false
+	return d.reachEnd
 }
 
 func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, freq int32, err error) {
-	b, err := ioutil.ReadAll(file)
+	floats, format, err := oggvorbis.ReadAll(file)
+	if err != nil {
+		return
+	}
 	defer file.Close()
 
-	if err != nil {
-		return
-	}
+	log.Println("data size:", len(floats), "format:", format)
 
-	_data, _numChan, _freq, err := vorbis.Decode(b)
-
-	if err != nil {
-		return
-	}
-	ptr := unsafe.Pointer(&_data[0])
-	data = ((*[1<<20]byte)(ptr))[:len(_data)*2]
-	numChan = int32(_numChan)
+	numChan = int32(format.Channels)
 	bitDepth = 16
-	freq = int32(_freq)
+	freq = int32(format.SampleRate)
+
+	i16s := make([]int16, len(floats))
+	f216(floats, i16s)
+	ptr := unsafe.Pointer(&i16s[0])
+	data = ((*[1<<31]byte)(ptr))[:len(floats)*2]
 	return
 }
 
 func (d *Decoder) Decode() int {
-	if d.vorb == nil {
-		f, err := asset.Open(d.name)
-		if err != nil {
-			return 0
-		}
-		v, err := vorbis.New(f)
-		if err != nil {
-			return 0
-		}
-		d.vorb = v
-		d.numChannels = int32(v.Channels)
-		d.sampleRate  = int32(v.SampleRate)
-		d.bitDepth = 16
-	}
-
-	data, err := d.vorb.Decode()
-	if err != nil {
+	size, err := d.reader.Read(d.f32buffer)
+	if err != nil && err != io.EOF {
+		log.Println("vorbis decode err:", err)
 		return 0
 	}
-	log.Println("decode data:", len(data))
-
-	ptr := unsafe.Pointer(&data[0])
-	d.buffer = ((*[1<<20]byte)(ptr))[:len(data)*4]
-	return len(data) * 4
+	if io.EOF == err {
+		d.reachEnd = true
+	}
+	f216(d.f32buffer, d.i16buffer)
+	d.size = size
+	return size
 }
 
-func (d *Decoder) Close() {
-	if v := d.vorb; v != nil {
-		v.Close()
+func (d *Decoder) head() error {
+	if f := d.file; f != nil {
+		f.Close()
 	}
+	f, err := asset.Open(d.name)
+	if err != nil {
+		return err
+	}
+	r, err := oggvorbis.NewReader(f)
+	if err != nil {
+		return err
+	}
+
+	d.file = f
+	d.reader = r
+	d.numChannels = int32(r.Channels())
+	d.sampleRate  = int32(r.SampleRate())
+	d.bitDepth = 16
+	d.reachEnd = false
+	return nil
+}
+
+func (d *Decoder) Rewind() {
+	d.head()
 }
 
 func NewVorbisDecoder(name string) (d *Decoder, err error){
 	d = new(Decoder)
 	d.name = name
+	d.f32buffer = make([]float32, 16384)
+	d.i16buffer = make([]int16, 16384)
+	err = d.head()
 	return
+}
+
+func f216(f32 []float32, i16 []int16) {
+	for i, f := range f32 {
+		i16[i] = int16(f*32767)
+	}
 }

@@ -2,15 +2,10 @@ package audio
 
 import (
 	"korok.io/korok/audio/sine"
-	"log"
 )
 
 func Init() (err error) {
-	if err = sine.Init(); err != nil {
-		log.Println("audio:", err)
-	} else {
-		sine.SetDecoderFactory(DefaultDecoderFactory)
-	}
+	sine.Init(DefaultDecoderFactory);
 	return
 }
 
@@ -19,12 +14,12 @@ func Destroy() {
 }
 
 func AdvanceFrame() {
-	sine.NextFrame()
+	sine.Tick()
 }
 
 // play
 func Play(id uint16, p uint16) {
-	sine.Play(id, p)
+	sine.Play(id)
 }
 
 // default Audio-File-Decoder

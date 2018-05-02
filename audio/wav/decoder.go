@@ -129,6 +129,7 @@ type Decoder struct {
 	buffer []byte
 	size int32
 	offset int32
+	reachEnd bool
 
 	file asset.File
 	name string
@@ -157,28 +158,33 @@ func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, fre
 
 // streamed from disc
 func (d *Decoder) Decode() (decoded int) {
-	if d.file == nil {
-		file, err := asset.Open(d.name)
-		if err != nil {
-			return
-		}
-		d.file = file
-		h, err := decode(file)
-		if err != nil {
-			return
-		}
-		d.numChannels = int32(h.NumChannels)
-		d.sampleRate  = int32(h.SampleRate)
-		d.bitDepth    = int32(h.BitsPerSample)
-		d.buffer      = make([]byte, 16384)
-
-		//fi, err := file.Stat()
-		//if err == nil {
-		//	log.Println("init decoder context... file size:", fi.Size()/16384)
-		//}
+	n, err := io.ReadFull(d.file, d.buffer)
+	if err == io.EOF {
+		d.reachEnd = true
 	}
-	decoded, _ = io.ReadFull(d.file, d.buffer)
-	return
+	return n
+}
+
+func (d *Decoder) head() error {
+	if d.file != nil {
+		d.file.Close()
+	}
+
+	file, err := asset.Open(d.name)
+	if err != nil {
+		return err
+	}
+	d.file = file
+	h, err := decode(file)
+	if err != nil {
+		return err
+	}
+	d.numChannels = int32(h.NumChannels)
+	d.sampleRate  = int32(h.SampleRate)
+	d.bitDepth    = int32(h.BitsPerSample)
+	d.buffer      = make([]byte, 16384)
+	d.reachEnd    = false
+	return nil
 }
 
 func (d *Decoder) NumOfChan() int32 {
@@ -198,7 +204,11 @@ func (d *Decoder) Buffer() []byte {
 }
 
 func (d *Decoder) ReachEnd() bool {
-	return d.offset == d.size
+	return d.reachEnd
+}
+
+func (d *Decoder) Rewind() {
+	d.head()
 }
 
 func (d *Decoder) Close() {
@@ -208,5 +218,6 @@ func (d *Decoder) Close() {
 func NewDecoder(name string) (d *Decoder, err error) {
 	d = new(Decoder)
 	d.name = name
+	d.head()
 	return
 }

@@ -1,7 +1,7 @@
 package asset
 
 import (
-	"korok.io/korok/audio/ap"
+	"korok.io/korok/audio/sine"
 	"strings"
 	"log"
 )
@@ -16,7 +16,7 @@ func NewAudioManager() *AudioManager {
 
 // Load loads a single Texture file.
 func (am *AudioManager) Load(file string, stream bool) {
-	if typ := audioType(file); typ == ap.None {
+	if typ := audioType(file); typ == sine.None {
 		log.Println("not implemented audio type:", file)
 		return
 	}
@@ -25,7 +25,7 @@ func (am *AudioManager) Load(file string, stream bool) {
 		cnt = v.cnt
 		rid = v.rid
 	} else {
-		id, _ := ap.R.LoadSound(file, audioType(file), sourceType(stream))
+		id, _ := sine.R.LoadSound(file, audioType(file), sourceType(stream))
 		rid = id
 	}
 	am.repo[file] = idCount{rid, cnt+1}
@@ -38,7 +38,7 @@ func (am *AudioManager) Unload(file string) {
 			am.repo[file] = idCount{v.rid, v.cnt -1}
 		} else {
 			delete(am.repo, file)
-			ap.R.UnloadSound(v.rid)
+			sine.R.UnloadSound(v.rid)
 			log.Println("refCont == 0, delete resoruce!!")
 		}
 	}
@@ -51,22 +51,22 @@ func (am *AudioManager) Get(file string) (id uint16){
 	return
 }
 
-func audioType(name string) ap.FileType {
+func audioType(name string) sine.FileType {
 	switch true {
 	case strings.HasSuffix(name, ".wav"):
-		return ap.WAV
+		return sine.WAV
 	case strings.HasSuffix(name, ".ogg"):
-		return ap.VORB
+		return sine.VORB
 	default:
-		return ap.None
+		return sine.None
 	}
 }
 
-func sourceType(stream bool) ap.SourceType {
+func sourceType(stream bool) sine.SourceType {
 	if stream {
-		return ap.Stream
+		return sine.Stream
 	} else {
-		return ap.Static
+		return sine.Static
 	}
 }
 
