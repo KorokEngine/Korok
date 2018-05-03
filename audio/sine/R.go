@@ -62,14 +62,6 @@ func NewAudioManager() *AudioManger {
 	return new(AudioManger)
 }
 
-func (am *AudioManger) LoadSoundBack() {
-
-}
-
-func (am *AudioManger) UnloadSoundBack() {
-
-}
-
 /// 加载数据，得到 Sound 实例
 /// 此时应该得出, 采样率，是否Stream等，
 func (am *AudioManger) LoadSound(name string, ft FileType, sType SourceType) (id uint16, sound *Sound){

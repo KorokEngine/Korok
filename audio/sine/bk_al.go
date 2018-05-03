@@ -221,6 +221,14 @@ func (p *BufferPlayer) Resume() {
 	}
 }
 
+func (p *BufferPlayer) SetVolume(leftVolume, rightVolume float32) {
+
+}
+
+func (p *BufferPlayer) SetLoop(loop int) {
+
+}
+
 func (p *BufferPlayer) State() {
 
 }
@@ -274,6 +282,10 @@ func (p *StreamPlayer) Resume() {
 	if ret := C.SineStreamPlayer_play(&p.player); ret != NoError {
 		log.Println("stream-player resume err:", errString(ret))
 	}
+}
+
+func (p *StreamPlayer) SetVolume(left, right float32) {
+
 }
 
 func (p *StreamPlayer) Tick() {

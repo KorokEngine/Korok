@@ -431,6 +431,14 @@ func (p *BufferPlayer) State() (st int) {
 	return int(state)
 }
 
+func (p *BufferPlayer) SetVolume(left, right float32) {
+	// todo
+}
+
+func (p *BufferPlayer) SetLoop(loop int) {
+	// todo
+}
+
 // StreamPlayer can play audio loaded as StreamData.
 type StreamPlayer struct {
 	player C.SineStreamPlayer
