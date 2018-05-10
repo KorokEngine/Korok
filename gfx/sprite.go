@@ -72,7 +72,7 @@ func (sc *SpriteComp) Flip(flipX, flipY bool) {
 	if flipY {
 		sc.flipY = 1
 	} else {
-		sc.flipX = 0
+		sc.flipY = 0
 	}
 }
 
@@ -282,13 +282,37 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 		w = sbo.width
 		h = sbo.height
 	)
+	// Texture
 	rg := c.Sprite.Region()
-	if c.flipY == 1 {
-		rg.Y1, rg.Y2 = rg.Y2, rg.Y1
+	if rg.Rotated {
+		if c.flipX == 1 {
+			rg.Y1, rg.Y2 = rg.Y2, rg.Y1
+		}
+		if c.flipY == 1 {
+			rg.X1, rg.X2 = rg.X2, rg.X1
+		}
+		buf[1].U, buf[1].V = rg.X1, rg.Y2
+		buf[2].U, buf[2].V = rg.X2, rg.Y2
+		buf[3].U, buf[3].V = rg.X2, rg.Y1
+		buf[0].U, buf[0].V = rg.X1, rg.Y1
+	} else {
+		if c.flipY == 1 {
+			rg.Y1, rg.Y2 = rg.Y2, rg.Y1
+		}
+		if c.flipX == 1 {
+			rg.X1, rg.X2 = rg.X2, rg.X1
+		}
+		buf[0].U, buf[0].V = rg.X1, rg.Y2
+		buf[1].U, buf[1].V = rg.X2, rg.Y2
+		buf[2].U, buf[2].V = rg.X2, rg.Y1
+		buf[3].U, buf[3].V = rg.X1, rg.Y1
 	}
-	if c.flipX == 1 {
-		rg.X1, rg.X2 = rg.X2, rg.X1
-	}
+
+	// Color
+	buf[0].RGBA = c.color
+	buf[1].RGBA = c.color
+	buf[2].RGBA = c.color
+	buf[3].RGBA = c.color
 
 	// Center of model
 	ox := w * c.gravity.x
@@ -299,20 +323,10 @@ func (sbo spriteBatchObject) Fill(buf []PosTexColorVertex) {
 
 	// Let's go!
 	buf[0].X, buf[0].Y = m.Transform(0, 0)
-	buf[0].U, buf[0].V = rg.X1, rg.Y2
-	buf[0].RGBA = c.color
-
 	buf[1].X, buf[1].Y = m.Transform(w, 0)
-	buf[1].U, buf[1].V = rg.X2, rg.Y2
-	buf[1].RGBA = c.color
-
 	buf[2].X, buf[2].Y = m.Transform(w, h)
-	buf[2].U, buf[2].V = rg.X2, rg.Y1
-	buf[2].RGBA = c.color
-
 	buf[3].X, buf[3].Y = m.Transform(0, h)
-	buf[3].U, buf[3].V = rg.X1, rg.Y1
-	buf[3].RGBA = c.color
+
 }
 
 func (sbo spriteBatchObject) Size() int {

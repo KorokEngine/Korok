@@ -32,6 +32,7 @@ type Size struct {
 type Region struct {
 	X1, Y1 float32
 	X2, Y2 float32
+	Rotated bool
 }
 
 
@@ -44,7 +45,7 @@ func (tex bkTex) Tex() uint16 {
 }
 
 func (tex bkTex) Region() Region {
-	return Region{0, 0, 1, 1}
+	return Region{0, 0, 1, 1, false}
 }
 
 func (tex bkTex) Size() (sz Size) {
@@ -122,15 +123,24 @@ func (at *Atlas) release() {
 	at.names = nil
 }
 
-func (at *Atlas) AddItem(x, y, w, h float32, name string) {
+func (at *Atlas) AddItem(x, y, w, h float32, name string, rotated bool) {
 	ii := at.index; at.index++
 
 	at.sizes[ii] = Size{w, h}
-	at.regions[ii] = Region{
-		X1: x/at.w, Y1: y/at.h,
-		X2: (x+w)/at.w, Y2:(y+h)/at.h,
-	}
 	at.names[ii] = name
+
+	if rotated {
+		at.regions[ii] = Region{
+			X1: x/at.w, Y1: y/at.h,
+			X2: (x+h)/at.w, Y2:(y+w)/at.h,
+			Rotated:true,
+		}
+	} else {
+		at.regions[ii] = Region{
+			X1: x/at.w, Y1: y/at.h,
+			X2: (x+w)/at.w, Y2:(y+h)/at.h,
+		}
+	}
 }
 
 func (at *Atlas) GetByName(name string) (tex SubTex, ok bool) {

@@ -78,7 +78,7 @@ func (tm *TextureManager) LoadAtlas(file, desc string) {
 
 		// fill
 		for _, f := range data.Frames {
-			at.AddItem(float32(f.Frame.X), float32(f.Frame.Y), float32(f.Frame.W), float32(f.Frame.H), f.Filename)
+			at.AddItem(float32(f.Frame.X), float32(f.Frame.Y), float32(f.Frame.W), float32(f.Frame.H), f.Filename, f.Rotated)
 		}
 		rid = id
 	}
@@ -105,7 +105,7 @@ func (tm *TextureManager) LoadAtlasIndexed(file string, width, height float32, r
 		// fill
 		for i := 0; i < row; i ++ {
 			for j := 0; j < col; j ++ {
-				at.AddItem(float32(j)*width, float32(i)*height, width, height, "")
+				at.AddItem(float32(j)*width, float32(i)*height, width, height, "", false)
 			}
 		}
 	}
