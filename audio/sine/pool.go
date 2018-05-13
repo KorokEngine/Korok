@@ -1,7 +1,6 @@
 package sine
 
 import (
-	"golang.org/x/mobile/exp/audio/al"
 	"log"
 )
 
@@ -49,7 +48,7 @@ func (sp *SoundPool) initialize (am *AudioManger, engine *Engine, maxChannel int
 }
 
 func (sp *SoundPool) Destroy() {
-	al.CloseDevice()
+	//al.CloseDevice()
 }
 
 func (sp *SoundPool) Mute(mute bool) {

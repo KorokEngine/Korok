@@ -433,7 +433,14 @@ func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
 	max[0], max[1] = max[0] * screen.scaleX, max[1] * screen.scaleY
 
 	rg := tex.Region()
-	ctx.DrawList.AddImage(tex.Tex(), min, max, f32.Vec2{rg.X1, rg.Y1}, f32.Vec2{rg.X2, rg.Y2}, color)
+	if rg.Rotated {
+		ctx.DrawList.AddImageQuad(tex.Tex(),
+			min, f32.Vec2{max[0], min[1]},  max, f32.Vec2{min[0], max[1]}, // xy
+			f32.Vec2{rg.X2, rg.Y1}, f32.Vec2{rg.X2, rg.Y2}, f32.Vec2{rg.X1, rg.Y2}, f32.Vec2{rg.X1, rg.Y1},// uv
+			color)
+	} else {
+		ctx.DrawList.AddImage(tex.Tex(), min, max, f32.Vec2{rg.X1, rg.Y1}, f32.Vec2{rg.X2, rg.Y2}, color)
+	}
 }
 
 // 绘制元素, bb 存储相对于父容器的相对坐标..

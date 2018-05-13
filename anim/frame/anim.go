@@ -84,9 +84,9 @@ func (eng *Engine) Animation(name string) (anim *SpriteAnimation, seq []gfx.Tex2
 	return
 }
 
-func (eng *Engine) newAnimationState() int {
+func (eng *Engine) newAnimationState(entity engi.Entity) int {
 	id := len(eng.states)
-	eng.states = append(eng.states, AnimationState{})
+	eng.states = append(eng.states, AnimationState{Entity:entity})
 	return id
 }
 
@@ -96,7 +96,9 @@ func (eng *Engine) Of(entity engi.Entity) Animator {
 	if ii, ok := eng._map[entity]; ok {
 		return Animator{eng, ii}
 	} else {
-		return Animator{eng, eng.newAnimationState()}
+		ii = eng.newAnimationState(entity)
+		eng._map[entity] = ii
+		return Animator{eng, ii}
 	}
 }
 

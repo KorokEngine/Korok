@@ -487,6 +487,10 @@ func (p *StreamPlayer) Resume() {
 	}
 }
 
+func (p *StreamPlayer) SetVolume(left, right float32) {
+
+}
+
 func (p *StreamPlayer) Tick() {
 	p.fill()
 }

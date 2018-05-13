@@ -37,7 +37,7 @@ func (d *Decoder) SampleRate() int32 {
 }
 
 func (d *Decoder) Buffer() []byte {
-	return ((*[1<<31]byte)(unsafe.Pointer(&d.i16buffer[0])))[:d.size*2]
+	return ((*[1<<30]byte)(unsafe.Pointer(&d.i16buffer[0])))[:d.size*2]
 }
 
 func (d *Decoder) ReachEnd() bool {
@@ -60,7 +60,7 @@ func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, fre
 	i16s := make([]int16, len(floats))
 	f216(floats, i16s)
 	ptr := unsafe.Pointer(&i16s[0])
-	data = ((*[1<<31]byte)(ptr))[:len(floats)*2]
+	data = ((*[1<<30]byte)(ptr))[:len(floats)*2]
 	return
 }
 
