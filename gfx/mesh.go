@@ -34,6 +34,13 @@ type MeshComp struct {
 	engi.Entity
 	Mesh
 	zOrder
+	width float32
+	height float32
+}
+
+func (m *MeshComp) SetSize(width, height float32) {
+	m.width = width
+	m.height = height
 }
 
 func (*Mesh) Type() int32{
@@ -189,6 +196,7 @@ func meshResize(slice []MeshComp, size int) []MeshComp {
 /////
 type MeshRenderFeature struct {
 	Stack *StackAllocator
+	id int
 
 	R *MeshRender
 	mt *MeshTable
@@ -196,32 +204,54 @@ type MeshRenderFeature struct {
 }
 
 // 此处初始化所有的依赖
-func (srf *MeshRenderFeature) Register(rs *RenderSystem) {
+func (f *MeshRenderFeature) Register(rs *RenderSystem) {
 	// init render
 	for _, r := range rs.RenderList {
 		switch br := r.(type) {
 		case *MeshRender:
-			srf.R = br; break
+			f.R = br; break
 		}
 	}
 	// init table
 	for _, t := range rs.TableList {
 		switch table := t.(type){
 		case *MeshTable:
-			srf.mt = table
+			f.mt = table
 		case *TransformTable:
-			srf.xt = table
+			f.xt = table
 		}
 	}
 	// add new feature
-	rs.Accept(srf)
+	f.id = rs.Accept(f)
+}
+
+// TODO:
+// mesh's local model coordinate
+func (f *MeshRenderFeature) Extract(v *View) {
+	//var (
+	//	camera = v.Camera
+	//	xt     = f.xt
+	//	fi = uint32(f.id) << 16
+	//)
+	//for i, spr := range f.mt.comps[:f.mt.index] {
+	//	xf := xt.Comp(spr.Entity)
+	//	if camera.InView(xf, f32.Vec2{spr.width, spr.height}, f32.Vec2{spr.gravity.x, spr.gravity.y}) {
+	//		sid := packSortId(spr.zOrder.value, spr.batchId.value)
+	//		val := fi + uint32(i)
+	//		v.RenderNodes = append(v.RenderNodes, sortObject{sid, val})
+	//	}
+	//}
+}
+
+func (f *MeshRenderFeature) Draw(nodes RenderNodes) {
+
 }
 
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
-func (srf *MeshRenderFeature) Draw(filter []engi.Entity) {
-	xt, mt, n := srf.xt, srf.mt, srf.mt.index
-	mr := srf.R
+func (f *MeshRenderFeature) Draw1(filter []engi.Entity) {
+	xt, mt, n := f.xt, f.mt, f.mt.index
+	mr := f.R
 	mat4 := f32.Ident4()
 
 	for i := 0; i < n; i++ {

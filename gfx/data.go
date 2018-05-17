@@ -15,6 +15,18 @@ type CompRef struct {
 	*SpriteComp
 }
 
+type AABB struct {
+	x, y float32
+	width, height float32
+}
+
+func OverlapAB(a, b *AABB) bool {
+	if a.x < b.x+b.width && a.x+a.width>b.x && a.y < b.y+b.height && a.y+a.height > b.y {
+		return true
+	}
+	return false
+}
+
 type zOrder struct {
 	value int16
 }

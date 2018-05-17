@@ -4,8 +4,6 @@ import (
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx/font"
 	"korok.io/korok/math/f32"
-
-	"sort"
 )
 
 // 文字应该采用 BatchRender 绘制
@@ -220,18 +218,19 @@ func textResize(slice []TextComp, size int) []TextComp {
 type TextRenderFeature struct {
 	Stack *StackAllocator
 	R *BatchRender
+	id int
 
 	tt *TextTable
 	xt *TransformTable
 }
 
 // 此处初始化所有的依赖
-func (trf *TextRenderFeature) Register(rs *RenderSystem) {
+func (f *TextRenderFeature) Register(rs *RenderSystem) {
 	// init render
 	for _, r := range rs.RenderList {
 		switch br := r.(type) {
 		case *BatchRender:
-			trf.R = br; break
+			f.R = br; break
 		}
 	}
 
@@ -239,40 +238,43 @@ func (trf *TextRenderFeature) Register(rs *RenderSystem) {
 	for _, t := range rs.TableList {
 		switch table := t.(type){
 		case *TextTable:
-			trf.tt = table
+			f.tt = table
 		case *TransformTable:
-			trf.xt = table
+			f.xt = table
 		}
 	}
-	rs.Accept(trf)
+	f.id = rs.Accept(f)
 }
 
-func (trf *TextRenderFeature) Draw(filter []engi.Entity) {
-	xt, tt, n := trf.xt, trf.tt, trf.tt.index
-	bList := make([]sortObject, n)
-
-	// get batch list
-	for i := 0; i < n; i++ {
-		text := &tt.comps[i]
-		sortId := packSortId(text.zOrder.value, text.batchId.value)
-		bList[i] = sortObject{sortId, i}
-	}
-
-	// sort
-	sort.Slice(bList, func(i, j int) bool {
-		return bList[i].sortId < bList[j].sortId
-	})
-
+func (f *TextRenderFeature) Extract(v *View) {
 	var (
+		camera = v.Camera
+		xt     = f.xt
+		fi     = uint32(f.id)<<16
+	)
+
+	for i, spr := range f.tt.comps[:f.tt.index] {
+		xf := xt.Comp(spr.Entity)
+		if camera.InView(xf, f32.Vec2{spr.width, spr.height}, f32.Vec2{spr.gravity.x, spr.gravity.y}) {
+			sid := packSortId(spr.zOrder.value, spr.batchId.value)
+			val := fi + uint32(i)
+			v.RenderNodes = append(v.RenderNodes, sortObject{sid, val})
+		}
+	}
+}
+
+func (f *TextRenderFeature) Draw(nodes RenderNodes) {
+	var (
+		tt, xt = f.tt, f.xt
 		sortId  = uint32(0xFFFFFFFF)
 		begin = false
-		render = trf.R
+		render = f.R
 	)
 
 	// batch draw!
 	var textBatchObject = textBatchObject{}
-	for _, b := range bList{
-		ii := b.value
+	for _, b := range nodes {
+		ii := b.value & 0xFFFF
 		if sid := b.sortId; sortId != sid {
 			if begin {
 				render.End()

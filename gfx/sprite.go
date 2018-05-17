@@ -3,8 +3,6 @@ package gfx
 import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
-
-	"sort"
 )
 
 // Sprite is Tex2D
@@ -168,71 +166,74 @@ func spriteResize(slice []SpriteComp, size int) []SpriteComp {
 /////
 type SpriteRenderFeature struct {
 	Stack *StackAllocator
+	id int
 
 	R *BatchRender
 	st *SpriteTable
 	xt *TransformTable
 }
 
-func (srf *SpriteRenderFeature) SetRender(render *BatchRender) {
-	srf.R = render
+func (f *SpriteRenderFeature) SetRender(render *BatchRender) {
+	f.R = render
 }
 
-func (srf *SpriteRenderFeature) SetTable(st *SpriteTable, xt *TransformTable) {
-	srf.st, srf.xt = st, xt
+func (f *SpriteRenderFeature) SetTable(st *SpriteTable, xt *TransformTable) {
+	f.st, f.xt = st, xt
 }
 
 // 此处初始化所有的依赖
-func (srf *SpriteRenderFeature) Register(rs *RenderSystem) {
+func (f *SpriteRenderFeature) Register(rs *RenderSystem) {
 	// init render
 	for _, r := range rs.RenderList {
 		switch br := r.(type) {
 		case *BatchRender:
-			srf.R = br; break
+			f.R = br; break
 		}
 	}
 	// init table
 	for _, t := range rs.TableList {
 		switch table := t.(type){
 		case *SpriteTable:
-			srf.st = table
+			f.st = table
 		case *TransformTable:
-			srf.xt = table
+			f.xt = table
 		}
 	}
-	// add new feature
-	rs.Accept(srf)
+	// add new feature, use the index as id
+	f.id = rs.Accept(f)
 }
 
-
-// 此处执行渲染
-// BatchRender 需要的是一组排过序的渲染对象！！！
-func (srf *SpriteRenderFeature) Draw(filter []engi.Entity) {
-	xt, st, n := srf.xt, srf.st, srf.st.index
-	bList := make([]sortObject, n)
-
-	// get batch list
-	for i := 0; i < n; i++ {
-		sprite := &st.comps[i]
-		sortId := packSortId(sprite.zOrder.value, sprite.batchId.value)
-		bList[i] = sortObject{sortId,i}
-	}
-
-	// sort
-	sort.Slice(bList, func(i, j int) bool {
-		return bList[i].sortId < bList[j].sortId
-	})
-
+func (f *SpriteRenderFeature) Extract(v *View) {
 	var (
+		camera = v.Camera
+		xt     = f.xt
+		fi = uint32(f.id) << 16
+	)
+	for i, spr := range f.st.comps[:f.st.index] {
+		xf := xt.Comp(spr.Entity)
+		sz := f32.Vec2{spr.width, spr.height}
+		g  := f32.Vec2{spr.gravity.x, spr.gravity.y}
+
+		if camera.InView(xf, sz , g) {
+			sid := packSortId(spr.zOrder.value, spr.batchId.value)
+			val := fi + uint32(i)
+			v.RenderNodes = append(v.RenderNodes, sortObject{sid, val})
+		}
+	}
+}
+
+func (f *SpriteRenderFeature) Draw(nodes RenderNodes) {
+	var (
+		st, xt = f.st, f.xt
 		sortId = uint32(0xFFFFFFFF)
 		begin = false
-		render = srf.R
+		render = f.R
 	)
 
 	// batch draw!
 	var spriteBatchObject = spriteBatchObject{}
-	for _, b := range bList{
-		ii := b.value
+	for _, b := range nodes {
+		ii := b.value & 0xFFFF
 		if sid := b.sortId; sortId != sid {
 			if begin {
 				render.End()

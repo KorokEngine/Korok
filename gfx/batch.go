@@ -43,5 +43,5 @@ type BatchObject interface {
 
 type sortObject struct {
 	sortId uint32
-	value int
+	value uint32
 }

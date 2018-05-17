@@ -31,10 +31,18 @@ type RenderObject struct {
 	scale f32.Vec2
 }
 
+type RenderNodes []sortObject
+
+type View struct {
+	*Camera
+	RenderNodes
+}
+
 // 传入参数是经过可见性系统筛选后的 Entity，这是一个很小的数组，可以
 // 直接传给各个 RenderFeature 来做可见性判断.
 type RenderFeature interface {
-	Draw(filter []engi.Entity)
+	Extract(v *View)
+	Draw(nodes RenderNodes)
 }
 
 // 所有的Table和Render都在此管理
@@ -43,6 +51,7 @@ type RenderFeature interface {
 // 它们之间也会存在各种组合...
 type RenderSystem struct {
 	MainCamera Camera
+	View
 
 	// shortcut for TransformTable
 	xfs *TransformTable
@@ -69,16 +78,10 @@ func (th *RenderSystem) RequireTable(tables []interface{}) {
 	}
 }
 
-func (th *RenderSystem) Accept(rf RenderFeature) {
+func (th *RenderSystem) Accept(rf RenderFeature) (index int){
+	index = len(th.FeatureList)
 	th.FeatureList = append(th.FeatureList, rf)
-}
-
-func (th *RenderSystem) featureUpdate(dt float32) {
-	entities := th.V.Collect(&th.MainCamera)
-
-	for _, f := range th.FeatureList {
-		f.Draw(entities)
-	}
+	return
 }
 
 // register type-render
@@ -103,16 +106,40 @@ func (th *RenderSystem) Update(dt float32) {
 		r.SetCamera(&th.MainCamera)
 	}
 
-	// draw
+	// build view
+	v := th.View
+
+	// extract
 	for _, f := range th.FeatureList {
-		f.Draw(nil)
+		f.Extract(&v)
 	}
+
+	// draw
+	var (
+		nodes, n = v.RenderNodes, len(v.RenderNodes)
+	)
+
+	for i, j := 0, 0; i < n; i = j {
+		fi := nodes[i].value>>16
+		j = i+1
+		for j < n && nodes[j].value>>16 == fi {
+			j++
+		}
+		f := th.FeatureList[fi]
+		f.Draw(v.RenderNodes[i:j])
+	}
+
+	// view reset
+	th.View.RenderNodes = th.View.RenderNodes[:0]
 }
 
 func (th *RenderSystem) Destroy() {
 
 }
 
-func NewRenderSystem() *RenderSystem {
-	return &RenderSystem{MainCamera:Camera{follow:engi.Ghost}}
+func NewRenderSystem() (rs *RenderSystem) {
+	rs = &RenderSystem{MainCamera:Camera{follow:engi.Ghost}}
+	rs.View.Camera = &rs.MainCamera
+	rs.View.RenderNodes = make([]sortObject, 0)
+	return
 }

@@ -126,6 +126,7 @@ func effectCompResize(slice []ParticleComp, size int) []ParticleComp {
 
 type ParticleRenderFeature struct {
 	mr *gfx.MeshRender
+	id int
 
 	et *ParticleSystemTable
 	xt *gfx.TransformTable
@@ -138,33 +139,41 @@ type ParticleRenderFeature struct {
 }
 
 // 此处初始化所有的依赖
-func (prf *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
+func (f *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
 	// init render
 	for _, r := range rs.RenderList {
 		switch mr := r.(type) {
 		case *gfx.MeshRender:
-			prf.mr = mr; break
+			f.mr = mr; break
 		}
 	}
 	// init table
 	for _, t := range rs.TableList {
 		switch table := t.(type){
 		case *ParticleSystemTable:
-			prf.et = table
+			f.et = table
 		case *gfx.TransformTable:
-			prf.xt = table
+			f.xt = table
 		}
 	}
 	// add new feature
-	rs.Accept(prf)
+	f.id = rs.Accept(f)
 }
 var mat = f32.Ident4()
 
+func (f *ParticleRenderFeature) Extract(v *gfx.View) {
+
+}
+
+func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
+
+}
+
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
-func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
-	xt, mt, n := prf.xt, prf.et, prf.et.index
-	mr := prf.mr
+func (f *ParticleRenderFeature) draw(filter []engi.Entity) {
+	xt, mt, n := f.xt, f.et, f.et.index
+	mr := f.mr
 
 	if n == 0 {
 		return
@@ -179,9 +188,9 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 			requireIndexSize = cap
 		}
 	}
-	prf.AllocBuffer(requireVertexSize, requireIndexSize)
+	f.AllocBuffer(requireVertexSize, requireIndexSize)
 
-	vertex := prf.BufferContext.vertex
+	vertex := f.BufferContext.vertex
 	renderObjs := make([]renderObject, n)
 	vertexOffset := int(0)
 
@@ -201,8 +210,8 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 		comp.sim.Visualize(buf, comp.tex)
 
 		ro.Mesh = gfx.Mesh{
-			IndexId:     prf.BufferContext.indexId,
-			VertexId:    prf.BufferContext.vertexId,
+			IndexId:     f.BufferContext.indexId,
+			VertexId:    f.BufferContext.vertexId,
 			FirstVertex: uint16(vertexOffset),
 			NumVertex:   uint16(vn),
 			FirstIndex:  0,
@@ -217,7 +226,7 @@ func (prf *ParticleRenderFeature) Draw(filter []engi.Entity) {
 	dbg.Move(400, 300)
 	dbg.DrawStrScaled(fmt.Sprintf("lives: %d", vertexOffset>>2), .6)
 
-	prf.vb.Update(0, updateSize, unsafe.Pointer(&vertex[0]), false)
+	f.vb.Update(0, updateSize, unsafe.Pointer(&vertex[0]), false)
 
 	for i := range renderObjs {
 		ro := &renderObjs[i]
