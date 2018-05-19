@@ -20,25 +20,25 @@ Document is in progress... But we have a [DemoProject](https://github.com/KorokE
 
 > Input Control - Show how to use `InputSystem`
 
-<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/alpha_input.gif" width="500">
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/v1_input.gif" width="500">
 
 > Sprite Animation - Show how to use sprite animation system
 
-<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_frame.gif" width="500">
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/v1_sprite_anim.gif" width="500">
 
 > Tween Animation - Show how to use tween animation system
 
-<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_tween.gif" width="500">
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/v1_tween.gif" width="500">
 
 
 > ParticleSystem - Show how to use `ParticleComp`
 
-<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_particle.jpeg" width="500">
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/v1_snow.gif" width="500">
 
 
 > Gui - Show how to use korok's imgui-api
 
-<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/beta_gui.gif" width="500">
+<img src="https://github.com/KorokEngine/beta-demo/blob/master/images/v1_gui.jpeg" width="500">
 
 ## License
 
