@@ -16,22 +16,20 @@ type Render interface {
 // 适合于渲染系统访问的表达方式.
 // 其实不必这么麻烦，我们在 RenderFeature里面涉及一个 Extract 步骤，构建一个渲染列表，然后再绘制即可.
 // 这个列表需要动态构建
+//type renderObject struct {
+//
+//}
+
+// Shared properties by most render object.
 type RenderObject struct {
-	RenderData
-
-	Type uint32
-
-	// Position
-	position f32.Vec2
-
-	// Rotation
-	rotation float32
-
-	// Scale
-	scale f32.Vec2
+	engi.Entity
+	Size f32.Vec2
+	Center f32.Vec2
+	ZOrder int16
+	BatchId uint16
 }
 
-type RenderNodes []sortObject
+type RenderNodes []SortObject
 
 type View struct {
 	*Camera
@@ -120,9 +118,9 @@ func (th *RenderSystem) Update(dt float32) {
 	)
 
 	for i, j := 0, 0; i < n; i = j {
-		fi := nodes[i].value>>16
+		fi := nodes[i].Value >>16
 		j = i+1
-		for j < n && nodes[j].value>>16 == fi {
+		for j < n && nodes[j].Value>>16 == fi {
 			j++
 		}
 		f := th.FeatureList[fi]
@@ -140,6 +138,6 @@ func (th *RenderSystem) Destroy() {
 func NewRenderSystem() (rs *RenderSystem) {
 	rs = &RenderSystem{MainCamera:Camera{follow:engi.Ghost}}
 	rs.View.Camera = &rs.MainCamera
-	rs.View.RenderNodes = make([]sortObject, 0)
+	rs.View.RenderNodes = make([]SortObject, 0)
 	return
 }

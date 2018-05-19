@@ -35,6 +35,7 @@ type TextComp struct {
 	gravity struct{
 		x, y float32
 	}
+	visible bool
 
 	// TextModel
 	text  string
@@ -58,6 +59,10 @@ func (tc *TextComp) SetText(text string) {
 func (tc *TextComp) SetGravity(x, y float32) {
 	tc.gravity.x = x
 	tc.gravity.y = y
+}
+
+func (tc *TextComp) SetVisible(v bool) {
+	tc.visible = v
 }
 
 func (tc *TextComp) SetFontSize(sz float32) {
@@ -158,6 +163,7 @@ func (tt *TextTable) NewComp(entity engi.Entity) (tc *TextComp) {
 	tc.color = 0xFFFFFFFF
 	tc.gravity.x = .5
 	tc.gravity.y = .5
+	tc.visible = true
 	tt._map[ei] = tt.index;
 	tt.index ++
 	return
@@ -255,10 +261,13 @@ func (f *TextRenderFeature) Extract(v *View) {
 
 	for i, spr := range f.tt.comps[:f.tt.index] {
 		xf := xt.Comp(spr.Entity)
-		if camera.InView(xf, f32.Vec2{spr.width, spr.height}, f32.Vec2{spr.gravity.x, spr.gravity.y}) {
-			sid := packSortId(spr.zOrder.value, spr.batchId.value)
+		sz := f32.Vec2{spr.width, spr.height}
+		g  := f32.Vec2{spr.gravity.x, spr.gravity.y}
+
+		if spr.visible && camera.InView(xf, sz, g) {
+			sid := PackSortId(spr.zOrder.value, spr.batchId.value)
 			val := fi + uint32(i)
-			v.RenderNodes = append(v.RenderNodes, sortObject{sid, val})
+			v.RenderNodes = append(v.RenderNodes, SortObject{sid, val})
 		}
 	}
 }
@@ -274,15 +283,15 @@ func (f *TextRenderFeature) Draw(nodes RenderNodes) {
 	// batch draw!
 	var textBatchObject = textBatchObject{}
 	for _, b := range nodes {
-		ii := b.value & 0xFFFF
-		if sid := b.sortId; sortId != sid {
+		ii := b.Value & 0xFFFF
+		if sid := b.SortId; sortId != sid {
 			if begin {
 				render.End()
 			}
 			sortId = sid
 			begin = true
 			tex2d, _ := tt.comps[ii].font.Tex2D()
-			depth, _ := unpackSortId(b.sortId)
+			depth, _ := UnpackSortId(b.SortId)
 			render.Begin(tex2d, depth)
 		}
 		textBatchObject.TextComp = &tt.comps[ii]

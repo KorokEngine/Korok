@@ -225,37 +225,21 @@ func (f *MeshRenderFeature) Register(rs *RenderSystem) {
 	f.id = rs.Accept(f)
 }
 
-// TODO:
-// mesh's local model coordinate
+// TODO: Visibility Test for MeshComp
 func (f *MeshRenderFeature) Extract(v *View) {
-	//var (
-	//	camera = v.Camera
-	//	xt     = f.xt
-	//	fi = uint32(f.id) << 16
-	//)
-	//for i, spr := range f.mt.comps[:f.mt.index] {
-	//	xf := xt.Comp(spr.Entity)
-	//	if camera.InView(xf, f32.Vec2{spr.width, spr.height}, f32.Vec2{spr.gravity.x, spr.gravity.y}) {
-	//		sid := packSortId(spr.zOrder.value, spr.batchId.value)
-	//		val := fi + uint32(i)
-	//		v.RenderNodes = append(v.RenderNodes, sortObject{sid, val})
-	//	}
-	//}
+	for i, m := range f.mt.comps[:f.mt.index] {
+		sid := PackSortId(m.zOrder.value, 0)
+		v.RenderNodes = append(v.RenderNodes, SortObject{sid, uint32(i)})
+	}
 }
 
 func (f *MeshRenderFeature) Draw(nodes RenderNodes) {
-
-}
-
-// 此处执行渲染
-// BatchRender 需要的是一组排过序的渲染对象！！！
-func (f *MeshRenderFeature) Draw1(filter []engi.Entity) {
-	xt, mt, n := f.xt, f.mt, f.mt.index
+	xt, mt := f.xt, f.mt
 	mr := f.R
 	mat4 := f32.Ident4()
 
-	for i := 0; i < n; i++ {
-		mesh := &mt.comps[i]
+	for _, b := range nodes {
+		mesh := &mt.comps[b.Value]
 		entity := mesh.Entity
 		xf  := xt.Comp(entity)
 		srt := xf.world
@@ -276,4 +260,3 @@ func (f *MeshRenderFeature) Draw1(filter []engi.Entity) {
 		mr.Draw(&mesh.Mesh, &mat4, int32(mesh.zOrder.value))
 	}
 }
-

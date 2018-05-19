@@ -5,10 +5,6 @@ import (
 	"unsafe"
 )
 
-type RenderData interface{
-	Type() int32
-}
-
 type CompRef struct {
 	Type int32
 	*Transform
@@ -51,13 +47,13 @@ func (b *batchId) BatchId() uint16 {
 	return b.value
 }
 
-func packSortId(z int16, b uint16) (sid uint32) {
+func PackSortId(z int16, b uint16) (sid uint32) {
 	 sid = uint32(int32(z) + 0xFFFF>>1)
 	 sid = (sid << 16) + uint32(b)
 	 return
 }
 
-func unpackSortId(sortId uint32) (z int16, b uint16) {
+func UnpackSortId(sortId uint32) (z int16, b uint16) {
 	b = uint16(sortId & 0xFFFF)
 	z = int16(int32(sortId>>16)-0xFFFF>>1)
 	return

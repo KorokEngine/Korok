@@ -161,17 +161,21 @@ func (f *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
 }
 var mat = f32.Ident4()
 
+// TODO: Visibility Test for ParticleComp
 func (f *ParticleRenderFeature) Extract(v *gfx.View) {
-
+	for i, m := range f.et.comps[:f.et.index] {
+		sid := gfx.PackSortId(m.zOrder, 0)
+		v.RenderNodes = append(v.RenderNodes, gfx.SortObject{sid, uint32(i)})
+	}
 }
 
 func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
-
+	f.draw()
 }
 
 // 此处执行渲染
 // BatchRender 需要的是一组排过序的渲染对象！！！
-func (f *ParticleRenderFeature) draw(filter []engi.Entity) {
+func (f *ParticleRenderFeature) draw() {
 	xt, mt, n := f.xt, f.et, f.et.index
 	mr := f.mr
 

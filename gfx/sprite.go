@@ -25,6 +25,7 @@ type SpriteComp struct {
 	gravity struct{
 		x, y float32
 	}
+	visible bool
 }
 
 func (sc *SpriteComp) SetSprite(spt Sprite) {
@@ -51,6 +52,10 @@ func (sc *SpriteComp) Size() (w, h float32) {
 func (sc *SpriteComp) SetGravity(x, y float32) {
 	sc.gravity.x = x
 	sc.gravity.y = y
+}
+
+func (sc *SpriteComp) SetVisible(v bool) {
+	sc.visible = v
 }
 
 func (sc *SpriteComp) Color() uint32 {
@@ -100,6 +105,7 @@ func (st *SpriteTable) NewComp(entity engi.Entity) (sc *SpriteComp) {
 	sc.Entity = entity
 	sc.gravity.x, sc.gravity.y = .5, .5
 	sc.color = 0xFFFFFFFF
+	sc.visible = true
 	st._map[ei] = st.index
 	st.index ++
 	return
@@ -214,10 +220,10 @@ func (f *SpriteRenderFeature) Extract(v *View) {
 		sz := f32.Vec2{spr.width, spr.height}
 		g  := f32.Vec2{spr.gravity.x, spr.gravity.y}
 
-		if camera.InView(xf, sz , g) {
-			sid := packSortId(spr.zOrder.value, spr.batchId.value)
+		if spr.visible && camera.InView(xf,sz , g) {
+			sid := PackSortId(spr.zOrder.value, spr.batchId.value)
 			val := fi + uint32(i)
-			v.RenderNodes = append(v.RenderNodes, sortObject{sid, val})
+			v.RenderNodes = append(v.RenderNodes, SortObject{sid, val})
 		}
 	}
 }
@@ -233,15 +239,15 @@ func (f *SpriteRenderFeature) Draw(nodes RenderNodes) {
 	// batch draw!
 	var spriteBatchObject = spriteBatchObject{}
 	for _, b := range nodes {
-		ii := b.value & 0xFFFF
-		if sid := b.sortId; sortId != sid {
+		ii := b.Value & 0xFFFF
+		if sid := b.SortId; sortId != sid {
 			if begin {
 				render.End()
 			}
 			sortId = sid
 			begin = true
 			tex2d := st.comps[ii].Sprite.Tex()
-			depth, _ := unpackSortId(b.sortId)
+			depth, _ := UnpackSortId(b.SortId)
 			render.Begin(tex2d, depth)
 		}
 		spriteBatchObject.SpriteComp = &st.comps[ii]

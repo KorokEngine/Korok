@@ -41,7 +41,7 @@ type BatchObject interface {
 	Size() int
 }
 
-type sortObject struct {
-	sortId uint32
-	value uint32
+type SortObject struct {
+	SortId uint32
+	Value  uint32
 }
