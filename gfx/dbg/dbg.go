@@ -20,6 +20,8 @@ const step = 14
 var screen struct{
 	w, h float32
 }
+// max value of z-order
+const zOrder = int32(0xFFFF>>1)
 
 // dbg - draw debug info
 // provide self-contained, im-gui api
@@ -37,9 +39,9 @@ type PosTexColorVertex struct {
 }
 
 func Init(w, h int) {
-	if g_render == nil {
-		g_render = NewDebugRender(vsh, fsh)
-		g_buffer = &g_render.Buffer
+	if gRender == nil {
+		gRender = NewDebugRender(vsh, fsh)
+		gBuffer = &gRender.Buffer
 	}
 	screen.w = float32(w)
 	screen.h = float32(h)
@@ -47,39 +49,46 @@ func Init(w, h int) {
 	log.Println("dbg init w,h", w, h)
 }
 
+func SetScreenSize(w, h float32) {
+	screen.w, screen.h = w, h
+	gRender.SetViewPort(w, h)
+
+	log.Println("set dbg size", w, h)
+}
+
 func Destroy() {
-	if g_buffer != nil {
-		g_buffer.Destroy()
+	if gBuffer != nil {
+		gBuffer.Destroy()
 	}
 }
 
 func FPS(fps int32) {
-	x, y := g_buffer.x, g_buffer.y
-	color := g_buffer.color
+	x, y := gBuffer.x, gBuffer.y
+	color := gBuffer.color
 
-	g_buffer.x, g_buffer.y = 10, 10
-	g_buffer.color = 0xFF121212
+	gBuffer.x, gBuffer.y = 10, 10
+	gBuffer.color = 0xFF121212
 	DrawStr(fmt.Sprintf("%d FPS", fps))
 
-	g_buffer.x, g_buffer.y = x, y
-	g_buffer.color = color
+	gBuffer.x, gBuffer.y = x, y
+	gBuffer.color = color
 }
 
 func Move(x, y float32) {
-	g_buffer.x, g_buffer.y = x, y
+	gBuffer.x, gBuffer.y = x, y
 }
 
 func Return() {
-	g_buffer.y -= step
+	gBuffer.y -= step
 }
 
 func Color(argb uint32) {
-	g_buffer.color = argb
+	gBuffer.color = argb
 }
 
 // draw a rect
 func DrawRect(x, y, w, h float32) {
-	g_buffer.Rect(x, y, w, h)
+	gBuffer.Rect(x, y, w, h)
 }
 
 // draw a circle
@@ -89,17 +98,17 @@ func DrawCircle(x,y float32, r float32) {
 
 // draw string
 func DrawStr(str string) {
-	g_buffer.String(str, 1)
+	gBuffer.String(str, 1)
 }
 
 func DrawStrScaled(str string, scale float32) {
-	g_buffer.String(str, scale)
+	gBuffer.String(str, scale)
 }
 
 func NextFrame() {
-	g_buffer.Update()
-	g_render.Draw()
-	g_buffer.Reset()
+	gBuffer.Update()
+	gRender.Draw()
+	gBuffer.Reset()
 
 }
 
@@ -112,8 +121,8 @@ type DebugRender struct {
 	program uint16
 
 	// uniform handle
-	umh_P  uint16 // Projection
-	umh_S0 uint16 // Sampler0
+	umhProjection uint16 // Projection
+	umhSampler0   uint16 // Sampler0
 
 	// buffer
 	Buffer TextShapeBuffer
@@ -133,38 +142,41 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		sh.AddAttributeBinding("xyuv\x00", 0, p2t2c4[0])
 		sh.AddAttributeBinding("rgba\x00", 0, p2t2c4[1])
 
-		p := f32.Ortho2D(0, 480, 0, 320)
 		s0 := int32(0)
-
 		// setup uniform
 		if pid, _ := bk.R.AllocUniform(id, "projection\x00", bk.UniformMat4, 1); pid != bk.InvalidId {
-			dr.umh_P = pid
-			bk.SetUniform(pid, unsafe.Pointer(&p[0]))
+			dr.umhProjection = pid
 		}
 		if sid,_ := bk.R.AllocUniform(id, "tex\x00", bk.UniformSampler, 1); sid != bk.InvalidId {
-			dr.umh_S0 = sid
+			dr.umhSampler0 = sid
 			bk.SetUniform(sid, unsafe.Pointer(&s0))
 		}
 
 		// submit render state
 		//bk.Touch(0)
-		bk.Submit(0, id, 0)
+		bk.Submit(0, id, zOrder)
 	}
 	// setup buffer, we can draw 512 rect at most!!
 	dr.Buffer.init(2048)
 	return dr
 }
 
+func (dr *DebugRender) SetViewPort(w, h float32) {
+	p := f32.Ortho2D(0, w, 0, h)
+	bk.SetUniform(dr.umhProjection, unsafe.Pointer(&p[0]))
+	bk.Submit(0, dr.program, zOrder)
+}
+
 func (dr *DebugRender) Draw() {
 	bk.SetState(dr.stateFlags, dr.rgba)
-	bk.SetTexture(0, dr.umh_S0, uint16(dr.Buffer.fontTexId), 0)
+	bk.SetTexture(0, dr.umhSampler0, uint16(dr.Buffer.fontTexId), 0)
 
 	b := &dr.Buffer
 	// set vertex
 	bk.SetVertexBuffer(0, b.vertexId, 0, b.pos)
 	bk.SetIndexBuffer(dr.Buffer.indexId, 0, b.pos * 6 >> 2)
 	// submit
-	bk.Submit(0, dr.program, 0)
+	bk.Submit(0, dr.program, zOrder)
 }
 
 type TextShapeBuffer struct {
@@ -301,6 +313,6 @@ func (buff *TextShapeBuffer) Destroy() {
 }
 
 //// static filed
-var g_render *DebugRender
-var g_buffer *TextShapeBuffer
+var gRender *DebugRender
+var gBuffer *TextShapeBuffer
 

@@ -14,7 +14,7 @@ type SpriteAnimation struct {
 	Loop bool
 }
 
-//
+// SpriteAnimComp
 type AnimationState struct {
 	engi.Entity
 	define int
@@ -130,6 +130,18 @@ func (am Animator) Rate(r float32) Animator {
 	return am
 }
 
+// delete from playing list
+func (am Animator) Stop() {
+	sz := len(am.sas.states)
+	if am.index >= 0 && am.index < sz {
+		if am.index != sz-1 {
+			am.sas.states[am.index] = am.sas.states[sz-1]
+		}
+		am.sas.states = am.sas.states[:sz-1]
+		am.index = -1
+	}
+}
+
 func (eng *Engine) Update(dt float32) {
 	// update animation
 	for i := range eng.states {
@@ -149,10 +161,5 @@ func (eng *Engine) Update(dt float32) {
 		ii := st.ii % anim.Len
 		frame := eng.frames[anim.Start+ii]
 		comp.SetSprite(frame)
-
-		// log.Println("play subtex:", comp.SubTex)
 	}
-
-	// remove dead
-
 }

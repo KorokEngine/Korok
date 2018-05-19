@@ -96,6 +96,9 @@ func (g *Game) setGameSize(w, h float32) {
 
 	// gui real screen size
 	gui.SetScreenSize(w, h)
+
+	// dbg screen size
+	dbg.SetScreenSize(w, h)
 }
 
 // init subsystem

@@ -54,6 +54,10 @@ func (sc *SpriteComp) SetGravity(x, y float32) {
 	sc.gravity.y = y
 }
 
+func (sc *SpriteComp) Gravity() (x, y float32) {
+	return sc.gravity.x, sc.gravity.y
+}
+
 func (sc *SpriteComp) SetVisible(v bool) {
 	sc.visible = v
 }
