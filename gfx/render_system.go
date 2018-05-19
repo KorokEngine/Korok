@@ -5,6 +5,7 @@ import (
 	"korok.io/korok/engi"
 	"korok.io/korok/gfx/dbg"
 	"fmt"
+	"sort"
 )
 
 type RenderType int32
@@ -112,11 +113,15 @@ func (th *RenderSystem) Update(dt float32) {
 		f.Extract(&v)
 	}
 
-	// draw
+	// sort
 	var (
 		nodes, n = v.RenderNodes, len(v.RenderNodes)
 	)
+	sort.Slice(nodes, func(i, j int) bool {
+		return nodes[i].SortId < nodes[j].SortId
+	})
 
+	// draw
 	for i, j := 0, 0; i < n; i = j {
 		fi := nodes[i].Value >>16
 		j = i+1

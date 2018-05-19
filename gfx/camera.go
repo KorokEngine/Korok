@@ -4,8 +4,6 @@ import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
 	"korok.io/korok/math"
-	"korok.io/korok/gfx/dbg"
-	"fmt"
 )
 
 type CameraMode uint8
@@ -81,11 +79,6 @@ func (c *Camera) InView(xf *Transform, size, gravity f32.Vec2) bool {
 		size[0], size[1] = size[0]*xf.world.Scale[0], size[1]*xf.world.Scale[1]
 		a := AABB{p[0]-size[0]*gravity[0], p[1]-size[1]*gravity[1], size[0], size[1]}
 		b := AABB{c.pos.x-c.view.w/2, c.pos.y-c.view.h/2, c.view.w, c.view.h}
-
-		if size[0] > 50 {
-			dbg.Move(100, 260)
-			dbg.DrawStrScaled(fmt.Sprintf("Rect: %f, pos: %f", c.view.h, p[1]), .6)
-		}
 		return OverlapAB(&a, &b)
 	} else {
 		srt := xf.world

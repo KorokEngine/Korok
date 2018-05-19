@@ -240,7 +240,7 @@ func (f *SpriteRenderFeature) Draw(nodes RenderNodes) {
 	var spriteBatchObject = spriteBatchObject{}
 	for _, b := range nodes {
 		ii := b.Value & 0xFFFF
-		if sid := b.SortId; sortId != sid {
+		if sid := b.SortId & 0xFFFF; sortId != sid {
 			if begin {
 				render.End()
 			}
