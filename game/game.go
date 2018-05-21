@@ -6,6 +6,7 @@ import (
 	"korok.io/korok/gfx"
 	"korok.io/korok/effect"
 	"korok.io/korok/anim"
+	"korok.io/korok/anim/frame"
 	"korok.io/korok/asset"
 	"korok.io/korok/hid/input"
 	"korok.io/korok/gfx/dbg"
@@ -202,6 +203,9 @@ func (g *Game) loadTables() {
 
 	psTable := effect.NewParticleSystemTable(MaxParticleSize)
 	g.DB.Tables = append(g.DB.Tables, psTable)
+
+	spriteAnimTable := frame.NewFlipbookTable(MaxSpriteSize)
+	g.DB.Tables = append(g.DB.Tables, spriteAnimTable)
 }
 
 func (g *Game) Input(dt float32) {

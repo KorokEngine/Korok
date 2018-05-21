@@ -13,6 +13,7 @@ import (
 	"korok.io/korok/effect"
 	"korok.io/korok/hid/input"
 	"korok.io/korok/math/f32"
+	"korok.io/korok/anim/frame"
 )
 
 const VERSION_CODE  = 2
@@ -53,6 +54,8 @@ func Run(options *Options, sc game.Scene)  {
 			Tag = t
 		case *game.ScriptTable:
 			Script = t
+		case *frame.FlipbookTable:
+			Flipbook = t
 		}
 	}
 
@@ -80,20 +83,23 @@ func SetDebug(enable bool) {
 var G *game.Game
 var SceneMan *game.SceneManager
 
-///// entity-api
+// entity-api
 var Entity *engi.EntityManager
 
 var Script *game.ScriptTable
 var Tag    *game.TagTable
 
-///// shortcut component-api for rendering system
+// shortcut component-api for rendering system
 var Sprite 	   *gfx.SpriteTable
 var Mesh       *gfx.MeshTable
 var Transform  *gfx.TransformTable
 var Text       *gfx.TextTable
 
-///// particle system
+// animation system
+var Flipbook *frame.FlipbookTable
+
+// particle system
 var ParticleSystem *effect.ParticleSystemTable
 
-///// input system
+// input system
 var Input *input.InputSystem

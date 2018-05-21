@@ -1,59 +1,43 @@
 package frame
 
 import (
-	"korok.io/korok/engi"
 	"korok.io/korok/gfx"
 )
 
-// implement frame-animation system
+// implement sprite-animation system
 
-// 动画定义
-type SpriteAnimation struct {
+// Frames data of Sprite Animation
+type Animation struct {
 	Name string
 	Start, Len int
 	Loop bool
 }
 
-// SpriteAnimComp
-type AnimationState struct {
-	engi.Entity
-	define int
-	dt, rate float32
-	ii int
-	running bool
-	once bool
-}
-
-// 序列帧动画
+// Sprite Animation System
 type Engine struct {
-	// 原始的帧地址
+	// raw frames
 	frames []gfx.Tex2D
-
-	// 动画定义
-	data []SpriteAnimation
-
-	// sprite
-	st *gfx.SpriteTable
-
-	// 正在播放的动画
-	states []AnimationState
-
-	// 从名称到动画实例的映射
+	// raw animation
+	data []Animation
+	// mapping from name to index
 	names map[string]int
-	_map map[engi.Entity]int
+
+	// sprite and animate table
+	st *gfx.SpriteTable
+	at *FlipbookTable
 }
 
 func NewEngine() *Engine {
-	return &Engine{
-		names:make(map[string]int),
-		_map:make(map[engi.Entity]int),
-	}
+	return &Engine{ names:make(map[string]int) }
 }
 
 func (eng *Engine) RequireTable(tables []interface{}) {
 	for _, t := range tables {
-		if st, ok := t.(*gfx.SpriteTable); ok {
-			eng.st = st; break
+		switch table := t.(type) {
+		case *gfx.SpriteTable:
+			eng.st = table
+		case *FlipbookTable:
+			eng.at = table
 		}
 	}
 }
@@ -70,13 +54,13 @@ func (eng *Engine) NewAnimation(name string, frames []gfx.Tex2D, loop bool) {
 	start, size := len(eng.frames), len(frames)
 	eng.frames = append(eng.frames, frames...)
 	// new animation
-	eng.data = append(eng.data, SpriteAnimation{name, start, size, loop})
+	eng.data = append(eng.data, Animation{name, start, size, loop})
 	// keep mapping
 	eng.names[name] = len(eng.data)-1
 }
 
 // 返回动画定义 - 好像并没有太大的意义
-func (eng *Engine) Animation(name string) (anim *SpriteAnimation, seq []gfx.Tex2D) {
+func (eng *Engine) Animation(name string) (anim *Animation, seq []gfx.Tex2D) {
 	if ii, ok := eng.names[name]; ok {
 		anim = &eng.data[ii]
 		seq  = eng.frames[anim.Start:anim.Start+anim.Len]
@@ -84,82 +68,31 @@ func (eng *Engine) Animation(name string) (anim *SpriteAnimation, seq []gfx.Tex2
 	return
 }
 
-func (eng *Engine) newAnimationState(entity engi.Entity) int {
-	id := len(eng.states)
-	eng.states = append(eng.states, AnimationState{Entity:entity})
-	return id
-}
-
-// 返回当前 Entity 绑定的动画状态
-// 新建一个动画执行器？？
-func (eng *Engine) Of(entity engi.Entity) Animator {
-	if ii, ok := eng._map[entity]; ok {
-		return Animator{eng, ii}
-	} else {
-		ii = eng.newAnimationState(entity)
-		eng._map[entity] = ii
-		return Animator{eng, ii}
-	}
-}
-
-// 指向当前动画状态的 Handle
-type Animator struct {
-	sas *Engine
-	index int
-}
-
-
-// 返回一个动画的当前执行状态
-//func (am *Animator) State(name string) int {
-//	st := am.sas.states[am.index]
-//	return st.n // todo 计算出当前的动画状态
-//}
-
-// 创建一个动画状态，并关联到 Entity
-func (am Animator) Play(name string) {
-	am.sas.states[am.index].define = am.sas.names[name]
-}
-
-func (am Animator) Once() Animator {
-	am.sas.states[am.index].once = true
-	return am
-}
-
-func (am Animator) Rate(r float32) Animator {
-	am.sas.states[am.index].rate = r
-	return am
-}
-
-// delete from playing list
-func (am Animator) Stop() {
-	sz := len(am.sas.states)
-	if am.index >= 0 && am.index < sz {
-		if am.index != sz-1 {
-			am.sas.states[am.index] = am.sas.states[sz-1]
-		}
-		am.sas.states = am.sas.states[:sz-1]
-		am.index = -1
-	}
-}
-
 func (eng *Engine) Update(dt float32) {
-	// update animation
-	for i := range eng.states {
-		seq := &eng.states[i]
-		seq.dt += dt
-		if seq.dt > seq.rate {
-			seq.ii = seq.ii + 1
-			seq.dt = 0
+	var (
+		at, st = eng.at, eng.st
+		anims  = at.comps[:at.index]
+	)
+
+	// update animation state
+	for i := range anims {
+		if seq := &anims[i]; seq.running {
+			seq.dt += dt
+			if seq.dt > seq.rate {
+				seq.ii = seq.ii + 1
+				seq.dt = 0
+			}
 		}
 	}
 
 	// update sprite-component
-	for _, st := range eng.states {
-		comp := eng.st.Comp(st.Entity)
-		anim := eng.data[st.define]
+	for _, am := range anims {
+		comp := st.Comp(am.Entity)
+		ii := eng.names[am.define]
+		anim := eng.data[ii]
 
-		ii := st.ii % anim.Len
-		frame := eng.frames[anim.Start+ii]
+		jj := am.ii % anim.Len
+		frame := eng.frames[anim.Start+jj]
 		comp.SetSprite(frame)
 	}
 }
