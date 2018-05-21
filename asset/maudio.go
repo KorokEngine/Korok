@@ -29,7 +29,7 @@ func (am *AudioManager) Load(file string, stream bool) {
 		rid = id
 	}
 	am.repo[file] = idCount{rid, cnt+1}
-	log.Print("load file:", file, am.repo)
+	log.Print("load file:", file)
 }
 
 // Unload delete raw Texture and any related SubTextures.

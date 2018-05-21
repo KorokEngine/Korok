@@ -51,8 +51,6 @@ func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, fre
 	}
 	defer file.Close()
 
-	log.Println("data size:", len(floats), "format:", format)
-
 	numChan = int32(format.Channels)
 	bitDepth = 16
 	freq = int32(format.SampleRate)

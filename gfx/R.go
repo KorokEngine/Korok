@@ -95,7 +95,7 @@ type Atlas struct {
 	sizes []Size
 
 	// name of this atlas
-	names []string
+	names map[string]int
 
 	// start index and size
 	index, size uint16
@@ -105,14 +105,12 @@ func (at *Atlas) initialize(size int) {
 	var (
 		szRegion = size * int(sizeOfRegion)
 		szSize   = size * int(sizeOfSize)
-		szString = size * int(sizeOfString)
 	)
 
-	buffer := make([]byte, szRegion + szSize + szString)
+	buffer := make([]byte, szRegion + szSize)
 	at.regions = (*[1<<16]Region)(unsafe.Pointer(&buffer[0]))[:size]
 	at.sizes = (*[1<<16]Size)(unsafe.Pointer(&buffer[szRegion]))[:size]
-	at.names = (*[1<<16]string)(unsafe.Pointer(&buffer[szRegion+szSize]))[:size]
-
+	at.names = make(map[string]int, size)
 	at.index = 0
 	at.size = uint16(size)
 }
@@ -127,7 +125,7 @@ func (at *Atlas) AddItem(x, y, w, h float32, name string, rotated bool) {
 	ii := at.index; at.index++
 
 	at.sizes[ii] = Size{w, h}
-	at.names[ii] = name
+	at.names[name] = int(ii)
 
 	if rotated {
 		at.regions[ii] = Region{
@@ -144,13 +142,9 @@ func (at *Atlas) AddItem(x, y, w, h float32, name string, rotated bool) {
 }
 
 func (at *Atlas) GetByName(name string) (tex SubTex, ok bool) {
-	if at != nil {
-	}
-	for i := range at.names {
-		if at.names[i] == name {
-			ok = true
-			tex = SubTex{uint32(at.aid) << 16 + uint32(i)}
-		}
+	if v, ook := at.names[name]; ook {
+		ok = true
+		tex = SubTex{uint32(at.aid) << 16 + uint32(v)}
 	}
 	return
 }
@@ -169,10 +163,6 @@ func (at *Atlas) Region(ii int) Region {
 
 func (at *Atlas) Size(ii int) Size {
 	return at.sizes[ii]
-}
-
-func (at *Atlas) Name(ii int) string {
-	return at.names[ii]
 }
 
 // Texture Resource Manager
@@ -257,9 +247,7 @@ func init() {
 
 	sizeOfRegion = unsafe.Sizeof(Region{})
 	sizeOfSize = unsafe.Sizeof(Size{})
-	sizeOfString = unsafe.Sizeof("")
 }
 
 var sizeOfRegion uintptr
 var sizeOfSize uintptr
-var sizeOfString uintptr
