@@ -2,6 +2,7 @@ package sine
 
 import (
 	"log"
+	"sort"
 )
 
 const (
@@ -61,7 +62,12 @@ func (sp *SoundPool) Pause(pause bool) {
 
 
 func (sp *SoundPool) Tick() {
-
+	for _, ch := range sp.channels {
+		if ch.playing && ch.State() == Stopped {
+			ch.playing = false
+			ch.priority = 0
+		}
+	}
 }
 
 func (sp *SoundPool) Play(id uint16, priority int) (chanId int){
@@ -78,6 +84,7 @@ func (sp *SoundPool) Play(id uint16, priority int) (chanId int){
 	// allocate a channel
 	channel, ok := sp.allocChannel(priority)
 	if !ok {
+		log.Print("no channel available")
 		return
 	}
 
@@ -91,24 +98,17 @@ func (sp *SoundPool) Play(id uint16, priority int) (chanId int){
 // channels ascend order
 func (sp *SoundPool) allocChannel(p int) (sc *SoundChannel, ok bool) {
 	// allocate a channel
-	if c := sp.channels[0]; c.priority < p {
-		ok = true
-		sc = c
-		sp.channels = sp.channels[1:]
+	if c := sp.channels[0]; !c.playing || c.priority < p {
+		sc = c; ok = true
+		c.priority = p
+		c.playing = true
 	}
 
 	// update priority
 	if sc != nil {
-		sc.priority = p
-		insert := 0
-		for i, ch := range sp.channels {
-			if ch.priority > p {
-				insert = i; break
-			}
-		}
-		sp.channels  = append(sp.channels, nil)
-		copy(sp.channels[insert+1:], sp.channels[insert:])
-		sp.channels[insert] = sc
+		sort.SliceStable(sp.channels, func(i, j int) bool {
+			return sp.channels[i].priority < sp.channels[j].priority
+		})
 	}
 	return
 }

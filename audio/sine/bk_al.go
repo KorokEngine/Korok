@@ -67,6 +67,13 @@ ALenum SineBufferPlayer_stop(SineBufferPlayer *p) {
 	return alGetError();
 }
 
+// ignore error check for state-checking
+ALenum SineBufferPlayer_state(SineBufferPlayer *p) {
+ 	ALenum state;
+ 	alGetSourcei(p->idSource, AL_SOURCE_STATE, &state);
+ 	return state;
+}
+
 typedef struct SineStreamPlayer {
 	ALuint idSource;
 	ALuint buffers[8]; //max buffer size
@@ -229,8 +236,9 @@ func (p *BufferPlayer) SetLoop(loop int) {
 
 }
 
-func (p *BufferPlayer) State() {
-
+func (p *BufferPlayer) State() uint32 {
+	st := C.SineBufferPlayer_state(&p.player)
+	return uint32(st)
 }
 
 // StreamPlayer can play audio loaded as StreamData.
@@ -349,4 +357,12 @@ const (
 	InvalidValue     = C.AL_INVALID_VALUE
 	InvalidOperation = C.AL_INVALID_OPERATION
 	OutOfMemory      = C.AL_OUT_OF_MEMORY
+)
+
+// AL state
+const (
+	Initial = 0x1011
+	Playing = 0x1012
+	Paused  = 0x1013
+	Stopped = 0x1014
 )

@@ -29,6 +29,7 @@ func (am *AudioManager) Load(file string, stream bool) {
 		rid = id
 	}
 	am.repo[file] = idCount{rid, cnt+1}
+	log.Print("load file:", file, am.repo)
 }
 
 // Unload delete raw Texture and any related SubTextures.
@@ -44,9 +45,10 @@ func (am *AudioManager) Unload(file string) {
 	}
 }
 
-func (am *AudioManager) Get(file string) (id uint16){
-	if v, ok := am.repo[file]; ok {
+func (am *AudioManager) Get(file string) (id uint16, ok bool){
+	if v, ook := am.repo[file]; ook {
 		id = v.rid
+		ok = true
 	}
 	return
 }
