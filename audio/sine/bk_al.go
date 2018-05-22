@@ -74,6 +74,16 @@ ALenum SineBufferPlayer_state(SineBufferPlayer *p) {
  	return state;
 }
 
+ALfloat SineBufferPlayer_getVolume(SineBufferPlayer *p) {
+	ALfloat v;
+	alGetSourcef(p->idSource, AL_GAIN, &v);
+	return v;
+}
+
+void SineBufferPlayer_setVolume(SineBufferPlayer *p, ALfloat v) {
+	alSourcef(p->idSource, AL_GAIN, v);
+}
+
 typedef struct SineStreamPlayer {
 	ALuint idSource;
 	ALuint buffers[8]; //max buffer size
@@ -135,6 +145,23 @@ void SineStreamPlayer_feed(SineStreamPlayer *p, void *data, ALsizei size, ALenum
 	alBufferData(buffer, format, data, size, freq);
 	alSourceQueueBuffers(source, 1, &buffer);
 	p->freed = freed-1;
+}
+
+ALenum SineStreamPlayer_state(SineStreamPlayer *p) {
+ 	ALenum state;
+ 	alGetSourcei(p->idSource, AL_SOURCE_STATE, &state);
+ 	return state;
+}
+
+
+ALfloat SineStreamPlayer_getVolume(SineStreamPlayer *p) {
+	ALfloat v;
+	alGetSourcef(p->idSource, AL_GAIN, &v);
+	return v;
+}
+
+void SineStreamPlayer_setVolume(SineStreamPlayer *p, ALfloat v) {
+	alSourcef(p->idSource, AL_GAIN, v);
 }
 
 // stream play!!
@@ -228,8 +255,13 @@ func (p *BufferPlayer) Resume() {
 	}
 }
 
-func (p *BufferPlayer) SetVolume(leftVolume, rightVolume float32) {
+func (p *BufferPlayer) Volume() float32 {
+	v := C.SineBufferPlayer_getVolume(&p.player)
+	return float32(v)
+}
 
+func (p *BufferPlayer) SetVolume(v float32) {
+	C.SineBufferPlayer_setVolume(&p.player, C.ALfloat(v))
 }
 
 func (p *BufferPlayer) SetLoop(loop int) {
@@ -292,8 +324,18 @@ func (p *StreamPlayer) Resume() {
 	}
 }
 
-func (p *StreamPlayer) SetVolume(left, right float32) {
+func (p *StreamPlayer) State() uint32 {
+	st := C.SineStreamPlayer_state(&p.player)
+	return uint32(st)
+}
 
+func (p *StreamPlayer) Volume() float32 {
+	v := C.SineStreamPlayer_getVolume(&p.player)
+	return float32(v)
+}
+
+func (p *StreamPlayer) SetVolume(v float32) {
+	C.SineStreamPlayer_setVolume(&p.player, C.ALfloat(v))
 }
 
 func (p *StreamPlayer) Tick() {

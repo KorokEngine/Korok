@@ -55,8 +55,12 @@ func StopMusic() {
 	music.Stop()
 }
 
-func SetMusicVolume(leftVolume, rightVolume float32) {
-	music.SetVolume(leftVolume, rightVolume)
+func SetMusicVolume(v float32) {
+	music.SetVolume(v)
+}
+
+func MusicVolume() float32 {
+	return music.Volume()
 }
 
 ////////////////////// Effect ////////////////////
@@ -77,15 +81,22 @@ func StopEffect(cid ChanId) {
 	effects.StopChan(int(cid))
 }
 
-func SetEffectVolume(cid ChanId, leftVolume, rightVolume float32) {
-	effects.SetVolume(int(cid), leftVolume, rightVolume)
+func EffectChannelVolume(cid ChanId) (v float32, ok bool){
+	return effects.GetChanVolume(int(cid))
 }
 
-func SetEffectCallback() {
-
+func SetEffectChannelVolume(cid ChanId, v float32) {
+	effects.SetChanVolume(int(cid), v)
 }
 
+// Overall volume setting.
+func EffectVolume() float32 {
+	return effects.Volume()
+}
 
+func SetEffectVolume(v float32) {
+	effects.SetVolume(v)
+}
 
 
 // default Audio-File-Decoder
