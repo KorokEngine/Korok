@@ -68,13 +68,10 @@ func (b *Rect) SizeAuto() {
 }
 
 func (b *Rect) InRange(p f32.Vec2) bool{
-	if p[0] < b.X || p[0] > (b.X + b.W) {
-		return false
+	if b.X < p[0] && p[0] < (b.X + b.W) && b.Y < p[1] && p[1] < (b.Y + b.H) {
+		return true
 	}
-	if p[1] < b.Y || p[1] > (b.Y + b.H) {
-		return false
-	}
-	return true
+	return false
 }
 
 type Cursor struct {
@@ -310,7 +307,6 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 		if btn := input.PointerButton(0); ctx.state.draggingPointer == id && !btn.JustPressed() {
 			if btn.JustReleased() {
 				event = EventEndDrag
-				log.Println("drag end real..", event)
 				ctx.state.draggingPointer = -1
 				ctx.state.draggingStart = f32.Vec2{}
 				event |= EventWentUp
@@ -340,7 +336,6 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 			// 2.1 Keep the click position, then use it to check a drag event
 			if btn.JustPressed() {
 				ctx.state.draggingStart = p.MousePos
-				log.Println("just pressed!!")
 			}
 			// 2.2 If the next movement out of thresh-hold, then it's a drag event
 			if btn.Down() && bb.InRange(ctx.state.draggingStart) {
@@ -359,7 +354,6 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 					event |= EventStartDrag
 					ctx.state.draggingStart = p.MousePos
 					ctx.state.draggingPointer = id
-					log.Println("drag start real ..")
 				}
 			}
 

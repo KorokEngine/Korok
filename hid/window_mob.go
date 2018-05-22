@@ -118,7 +118,7 @@ func onTouch(e touch.Event) {
 	case touch.TypeBegin:
 		pressed = true
 	case touch.TypeMove:
-		pressed = false
+		pressed = true
 	case touch.TypeEnd:
 		pressed = false
 	}
