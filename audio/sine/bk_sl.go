@@ -57,7 +57,7 @@ typedef struct SineBufferPlayer {
 	SLDataSink   audioSink;
 
 	// control
-	SLVolumeItf fdPlayerVolume;
+	SLVolumeItf volume;
 	SLObjectItf playerObj;
 	SLPlayItf   player;
 
@@ -111,7 +111,7 @@ SLresult SineBufferPlayer_init(SineBufferPlayer *p, SineEngine *engine, SLuint32
 	}
 
 	// create volume & realize
-	ret = (*p->playerObj)->GetInterface(p->playerObj, SL_IID_VOLUME, &(p->fdPlayerVolume));
+	ret = (*p->playerObj)->GetInterface(p->playerObj, SL_IID_VOLUME, &(p->volume));
 	if (ret != SL_RESULT_SUCCESS) {
 		return ret;
 	}
@@ -154,33 +154,25 @@ SLresult SineBufferPlayer_resume(SineBufferPlayer *p) {
 	return (*p->player)->SetPlayState(p->player, SL_PLAYSTATE_PLAYING);
 }
 
-SLresult SineBufferPlayer_state(SineBufferPlayer *p, SLuint32 *state) {
+SLresult SineBufferPlayer_queueCount(SineBufferPlayer *p, SLuint32 *count) {
 	SLresult ret;
-
 	SLBufferQueueState qState;
 	ret = (*p->bufferQueue)->GetState(p->bufferQueue, &qState);
-	if (ret != SL_RESULT_SUCCESS) {
-		return ret;
-	}
-
-	SLuint32 pState;
-	ret = (*p->player)->GetPlayState(p->player, &pState);
-	if (ret != SL_RESULT_SUCCESS) {
-		return ret;
-	}
-
-	if ((pState == SL_PLAYSTATE_PLAYING) && (qState.count == 0)) {
-		*state = SL_PLAYSTATE_PLAYING; // TODO 状态有待优化..
-	}
-	return SL_RESULT_SUCCESS;
+	*count = qState.count;
+	return ret;
 }
 
-SLresult SineBufferPlayer_setVolume(SineBufferPlayer *p, float v) {
-	return SL_RESULT_SUCCESS;
+SLresult SineBufferPlayer_state(SineBufferPlayer *p, SLuint32 *state) {
+	return (*p->player)->GetPlayState(p->player, state);
 }
 
-SLresult SineBufferPlayer_getVolume(SineBufferPlayer *p, float *v) {
-	return SL_RESULT_SUCCESS;
+// unit: db
+SLresult SineBufferPlayer_setVolume(SineBufferPlayer *p, SLmillibel v) {
+	return (*p->volume)->SetVolumeLevel(p->volume, v);
+}
+
+SLresult SineBufferPlayer_getVolume(SineBufferPlayer *p, SLmillibel *v) {
+	return (*p->volume)->GetVolumeLevel(p->volume, v);
 }
 
 //////////////////// StreamPlayer /////////////////////
@@ -196,7 +188,7 @@ typedef struct SineStreamPlayer {
 	SLDataSink   audioSink;
 
 	// control
-	SLVolumeItf fdPlayerVolume;
+	SLVolumeItf volume;
 	SLObjectItf playerObj;
 	SLPlayItf   player;
 
@@ -254,7 +246,7 @@ SLresult SineStreamPlayer_init(SineStreamPlayer *p, SineEngine *engine, SLuint32
 	}
 
 	// create volume & realize
-	ret = (*p->playerObj)->GetInterface(p->playerObj, SL_IID_VOLUME, &(p->fdPlayerVolume));
+	ret = (*p->playerObj)->GetInterface(p->playerObj, SL_IID_VOLUME, &(p->volume));
 	if (ret != SL_RESULT_SUCCESS) {
 		return ret;
 	}
@@ -300,33 +292,25 @@ SLresult SineStreamPlayer_pause(SineStreamPlayer *p) {
 	return  (*p->player)->SetPlayState(p->player, SL_PLAYSTATE_PAUSED);
 }
 
-SLresult SineStreamPlayer_state(SineStreamPlayer *p, SLuint32 *state) {
+SLresult SineStreamPlayer_queueCount(SineStreamPlayer *p, SLuint32 *count) {
 	SLresult ret;
-
 	SLBufferQueueState qState;
 	ret = (*p->bufferQueue)->GetState(p->bufferQueue, &qState);
-	if (ret != SL_RESULT_SUCCESS) {
-		return ret;
-	}
-
-	SLuint32 pState;
-	ret = (*p->player)->GetPlayState(p->player, &pState);
-	if (ret != SL_RESULT_SUCCESS) {
-		return ret;
-	}
-
-	if ((pState == SL_PLAYSTATE_PLAYING) && (qState.count == 0)) {
-		*state = SL_PLAYSTATE_PLAYING; // TODO 状态有待优化..
-	}
-	return SL_RESULT_SUCCESS;
+	*count = qState.count;
+	return ret;
 }
 
-SLresult SineStreamPlayer_setVolume(SineStreamPlayer *p, float v) {
-	return SL_RESULT_SUCCESS;
+SLresult SineStreamPlayer_state(SineStreamPlayer *p, SLuint32 *state) {
+	return (*p->player)->GetPlayState(p->player, state);
 }
 
-SLresult SineStreamPlayer_getVolume(SineStreamPlayer *p, float *v) {
-	return SL_RESULT_SUCCESS;
+// unit: db
+SLresult SineStreamPlayer_setVolume(SineStreamPlayer *p, SLmillibel v) {
+	return (*p->volume)->SetVolumeLevel(p->volume, v);
+}
+
+SLresult SineStreamPlayer_getVolume(SineStreamPlayer *p, SLmillibel *v) {
+	return (*p->volume)->GetVolumeLevel(p->volume, v);
 }
 
  */
@@ -338,6 +322,7 @@ import (
 	//"unsafe"
 	//"unsafe"
 	"unsafe"
+	"math"
 )
 
 // StaticData is small audio sampler, which will be load into memory directly.
@@ -367,7 +352,6 @@ func (d *StreamData) Create(file string, ft FileType) {
 	d.decoder = decoder
 }
 
-
 type Engine struct {
 	engine C.SineEngine
 }
@@ -385,6 +369,8 @@ func (eng *Engine) Destroy() {
 // BufferPlayer can play audio loaded as StaticData.
 type BufferPlayer struct {
 	player C.SineBufferPlayer
+	volume float32
+	state int
 }
 
 func (p *BufferPlayer) initialize(engine *Engine) {
@@ -402,47 +388,76 @@ func (p *BufferPlayer) destroy() {
 }
 
 func (p *BufferPlayer) Play(d *StaticData) {
+	p.state = Playing
 	if ret := C.SineBufferPlayer_play(&p.player, unsafe.Pointer(&d.bits[0]), C.SLuint32(len(d.bits))); ret != OK {
 		log.Println("buffer-player play err:", ret)
 	}
 }
 
 func (p *BufferPlayer) Stop() {
+	p.state = Stopped
 	if ret := C.SineBufferPlayer_stop(&p.player); ret != OK {
 		log.Println("buffer-player stop err:", ret)
 	}
 }
 
 func (p *BufferPlayer) Pause() {
+	p.state = Paused
 	if ret := C.SineBufferPlayer_pause(&p.player); ret != OK {
 		log.Println("buffer-player pause err:", ret)
 	}
 }
 
 func (p *BufferPlayer) Resume() {
+	p.state = Playing
 	if ret := C.SineBufferPlayer_resume(&p.player); ret != OK {
 		log.Println("buffer-player resume err:", ret)
 	}
 }
 
-func (p *BufferPlayer) State() (st int) {
-	var state C.SLuint32
-	C.SineBufferPlayer_state(&p.player, &state)
-	return int(state)
+// OpenSL's state is different from OpenAL. In OpenAL, if buffer
+// queue exhausted, OpenAL will issue a 'Stop' state. But in SL,
+// buffer-queue has nothing to do with player state. It' still
+// playing even though queue exhausted.
+
+
+func (p *BufferPlayer) State() int {
+	if st := p.state; st != Playing {
+		return st
+	}
+	ct := C.SLuint32(0)
+	if ret := C.SineBufferPlayer_queueCount(&p.player, &ct); ret != OK {
+		log.Print("buffer state err:", ret)
+		return Initial
+	}
+	if ct == 0 {
+		return Stopped
+	}
+	return Playing
 }
 
-func (p *BufferPlayer) SetVolume(left, right float32) {
-	// todo
+func (p *BufferPlayer) Volume() float32 {
+	return p.volume
 }
 
-func (p *BufferPlayer) SetLoop(loop int) {
-	// todo
+func (p *BufferPlayer) SetVolume(v float32) {
+	p.volume = v
+	f := math.Log10(float64(v)) * 2000
+	if ret := C.SineBufferPlayer_setVolume(&p.player, C.SLmillibel(f)); ret != OK {
+		log.Print("stream-player set volume err:", ret)
+	}
+}
+
+func (p *BufferPlayer) SetLoop(n int) {
+
 }
 
 // StreamPlayer can play audio loaded as StreamData.
 type StreamPlayer struct {
 	player C.SineStreamPlayer
 	decoder      Decoder
+	volume float32
+	state int
 }
 
 func (p *StreamPlayer) initialize(engine *Engine) {
@@ -453,12 +468,13 @@ func (p *StreamPlayer) initialize(engine *Engine) {
 	if ret := C.SineStreamPlayer_init(&p.player, &engine.engine, numBuffers, numChannels); ret != OK {
 		log.Println("stream-player init err:", ret)
 	}
+	p.volume = 1
 }
 
 func (p *StreamPlayer) Play(d *StreamData) {
 	p.decoder = d.decoder
 	p.fill()
-
+	p.state = Playing
 	// play
 	if ret := C.SineStreamPlayer_play(&p.player); ret != OK {
 		log.Println("stream-player play err:", ret)
@@ -466,6 +482,7 @@ func (p *StreamPlayer) Play(d *StreamData) {
 }
 
 func (p *StreamPlayer) Stop() {
+	p.state = Stopped
 	if ret := C.SineStreamPlayer_stop(&p.player); ret != OK {
 		log.Println("stream-player stop err:", ret)
 	}
@@ -476,19 +493,50 @@ func (p *StreamPlayer) Stop() {
 }
 
 func (p *StreamPlayer) Pause() {
+	p.state = Paused
 	if ret := C.SineStreamPlayer_pause(&p.player); ret != OK {
 		log.Println("stream-player pause err:", ret)
 	}
 }
 
 func (p *StreamPlayer) Resume() {
+	p.state = Playing
 	if ret := C.SineStreamPlayer_play(&p.player); ret != OK {
 		log.Println("stream-player resume err:", ret)
 	}
 }
 
-func (p *StreamPlayer) SetVolume(left, right float32) {
+func (p *StreamPlayer) State() int {
+	if st := p.state; st != Playing {
+		return st
+	}
+	ct := C.SLuint32(0)
+	if ret := C.SineBufferPlayer_queueCount(&p.player, &ct); ret != OK {
+		log.Print("buffer state err:", ret)
+		return Initial
+	}
+	if ct == 0 {
+		return Stopped
+	}
+	return Playing
+}
 
+func (p *StreamPlayer) Volume() float32 {
+	return p.volume
+}
+
+func (p *StreamPlayer) SetVolume(v float32) {
+	var db C.SLmillibel
+	if v > 0 {
+		p.volume = v
+		db = C.SLmillibel(math.Log10(float64(v))*2000)
+	} else {
+		p.volume = 0
+		db = C.SL_MILLIBEL_MIN
+	}
+	if ret := C.SineStreamPlayer_setVolume(&p.player, db); ret != OK {
+		log.Print("stream-player set volume err:", ret)
+	}
 }
 
 func (p *StreamPlayer) Tick() {
@@ -531,7 +579,10 @@ const (
 )
 
 const (
-
+	Initial = 0x0
+	Playing = C.SL_PLAYSTATE_PLAYING
+	Paused  = C.SL_PLAYSTATE_PAUSED
+	Stopped = C.SL_PLAYSTATE_STOPPED
 )
 
 
