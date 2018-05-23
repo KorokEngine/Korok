@@ -34,7 +34,7 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 
 	// Create an image(512*512) to store all requested glyphs.
 	iw, ih := 512, 512
-	_, fg := image.Black, image.Black
+	_, fg := image.Black, image.White
 	rect := image.Rect(0, 0, iw, ih)
 	img  := image.NewRGBA(rect)
 	padding := fixed.I(2)
