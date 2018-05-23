@@ -212,8 +212,8 @@ func (ctx *Context) Slider(id ID, bb *Rect, value *float32, style *SliderStyle) 
 		e = event
 	}
 
-	ctx.DrawRect(bb, 0xFFCDCDCD, 5)
-	ctx.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, 0xFFABABAB)
+	ctx.DrawRect(bb, style.Bar, 5)
+	ctx.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, style.Knob)
 
 	return
 }
@@ -366,7 +366,7 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 	return event
 }
 
-func (ctx *Context) DrawRect(bb *Rect, color uint32, round float32) {
+func (ctx *Context) DrawRect(bb *Rect, fill gfx.Color, round float32) {
 	var (
 		x = bb.X + ctx.Cursor.X
 		y = bb.Y + ctx.Cursor.Y
@@ -374,7 +374,7 @@ func (ctx *Context) DrawRect(bb *Rect, color uint32, round float32) {
 	x, y = Gui2Game(x, y)
 	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
 	max := f32.Vec2{(x+bb.W) * screen.scaleX, y * screen.scaleY}
-	ctx.DrawList.AddRectFilled(min, max, color, round, FlagCornerAll)
+	ctx.DrawList.AddRectFilled(min, max, fill.U32(), round, FlagCornerAll)
 }
 
 func (ctx *Context) DrawBorder(bb *Rect, color uint32, round, thick float32) {
@@ -396,12 +396,12 @@ func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {
 }
 
 // default segment = 12 TODO, circle scale factor
-func (ctx *Context) DrawCircle(x, y, radius float32, color uint32) {
+func (ctx *Context) DrawCircle(x, y, radius float32, fill gfx.Color) {
 	c := ctx.Cursor
 	x, y = Gui2Game(x + c.X, y + c.Y)
 	x = x * screen.scaleX
 	y = y * screen.scaleY
-	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius * screen.scaleX, color, 12)
+	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius * screen.scaleX, fill.U32(), 12)
 }
 
 func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
@@ -415,9 +415,9 @@ func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
 	max := min.Add(f32.Vec2{bound.W, bound.H})
 	var color uint32
 	if style != nil {
-		color = style.TintColor
+		color = style.Tint.U32()
 	} else {
-		color = ctx.Theme.Image.TintColor
+		color = ctx.Theme.Image.Tint.U32()
 	}
 	min[0], min[1] = Gui2Game(min[0], min[1])
 	max[0], max[1] = Gui2Game(max[0], max[1])
@@ -447,7 +447,7 @@ func (ctx *Context) DrawText(bb *Rect, text string, style *TextStyle) (size f32.
 	var (
 		font = style.Font
 		fontSize = style.Size * screen.scaleX // TODO 字体缩放不能这么简单的考虑
-		color = style.Color
+		color = style.Color.U32()
 		wrapWidth = (bb.W + 10) * screen.scaleX
 		pos = f32.Vec2{x * screen.scaleX, y * screen.scaleY}
 	)
@@ -465,9 +465,9 @@ func (ctx *Context) CalcTextSize(text string, wrapWidth float32, fnt font.Font, 
 // 偷懒的自定义UI，不做任何状态的改变... 所以说呢, 我们也采用偷懒的做法呗。。
 func (ctx *Context) ColorBackground(event EventType, bb *Rect, round float32) {
 	if event == EventDown {
-		ctx.DrawRect(bb, ThemeLight.ColorPressed, round)
+		ctx.DrawRect(bb, ThemeLight.Pressed, round)
 	} else {
-		ctx.DrawRect(bb, ThemeLight.ColorNormal, round)
+		ctx.DrawRect(bb, ThemeLight.Normal, round)
 	}
 }
 

@@ -3,7 +3,45 @@ package gfx
 import (
 	"korok.io/korok/gfx/bk"
 	"unsafe"
+	"image/color"
 )
+
+type Color color.RGBA
+
+var (
+	While  = Color{0xFF, 0xFF, 0xFF, 0xFF}
+	Blank  = Color{0,0,0,0xFF}
+	LTGray = Color{0xCC,0xCC,0xCC, 0xFF}
+	Gray   = Color{0x88, 0x88, 0x88, 0xFF}
+	DKGray = Color{0x44, 0x44, 0x44, 0xFF}
+
+	Red   = Color{0xFF,0,0, 0xFF}
+	Green = Color{0,0xFF,0, 0xFF}
+	Blue  = Color{0,0,0xFF, 0xFF}
+
+	Cyan    = Color{0, 0xFF, 0xFF, 0xFF}
+	Magenta = Color{0xFF, 00, 0xFF, 0xFF}
+	Yellow  = Color{0xFF, 0xFF, 0x00, 0xFF}
+
+	Transparent = Color{}
+	Opaque      = Color{0xFF, 0xFF, 0xFF, 0xFF}
+)
+
+func (c Color) U32() uint32 {
+	return *(*uint32)(unsafe.Pointer(&c))
+}
+
+func (c Color) RGBA() (r, g, b, a uint32) {
+	r = uint32(c.R)
+	r |= r << 8
+	g = uint32(c.G)
+	g |= g << 8
+	b = uint32(c.B)
+	b |= b << 8
+	a = uint32(c.A)
+	a |= a << 8
+	return
+}
 
 type CompRef struct {
 	Type int32

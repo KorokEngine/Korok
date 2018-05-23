@@ -16,7 +16,7 @@ func Text(id ID, bb Rect, text string, style *TextStyle) {
 	return
 }
 
-func TextSizeColored(id ID, bb Rect, text string, color uint32, size float32) {
+func TextSizeColored(id ID, bb Rect, text string, color gfx.Color, size float32) {
 	sty := gContext.Theme.Text
 	sty.Color = color
 	sty.Size = size
@@ -55,12 +55,9 @@ func Slider(id ID, bb Rect, value *float32, style *SliderStyle) (v EventType){
 	return gContext.Slider(id, &bb, value, style)
 }
 
-// Widget: Box
-func Box(bb Rect, style *BoxStyle) {
-	if style == nil {
-		style = &gContext.Theme.Rect
-	}
-	gContext.DrawRect(&bb, style.FillColor, style.Rounding)
+// Widget: ColorRect
+func ColorRect(bb Rect, fill gfx.Color, rounding float32) {
+	gContext.DrawRect(&bb, fill, rounding)
 }
 
 // Widget: ListView TODO

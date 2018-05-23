@@ -52,7 +52,7 @@ func Text(id gui.ID, text string, style *gui.TextStyle, p *Options) {
 	return
 }
 
-func TextSizeColored(id gui.ID, text string, color uint32, size float32, opt *Options) {
+func TextSizeColored(id gui.ID, text string, color gfx.Color, size float32, opt *Options) {
 	sty := gContext.Theme.Text
 	sty.Color = color
 	sty.Size = size

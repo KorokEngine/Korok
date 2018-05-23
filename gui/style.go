@@ -2,6 +2,7 @@ package gui
 
 import (
 	"korok.io/korok/gfx/font"
+	"korok.io/korok/gfx"
 )
 
 type Visibility uint8
@@ -16,12 +17,11 @@ type Theme struct {
 	Button      ButtonStyle
 	Image       ImageStyle
 	ImageButton ImageButtonStyle
-	Rect        BoxStyle
 	Slider      SliderStyle
 
 	// global config..
-	ColorNormal uint32
-	ColorPressed uint32
+	Normal gfx.Color
+	Pressed gfx.Color
 	// item 之间的空隙
 	Spacing float32
 }
@@ -34,7 +34,7 @@ type TextStyle struct {
 	Padding
 	Font font.Font
 	Visibility
-	Color uint32
+	Color gfx.Color
 	Size float32
 	Lines int
 }
@@ -44,7 +44,7 @@ func (text *TextStyle) SetFont(f font.Font) *TextStyle {
 	return text
 }
 
-func (text *TextStyle) SetColor(color uint32) *TextStyle {
+func (text *TextStyle) SetColor(color gfx.Color) *TextStyle {
 	text.Color = color
 	return text
 }
@@ -63,7 +63,7 @@ type InputStyle struct {
 type ButtonStyle struct {
 	TextStyle
 	Visibility
-	Color uint32
+	Background gfx.Color
 	Rounding float32
 }
 
@@ -75,7 +75,7 @@ type ImageButtonStyle struct {
 type ImageStyle struct {
 	Visibility
 	Padding
-	TintColor uint32
+	Tint gfx.Color
 }
 
 type CheckBoxStyle struct {
@@ -87,15 +87,7 @@ type ProgressBarStyle struct {
 }
 
 type SliderStyle struct {
-	Bar, Knob uint16
-}
-
-type BoxStyle struct {
-	Stroke float32
-	FillColor uint32
-	StrokeColor uint32
-	Rounding float32
-	Corner FlagCorner
+	Bar, Knob gfx.Color
 }
 
 //// 这样
@@ -103,40 +95,33 @@ func newLightTheme() *Theme {
 	return &Theme{
 		Text:TextStyle{
 			Visibility:Visible,
-			Color:0xFF000000,
+			Color:gfx.Blank,
 			Size:12,
 		},
 		Button:ButtonStyle{
-			TextStyle{Visibility:Visible, Color:0xFF000000, Size:12, Padding:Padding{10, 10, 10, 10}},
+			TextStyle{Visibility:Visible, Color:gfx.Blank, Size:12, Padding:Padding{10, 10, 10, 10}},
 			Visible,
-			0xFFCDCDCD,
+			gfx.LTGray,
 			5,
 		},
 		Image:ImageStyle{
 			Visible,
 			Padding{0, 0, 0, 0},
-			0xFFFFFFFF,
+			gfx.While,
 		},
 		ImageButton:ImageButtonStyle{
 			ImageStyle{
 				Visibility:Visible,
 				Padding: Padding{0, 0, 0, 0},
-				TintColor:0xFFFFFFFF,
+				Tint:gfx.While,
 			},
 			Visible,
 		},
-		Rect: BoxStyle{
-			2,
-			0xFFCDCDCD,
-			0xFF000000,
-			5,
-			FlagCornerNone,
-		},
 		Slider:SliderStyle{
-			0, 0,
+			gfx.LTGray, gfx.Gray,
 		},
-		ColorNormal:0xFFCDCDCD,
-		ColorPressed:0xFFABABAB,
+		Normal: gfx.LTGray,
+		Pressed: gfx.Gray,
 		Spacing:4,
 	}
 }

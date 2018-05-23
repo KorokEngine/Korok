@@ -153,8 +153,8 @@ func (lm *LayoutMan) Slider(id g.ID, value *float32, style *g.SliderStyle, opt *
 			e = event
 		}
 
-		lm.DrawRect(bb, 0xFFCDCDCD, 5)
-		lm.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, 0xFFABABAB)
+		lm.DrawRect(bb, style.Bar, 5)
+		lm.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, style.Knob)
 	} else {
 		// 设置默认的宽高
 		if elem.W == 0 {
