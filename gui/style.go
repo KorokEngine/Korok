@@ -31,12 +31,11 @@ type Padding struct {
 }
 
 type TextStyle struct {
-	Padding
 	Font font.Font
-	Visibility
 	Color gfx.Color
 	Size float32
 	Lines int
+	LineSpace float32
 }
 
 func (text *TextStyle) SetFont(f font.Font) *TextStyle {
@@ -62,19 +61,17 @@ type InputStyle struct {
 
 type ButtonStyle struct {
 	TextStyle
-	Visibility
+	Padding
 	Background gfx.Color
 	Rounding float32
 }
 
 type ImageButtonStyle struct {
 	ImageStyle
-	Visibility
+	Padding
 }
 
 type ImageStyle struct {
-	Visibility
-	Padding
 	Tint gfx.Color
 }
 
@@ -94,28 +91,20 @@ type SliderStyle struct {
 func newLightTheme() *Theme {
 	return &Theme{
 		Text:TextStyle{
-			Visibility:Visible,
 			Color:gfx.Blank,
 			Size:12,
+			LineSpace:6,
 		},
 		Button:ButtonStyle{
-			TextStyle{Visibility:Visible, Color:gfx.Blank, Size:12, Padding:Padding{10, 10, 10, 10}},
-			Visible,
-			gfx.LTGray,
-			5,
+			TextStyle:TextStyle{Color:gfx.Blank, Size:12},
+			Padding:Padding{10, 10, 10, 10},
+			Background:gfx.LTGray,
+			Rounding:5,
 		},
-		Image:ImageStyle{
-			Visible,
-			Padding{0, 0, 0, 0},
-			gfx.While,
-		},
+		Image:ImageStyle{gfx.While},
 		ImageButton:ImageButtonStyle{
-			ImageStyle{
-				Visibility:Visible,
-				Padding: Padding{0, 0, 0, 0},
-				Tint:gfx.While,
-			},
-			Visible,
+			ImageStyle:ImageStyle{ Tint:gfx.While},
+			Padding:Padding{0, 0,0,0},
 		},
 		Slider:SliderStyle{
 			gfx.LTGray, gfx.Gray,

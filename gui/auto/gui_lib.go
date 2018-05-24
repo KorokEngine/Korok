@@ -78,7 +78,7 @@ func (lm *LayoutMan) Button(id g.ID, text string, style *g.ButtonStyle, opt *Opt
 	if ready {
 		bb := &elem.Rect
 		// Check Event
-		event = lm.CheckEvent(id, bb, false)
+		event = lm.ClickEvent(id, bb)
 
 		// Render Frame
 		lm.ColorBackground(event, bb, round)
@@ -116,7 +116,7 @@ func (lm *LayoutMan) ImageButton(id g.ID, normal, pressed gfx.Tex2D, style *g.Im
 		bb = &elem.Rect
 	)
 	if ready {
-		event = lm.CheckEvent(id, bb, false)
+		event = lm.ClickEvent(id, bb)
 		var tex gfx.Tex2D
 		if event & g.EventDown != 0 {
 			tex = pressed

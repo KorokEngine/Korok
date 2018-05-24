@@ -4,11 +4,7 @@ import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
 	"korok.io/korok/hid/input"
-	"korok.io/korok/gfx/dbg"
 	"korok.io/korok/gfx/font"
-
-	"log"
-	"fmt"
 )
 
 type EventType uint8
@@ -54,21 +50,19 @@ type Rect struct {
 	W, H float32
 }
 
-func (b *Rect) Offset(x, y float32) *Rect {
-	b.X, b.Y = x, y
-	return b
+func (r *Rect) Offset(dx, dy float32) *Rect{
+	r.X, r.Y = r.X+dx, r.Y+dy
+	return r
 }
 
-func (b *Rect) Size(w, h float32) {
-	b.W, b.H = w, h
+func (r *Rect) Scale(skx, sky float32) *Rect{
+	r.X, r.Y = r.X*skx, r.Y*sky
+	r.W, r.H = r.W*skx, r.H*sky
+	return r
 }
 
-func (b *Rect) SizeAuto() {
-	b.W, b.H = 0, 0
-}
-
-func (b *Rect) InRange(p f32.Vec2) bool{
-	if b.X < p[0] && p[0] < (b.X + b.W) && b.Y < p[1] && p[1] < (b.Y + b.H) {
+func (r *Rect) InRange(p f32.Vec2) bool{
+	if r.X < p[0] && p[0] < (r.X + r.W) && r.Y < p[1] && p[1] < (r.Y + r.H) {
 		return true
 	}
 	return false
@@ -160,25 +154,16 @@ func (ctx *Context) Button(id ID, bb *Rect, text string, style *ButtonStyle) (ev
 	}
 
 	// Check Event
-	event = ctx.CheckEvent(id, bb, false)
+	event = ctx.ClickEvent(id, bb)
 
 	// Render Frame
 	ctx.ColorBackground(event, bb, round)
 
 	// Render Text
+	bb.X += style.Padding.Left
+	//bb.Y += style.Padding.Top
 	ctx.DrawText(bb, text, &style.TextStyle)
 	return
-}
-
-
-func (ctx *Context) renderTextClipped(text string, bb *Rect, style *TextStyle) {
-	x, y := Gui2Game(bb.X, bb.Y)
-	font := ctx.Theme.Text.Font
-	if bb.W == 0 {
-		ctx.DrawList.AddText(f32.Vec2{x, y}, text, font, 12, 0xFF000000, 0)
-	} else {
-		ctx.DrawList.AddText(f32.Vec2{x, y}, text, font, 12, 0xFF000000, bb.W)
-	}
 }
 
 func (ctx *Context) ImageBackground(eventType EventType) {
@@ -189,8 +174,7 @@ func (ctx *Context) ImageButton(id ID, normal, pressed gfx.Tex2D, bb *Rect, styl
 	if style == nil {
 		style = &ctx.Theme.ImageButton
 	}
-
-	event = ctx.CheckEvent(id, bb, false)
+	event = ctx.ClickEvent(id, bb)
 	var tex gfx.Tex2D
 	if event & EventDown != 0 {
 		tex = pressed
@@ -205,7 +189,6 @@ func (ctx *Context) Slider(id ID, bb *Rect, value *float32, style *SliderStyle) 
 	if style == nil {
 		style = &ctx.Theme.Slider
 	}
-
 	// 说明滑动了，那么应该使用最新的值，而不是传入的值
 	if v, event := ctx.CheckSlider(id, bb); event & EventDragging != 0 {
 		*value = v
@@ -214,93 +197,69 @@ func (ctx *Context) Slider(id ID, bb *Rect, value *float32, style *SliderStyle) 
 
 	ctx.DrawRect(bb, style.Bar, 5)
 	ctx.DrawCircle(bb.X+bb.W*(*value), bb.Y+bb.H/2, 10, style.Knob)
-
 	return
 }
 
 // Scroll 效果的关键是使用裁切限制滚动区域，然后
 // 通过计算拖拽，来得到争取的偏移
 func (ctx *Context) StartScroll(size, offset f32.Vec2) {
-	event := ctx.CheckEvent(123, nil, false)
 
-	if event == EventStartDrag {
-		ctx.capturePoint()
-	} else if event == EventEndDrag {
-		ctx.releasePointer()
-	}
-	// 好像算法也不是很难
 }
 
 func (ctx *Context) EndScroll() {
-	//
+
 }
 
-
-
-// 这里的实现基于拖拽的实现，所以
-// 只要正确的实现了拖拽，这里的就可以很容易的实现
 func (ctx *Context) CheckSlider(id ID, bound *Rect) (v float32, e EventType) {
-	event := ctx.CheckEvent(id, bound, false)
+	event := ctx.DraggingEvent(id, bound)
 	if (event & EventStartDrag) != 0 {
 		ctx.state.pointerCapture = id
-		log.Println("start drag..")
 	}
-
 	if (event & EventEndDrag) != 0 {
 		ctx.state.pointerCapture = -1
-		log.Println("end drag..")
 	}
-
-	//
-	//if ctx.state.isLastEventPointerType {
-	//}
-	// Update the knob position
+	// Update the knob position & default = Horizontal
 	if (event & (EventDragging|EventWentDown)) != 0{
-		// default = Horizontal
 		p1 := (input.PointerPosition(0).MousePos[0])/screen.scaleX
 		p0 := bound.X + ctx.Cursor.X
 		v = (p1 - p0)/bound.W
-
-		dbg.DrawStrScaled(fmt.Sprintf("p0: %v, p1: %v", p0, p1), .6 )
-		dbg.Return()
-
-		if v > 1 {
-			v = 1
-		}
-		if v < 0 {
-			v = 0
-		}
+		if v > 1 { v = 1 }
+		if v < 0 { v = 0 }
 	}
 	e = event
 	return
 }
 
-func (ctx *Context) capturePoint() {
-
-}
-
-func (ctx *Context) releasePointer() {
-
-}
-
-func (ctx *Context) isLastEventPointerType() bool {
-	return true
-}
-
-// Algorithm from FlatUI: http://google.github.io/flatui/
-func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType {
+func (ctx *Context) ClickEvent(id ID, rect *Rect) EventType {
 	var (
 		event = EventNone
-		cursor = ctx.Cursor
+		c = ctx.Cursor
+	)
+	bb := Rect{(c.X+rect.X)*screen.scaleX, (c.Y+rect.Y)*screen.scaleY, rect.W*screen.scaleX,rect.H*screen.scaleY}
+	if p  := input.PointerPosition(0); bb.InRange(p.MousePos) {
+		btn := input.PointerButton(0)
+		if btn.JustPressed() {
+			ctx.state.active = id
+			event = EventWentDown
+		}
+		if btn.JustReleased() && ctx.state.active == id {
+			event = EventWentUp
+			ctx.state.active = -1
+		} else if btn.Down() && ctx.state.active == id {
+			event |= EventDown
+		}
+	}
+	return event
+}
+
+func (ctx *Context) DraggingEvent(id ID, bound *Rect) EventType {
+	var (
+		event = EventNone
+		c = ctx.Cursor
 	)
 
-	bb := Rect{
-		(cursor.X+bound.X) * screen.scaleX,
-		(cursor.Y+bound.Y) * screen.scaleY,
-		bound.W * screen.scaleX,
-		bound.H * screen.scaleY}
+	bb := Rect{(c.X+bound.X)*screen.scaleX, (c.Y+bound.Y)*screen.scaleY, bound.W*screen.scaleX, bound.H*screen.scaleY}
 	p  := input.PointerPosition(0)
-
 
 	if bb.InRange(p.MousePos) || ctx.state.pointerCapture == id {
 		// in-dragging, The pointer is in drag operation
@@ -316,28 +275,11 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 				ctx.state.draggingPointer = -1
 			}
 		} else {
-			// Check event start, event as DragStart/Down/Up
-
-			// 1. Regular pointer event handling
-			if !checkDragOnly {
-				if btn.JustPressed() {
-					ctx.state.active = id
-					event = EventWentDown
-				}
-
-				if btn.JustReleased() {
-					event = EventWentUp
-				} else if btn.Down() {
-					event |= EventDown
-				}
-			}
-
-			// 2. Check for drag events
-			// 2.1 Keep the click position, then use it to check a drag event
+			// Keep the click position, then use it to check a drag event
 			if btn.JustPressed() {
 				ctx.state.draggingStart = p.MousePos
 			}
-			// 2.2 If the next movement out of thresh-hold, then it's a drag event
+			// If the next movement out of thresh-hold, then it's a drag event
 			if btn.Down() && bb.InRange(ctx.state.draggingStart) {
 				var (
 					startPosition  = ctx.state.draggingStart
@@ -356,10 +298,6 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 					ctx.state.draggingPointer = id
 				}
 			}
-
-			if event > 0 {
-				ctx.state.isLastEventPointerType = true
-			}
 		}
 
 	}
@@ -368,8 +306,8 @@ func (ctx *Context) CheckEvent(id ID, bound *Rect, checkDragOnly bool) EventType
 
 func (ctx *Context) DrawRect(bb *Rect, fill gfx.Color, round float32) {
 	var (
-		x = bb.X + ctx.Cursor.X
-		y = bb.Y + ctx.Cursor.Y
+		x = bb.X+ctx.Cursor.X
+		y = bb.Y+ctx.Cursor.Y
 	)
 	x, y = Gui2Game(x, y)
 	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
@@ -379,8 +317,8 @@ func (ctx *Context) DrawRect(bb *Rect, fill gfx.Color, round float32) {
 
 func (ctx *Context) DrawBorder(bb *Rect, color uint32, round, thick float32) {
 	var (
-		x = bb.X + ctx.Cursor.X
-		y = bb.Y + ctx.Cursor.Y
+		x = bb.X+ctx.Cursor.X
+		y = bb.Y+ctx.Cursor.Y
 	)
 	x, y = Gui2Game(x, y)
 	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
@@ -397,16 +335,14 @@ func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {
 
 // default segment = 12 TODO, circle scale factor
 func (ctx *Context) DrawCircle(x, y, radius float32, fill gfx.Color) {
-	c := ctx.Cursor
-	x, y = Gui2Game(x + c.X, y + c.Y)
+	x, y = Gui2Game(x+ctx.Cursor.X, y+ctx.Cursor.Y)
 	x = x * screen.scaleX
 	y = y * screen.scaleY
 	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius * screen.scaleX, fill.U32(), 12)
 }
 
 func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
-	c := ctx.Cursor
-	min := f32.Vec2{bound.X+c.X, bound.Y+c.Y}
+	min := f32.Vec2{bound.X+ctx.Cursor.X, bound.Y+ctx.Cursor.Y}
 	if bound.W == 0 {
 		sz := tex.Size()
 		bound.W = sz.Width
@@ -439,11 +375,7 @@ func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
 
 // 绘制元素, bb 存储相对于父容器的相对坐标..
 func (ctx *Context) DrawText(bb *Rect, text string, style *TextStyle) (size f32.Vec2) {
-	// 1. 取出布局
-	c := ctx.Cursor
-	x, y := Gui2Game(bb.X+style.Left+c.X, bb.Y+style.Top+c.Y)
-
-	// 2. 开始绘制
+	x, y := Gui2Game(bb.X+ctx.Cursor.X, bb.Y+ctx.Cursor.Y)
 	var (
 		font = style.Font
 		fontSize = style.Size * screen.scaleX // TODO 字体缩放不能这么简单的考虑
@@ -464,7 +396,7 @@ func (ctx *Context) CalcTextSize(text string, wrapWidth float32, fnt font.Font, 
 // 但是在大部分UI中，比如 Text/Image 只会改变背景的状态
 // 偷懒的自定义UI，不做任何状态的改变... 所以说呢, 我们也采用偷懒的做法呗。。
 func (ctx *Context) ColorBackground(event EventType, bb *Rect, round float32) {
-	if event == EventDown {
+	if (event & EventDown) != 0 {
 		ctx.DrawRect(bb, ThemeLight.Pressed, round)
 	} else {
 		ctx.DrawRect(bb, ThemeLight.Normal, round)
