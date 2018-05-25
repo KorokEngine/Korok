@@ -161,7 +161,7 @@ func (ctx *Context) Button(id ID, bb *Rect, text string, style *ButtonStyle) (ev
 
 	// Render Text
 	bb.X += style.Padding.Left
-	//bb.Y += style.Padding.Top
+	bb.Y += style.Padding.Top
 	ctx.DrawText(bb, text, &style.TextStyle)
 	return
 }

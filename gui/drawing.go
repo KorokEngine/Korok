@@ -670,7 +670,7 @@ func (dl *DrawList) AddText(pos f32.Vec2, text string, font font.Font, fontSize 
 	if wrapWidth > 0 {
 		size = fr.RenderWrapped(pos, text, wrapWidth)
 	} else {
-		size = fr.RenderText1(pos, text)
+		size = fr.RenderText(pos, text)
 	}
 	return
 }

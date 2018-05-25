@@ -92,10 +92,10 @@ func (tc *TextComp) fillData() {
 
 	if tc.size == 0 {
 		scale = 1.0
-		yOffset += gh
 	} else {
-		yOffset += tc.size
+		gh = tc.size
 	}
+	yOffset = gh
 
 	for i, r := range tc.text {
 		if glyph, ok := tc.font.Glyph(r); ok {
@@ -114,18 +114,14 @@ func (tc *TextComp) fillData() {
 			char.region.X1, char.region.Y1 = u1, v1
 			char.region.X2, char.region.Y2 = u2, v2
 
-			// left to right shit
+			// left to right shift only!
 			xOffset += advance
 			yOffset += 0
-
-			if char.h > size.h {
-				size.h = char.h
-			}
 		}
 	}
 	size.w = xOffset + chars[len(chars)-1].w
 	tc.width = size.w
-	tc.height = size.h
+	tc.height = gh
 }
 
 // should have default font!!

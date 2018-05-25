@@ -18,7 +18,7 @@ type FontRender struct {
 }
 
 // 当前的实现中，不考虑裁切优化，全部绘制所有字符
-func (fr *FontRender) RenderText1(pos f32.Vec2, text string) (size f32.Vec2){
+func (fr *FontRender) RenderText(pos f32.Vec2, text string) (size f32.Vec2){
 	dx, dy := pos[0], pos[1]
 	maxWidth := float32(0)
 
@@ -60,7 +60,7 @@ func (fr *FontRender) RenderText1(pos f32.Vec2, text string) (size f32.Vec2){
 		// Add kerning todo
 		// dx += getKerning(preglyph, g)
 		x1, y1 := dx, dy - (g.Height+g.YOffset) * scale
-		x2, y2 := x1 + g.Width * scale, y1 + g.Height * scale
+		x2, y2 := x1 + g.Width * scale, dy - (g.YOffset) * scale
 		u1,v1, u2, v2 := fr.font.Frame(r)
 
 		vi := bufferUsed * 4
@@ -102,7 +102,7 @@ func (fr *FontRender) RenderWrapped(pos f32.Vec2, text string, wrapWidth float32
 	_, lines := font.Wrap(fr.font, text, wrap, fr.fontSize)
 	//log.Println(lines)
 
-	size = fr.RenderText1(pos, lines)
+	size = fr.RenderText(pos, lines)
 	return
 }
 

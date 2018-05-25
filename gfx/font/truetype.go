@@ -54,7 +54,8 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 		gb = ttf.Bounds(fixed.I(size))
 		gw = gb.Max.X - gb.Min.X
 		gh = gb.Max.Y - gb.Min.Y
-		hh = face.Metrics().Ascent + face.Metrics().Descent
+		hh = face.Metrics().Ascent+face.Metrics().Descent
+		ah = face.Metrics().Ascent
 	)
 
 	width := fixed.I(iw)
@@ -91,7 +92,7 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 			Height: fixed2f32(gh+padding),
 
 			XOffset: fixed2f32(bb.Min.X),
-			YOffset: fixed2f32(hh+bb.Min.Y),
+			YOffset: fixed2f32(ah+bb.Min.Y-padding),
 		}
 
 		// add padding

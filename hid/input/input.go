@@ -156,8 +156,8 @@ func RegisterButton(name string, keys...Key) {
 	Input.RegisterButton(name, keys...)
 }
 
-func PointerButton(pb KeyPoint) *button {
-	return &Input.pointerButton[pb]
+func PointerButton(pb KeyPoint) button {
+	return Input.pointerButton[pb]
 }
 
 func PointerPosition(pb KeyPoint) PointerInput {
@@ -165,8 +165,8 @@ func PointerPosition(pb KeyPoint) PointerInput {
 }
 
 // Touch event
-func Touch(fi FingerId) (btn *button, pos, delta f32.Vec2) {
-	btn = &Input.pointerButton[fi]
+func Touch(fi FingerId) (btn button, pos, delta f32.Vec2) {
+	btn = Input.pointerButton[fi]
 	p := Input.pointers[fi]
 	pos, delta = p.MousePos, p.MouseDelta
 	return
