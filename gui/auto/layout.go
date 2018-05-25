@@ -180,7 +180,9 @@ func (lyt *layout) SetPadding(top, left, right, bottom float32) *layout {
 
 func (lyt *layout) BeginLayout(id gui.ID, opt *Options, xtype LayoutType) (elem *Element, ok bool) {
 	// layout element
+	spacing := lyt.spacing; lyt.spacing = 0
 	elem, ok = lyt.BeginElement(id, opt)
+	lyt.spacing = spacing
 
 	// do layout
 	ii := len(lyt.groupStack)
@@ -207,15 +209,13 @@ func (lyt *layout) EndLayout() {
 	if v.fixedWidth > 0 {
 		v.W = v.fixedWidth
 	} else {
-		v.W = v.Size.W
+		v.W = v.Size.W + lyt.spacing
 	}
 	if v.fixedHeight > 0 {
 		v.H = v.fixedHeight
 	} else {
-		v.H = v.Size.H
+		v.H = v.Size.H + lyt.spacing
 	}
-	v.W += lyt.spacing
-	v.H += lyt.spacing
 
 	// 2. return to parent
 	if size := len(lyt.groupStack); size > 1 {
@@ -228,7 +228,10 @@ func (lyt *layout) EndLayout() {
 
 	// 3. end layout
 	elem := &Element{Rect:gui.Rect{0, 0, v.W, v.H}}
+	spacing := lyt.spacing; lyt.spacing = 0
 	lyt.EndElement(elem)
+	lyt.spacing = spacing
+
 }
 
 func (lyt *layout) BeginElement(id gui.ID, opt *Options) (elem *Element, ok bool){

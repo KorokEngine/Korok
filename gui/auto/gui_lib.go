@@ -84,6 +84,8 @@ func (lm *LayoutMan) Button(id g.ID, text string, style *g.ButtonStyle, opt *Opt
 		lm.ColorBackground(event, bb, round)
 
 		// Render Text
+		bb.X += style.Padding.Left
+		bb.Y += style.Padding.Top
 		lm.DrawText(&elem.Rect, text, &style.TextStyle)
 	} else {
 		textStyle := lm.Theme.Text
@@ -108,9 +110,6 @@ func (lm *LayoutMan) renderTextClipped(text string, bb *g.Rect, style *g.TextSty
 }
 
 func (lm *LayoutMan) ImageButton(id g.ID, normal, pressed gfx.Tex2D, style *g.ImageButtonStyle, opt *Options) ( event g.EventType) {
-	if style == nil {
-		style = &lm.Theme.ImageButton
-	}
 	var (
 		elem, ready = lm.BeginElement(id, opt)
 		bb = &elem.Rect
@@ -137,10 +136,6 @@ func (lm *LayoutMan) ImageButton(id g.ID, normal, pressed gfx.Tex2D, style *g.Im
 // Slider 需要设定一些自定义的属性，目前没有想好如何实现，先把逻辑实现了
 // 用两种颜色来绘制
 func (lm *LayoutMan) Slider(id g.ID, value *float32, style *g.SliderStyle, opt *Options) (e g.EventType){
-	if style == nil {
-		style = &lm.Theme.Slider
-	}
-
 	var (
 		elem, ready = lm.BeginElement(id, opt)
 		bb = &elem.Rect

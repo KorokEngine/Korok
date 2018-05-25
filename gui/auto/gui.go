@@ -66,15 +66,24 @@ func InputText(hint string, style *gui.InputStyle, p *Options) {
 
 // Widget: Image
 func Image(id gui.ID, tex gfx.Tex2D, style *gui.ImageStyle, p *Options) {
+	if style == nil {
+		style = &gContext.Theme.Image
+	}
 	gLayoutMan.Image(id, tex, style, p)
 }
 
 // Widget: Button
 func Button(id gui.ID, text string, style *gui.ButtonStyle, p *Options) (event gui.EventType) {
+	if style == nil {
+		style = &gContext.Theme.Button
+	}
 	return gLayoutMan.Button(id, text, style, p)
 }
 
 func ImageButton(id gui.ID, normal, pressed gfx.Tex2D, style *gui.ImageButtonStyle, p *Options) gui.EventType{
+	if style == nil {
+		style = &gContext.Theme.ImageButton
+	}
 	return gLayoutMan.ImageButton(id, normal, pressed, style, p)
 }
 
@@ -88,6 +97,9 @@ func ProgressBar(fraction float32, style *gui.ProgressBarStyle, p *Options) {
 }
 
 func Slider(id gui.ID, value *float32, style *gui.SliderStyle, p *Options) (v gui.EventType){
+	if style == nil {
+		style = &gContext.Theme.Slider
+	}
 	return gLayoutMan.Slider(id, value, style, p)
 }
 
