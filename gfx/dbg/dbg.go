@@ -91,6 +91,10 @@ func DrawRect(x, y, w, h float32) {
 	gBuffer.Rect(x, y, w, h)
 }
 
+func DrawBorder(x, y, w, h, thickness float32) {
+	gBuffer.Border(x, y, w, h, thickness)
+}
+
 // draw a circle
 func DrawCircle(x,y float32, r float32) {
 
@@ -296,6 +300,13 @@ func (buff *TextShapeBuffer) Rect(x,y, w, h float32) {
 	b[3].X, b[3].Y = buff.x + x + 0, buff.y + y + h
 	b[3].U, b[3].V = 2, 0
 	b[3].RGBA = buff.color
+}
+
+func (buff *TextShapeBuffer) Border(x, y, w, h, thick float32) {
+	buff.Rect(x,y,w,thick)
+	buff.Rect(x,y+h-thick,w,thick)
+	buff.Rect(x, y, thick, h)
+	buff.Rect(x+w-thick,y,thick,h)
 }
 
 func (buff *TextShapeBuffer) Update() {
