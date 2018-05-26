@@ -272,25 +272,11 @@ type BufferContext struct {
 
 func (ctx *BufferContext) AllocBuffer(vertexSize, indexSize int) {
 	if vertexSize > ctx.vertexSize {
-		if ctx.vertexId != 0 {
-			bk.R.Free(ctx.vertexId)
-		}
-		{
-			vertexSize--
-			vertexSize |= vertexSize >> 1
-			vertexSize |= vertexSize >> 2
-			vertexSize |= vertexSize >> 3
-			vertexSize |= vertexSize >> 8
-			vertexSize |= vertexSize >> 16
-			vertexSize++
-		}
-
-		ctx.vertexSize = vertexSize
-		ctx.vertex = make([]gfx.PosTexColorVertex, vertexSize)
-		if id, vb := bk.R.AllocVertexBuffer(bk.Memory{nil,uint32(vertexSize) * 20}, 20); id != bk.InvalidId {
-			ctx.vertexId = id
-			ctx.vb = vb
-		}
+		id, sz, vb := gfx.Context.TempVertexBuffer(vertexSize, 20)
+		ctx.vertexId = id
+		ctx.vertexSize = sz
+		ctx.vb = vb
+		ctx.vertex = make([]gfx.PosTexColorVertex, sz)
 	}
 
 	if indexSize > ctx.indexSize {
