@@ -34,17 +34,20 @@ type MeshComp struct {
 	engi.Entity
 	Mesh
 	zOrder
-	width float32
-	height float32
+	size f32.Vec2
+	visible bool
+}
+
+func (m *MeshComp) Size() (w, h float32) {
+	return m.size[0], m.size[1]
 }
 
 func (m *MeshComp) SetSize(width, height float32) {
-	m.width = width
-	m.height = height
+	m.size[0], m.size[1] = width, height
 }
 
-func (*Mesh) Type() int32{
-	return 0
+func (m *MeshComp) SetVisible(v bool) {
+	m.visible = v
 }
 
 func (m *Mesh) Setup() {
@@ -139,6 +142,7 @@ func (mt *MeshTable) NewComp(entity engi.Entity) (mc *MeshComp) {
 
 	mc = &mt.comps[mt.index]
 	mc.Entity = entity
+	mc.size = f32.Vec2{64, 64}
 	mt._map[ei] = mt.index
 	mt.index ++
 	return
@@ -225,11 +229,18 @@ func (f *MeshRenderFeature) Register(rs *RenderSystem) {
 	f.id = rs.Accept(f)
 }
 
-// TODO: Visibility Test for MeshComp
 func (f *MeshRenderFeature) Extract(v *View) {
+	var (
+		camera = v.Camera
+		xt     = f.xt
+		fi = uint32(f.id) << 16
+	)
 	for i, m := range f.mt.comps[:f.mt.index] {
-		sid := PackSortId(m.zOrder.value, 0)
-		v.RenderNodes = append(v.RenderNodes, SortObject{sid, uint32(i)})
+		if xf := xt.Comp(m.Entity); m.visible && camera.InView(xf,m.size,f32.Vec2{.5, .5}) {
+			sid := PackSortId(m.zOrder.value, 0)
+			val := fi + uint32(i)
+			v.RenderNodes = append(v.RenderNodes, SortObject{sid, val})
+		}
 	}
 }
 
