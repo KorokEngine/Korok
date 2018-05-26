@@ -16,8 +16,10 @@ type ParticleComp struct {
 	engi.Entity
 	sim Simulator
 	zOrder int16
+	visible int16
 
 	tex gfx.Tex2D
+	size f32.Vec2
 }
 
 func (pc *ParticleComp) SetSimulator(sim Simulator) {
@@ -52,6 +54,27 @@ func (pc *ParticleComp) Z() int16 {
 	return pc.zOrder
 }
 
+func (pc *ParticleComp) Visible() bool {
+	if pc.visible == 0 {
+		return false
+	}
+	return true
+}
+
+func (pc *ParticleComp) SetVisible(v bool) {
+	if v {
+		pc.visible = 1
+	} else {
+		pc.visible = 0
+	}
+}
+
+// The width and height of the particle system. We'll use it to
+// make visibility test. The default value is {w:64, h:64}
+func (pc *ParticleComp) SetSize(w, h float32) {
+	pc.size[0], pc.size[1] = w, h
+}
+
 // component manager
 type ParticleSystemTable struct {
 	comps []ParticleComp
@@ -76,6 +99,8 @@ func (et *ParticleSystemTable) NewComp(entity engi.Entity) (ec *ParticleComp) {
 	}
 	ec = &et.comps[et.index]
 	ec.Entity = entity
+	ec.visible = 1
+	ec.size = f32.Vec2{64, 64}
 	et._map[ei] = et.index
 	et.index ++
 	return
@@ -125,7 +150,7 @@ func effectCompResize(slice []ParticleComp, size int) []ParticleComp {
 }
 
 type ParticleRenderFeature struct {
-	mr *gfx.MeshRender
+	*gfx.MeshRender
 	id int
 
 	et *ParticleSystemTable
@@ -144,7 +169,7 @@ func (f *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
 	for _, r := range rs.RenderList {
 		switch mr := r.(type) {
 		case *gfx.MeshRender:
-			f.mr = mr; break
+			f.MeshRender = mr; break
 		}
 	}
 	// init table
@@ -159,34 +184,28 @@ func (f *ParticleRenderFeature) Register(rs *gfx.RenderSystem) {
 	// add new feature
 	f.id = rs.Accept(f)
 }
-var mat = f32.Ident4()
 
-// TODO: Visibility Test for ParticleComp
 func (f *ParticleRenderFeature) Extract(v *gfx.View) {
-	for i, m := range f.et.comps[:f.et.index] {
-		sid := gfx.PackSortId(m.zOrder, 0)
-		v.RenderNodes = append(v.RenderNodes, gfx.SortObject{sid, uint32(i)})
+	var (
+		camera = v.Camera
+		xt     = f.xt
+		fi = uint32(f.id) << 16
+	)
+	for i, pc := range f.et.comps[:f.et.index] {
+		if xf := xt.Comp(pc.Entity); pc.visible != 0 && camera.InView(xf, pc.size, f32.Vec2{.5, .5}) {
+			sid := gfx.PackSortId(pc.zOrder, 0)
+			v.RenderNodes = append(v.RenderNodes, gfx.SortObject{sid,fi+uint32(i)})
+		}
 	}
 }
 
 func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
-	f.draw()
-}
-
-// 此处执行渲染
-// BatchRender 需要的是一组排过序的渲染对象！！！
-func (f *ParticleRenderFeature) draw() {
-	xt, mt, n := f.xt, f.et, f.et.index
-	mr := f.mr
-
-	if n == 0 {
-		return
-	}
-
-	var requireVertexSize int
-	var requireIndexSize int
-	for i := 0; i < n; i++ {
-		_, cap := mt.comps[i].sim.Size()
+	var (
+		requireVertexSize int
+		requireIndexSize int
+	)
+	for _, node := range nodes {
+		_, cap := f.et.comps[node.Value&0xFFFF].sim.Size()
 		requireVertexSize += cap * 4
 		if cap > requireIndexSize {
 			requireIndexSize = cap
@@ -194,57 +213,45 @@ func (f *ParticleRenderFeature) draw() {
 	}
 	f.AllocBuffer(requireVertexSize, requireIndexSize)
 
-	vertex := f.BufferContext.vertex
-	renderObjs := make([]renderObject, n)
-	vertexOffset := int(0)
+	// setup mesh & matrix
+	mesh := &gfx.Mesh{
+		IndexId:f.BufferContext.indexId,
+		VertexId:f.BufferContext.vertexId,
+	}
+	mat4 := &f32.Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
 
-	for i := 0; i < n; i++ {
-		comp := &mt.comps[i]
-		entity := comp.Entity
-		xform  := xt.Comp(entity)
+	// fill vertex buffer
+	var (
+		offset int
+	)
+	for _, node := range nodes {
+		z, _ := gfx.UnpackSortId(node.SortId)
+		ps := f.et.comps[node.Value&0xFFFF]
+		xf := f.xt.Comp(ps.Entity)
 
-		ro := &renderObjs[i]
-		ro.Transform = xform
-		ro.depth = int32(comp.zOrder)
-		live, _ := comp.sim.Size()
-		vn, in := live * 4, live * 6
+		live, _ := ps.sim.Size()
+		vsz, isz := live*4, live*6
+		buff := f.vertex[offset:offset+vsz]; offset += vsz
+		ps.sim.Visualize(buff, ps.tex)
 
-		// write vertex
-		buf := vertex[vertexOffset:vertexOffset+vn]
-		comp.sim.Visualize(buf, comp.tex)
+		mesh.FirstVertex = uint16(offset)
+		mesh.NumVertex = uint16(vsz)
+		mesh.FirstIndex = 0
+		mesh.NumIndex = uint16(isz)
+		mesh.SetTexture(ps.tex.Tex())
 
-		ro.Mesh = gfx.Mesh{
-			IndexId:     f.BufferContext.indexId,
-			VertexId:    f.BufferContext.vertexId,
-			FirstVertex: uint16(vertexOffset),
-			NumVertex:   uint16(vn),
-			FirstIndex:  0,
-			NumIndex:    uint16(in),
-		}
-		ro.Mesh.SetTexture(comp.tex.Tex())
-		vertexOffset += vn
+		p := xf.Position()
+		mat4.Set(0, 3, p[0])
+		mat4.Set(1, 3, p[1])
+		f.MeshRender.Draw(mesh, mat4, int32(z))
 	}
 
+	// update buffer
 	updateSize := uint32(requireVertexSize * 20)
+	f.vb.Update(0, updateSize, unsafe.Pointer(&f.vertex[0]), false)
 
 	dbg.Move(400, 300)
-	dbg.DrawStrScaled(fmt.Sprintf("lives: %d", vertexOffset>>2), .6)
-
-	f.vb.Update(0, updateSize, unsafe.Pointer(&vertex[0]), false)
-
-	for i := range renderObjs {
-		ro := &renderObjs[i]
-		p := ro.Transform.Position()
-		mat.Set(0, 3, p[0])
-		mat.Set(1, 3, p[1])
-		mr.Draw(&ro.Mesh, &mat, ro.depth)
-	}
-}
-
-type renderObject struct {
-	depth int32
-	gfx.Mesh
-	*gfx.Transform
+	dbg.DrawStrScaled(fmt.Sprintf("lives: %d", offset>>2), .6)
 }
 
 // 目前所有的粒子都会使用一个VBO进行渲染 TODO
