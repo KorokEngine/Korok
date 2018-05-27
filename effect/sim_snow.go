@@ -40,7 +40,7 @@ func NewSnowSimulator(cap int, w, h float32) *SnowSimulator {
 	sim.Config.Color = f32.Vec4{1, 0, 0, 1}
 	sim.Config.Size = Var{6, 6}
 	sim.Config.Position[0] = Var{0, w}
-	sim.Config.Position[1] = Var{h, 0}
+	sim.Config.Position[1] = Var{h/2, 0}
 	sim.Config.Velocity[0] = Var{-10,  20}
 	sim.Config.Velocity[1] = Var{-50, 20}
 

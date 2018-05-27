@@ -34,7 +34,7 @@ func (sh *Shader) BindAttributes(R *ResManager, streams []Stream) {
 		stream := streams[bind.stream]
 
 		if bind.stream != bindStream {
-			buffer := R.vertexBuffers[stream.vertexBuffer&0x0FFF]
+			buffer := R.vertexBuffers[stream.vertexBuffer&IdMask]
 			gl.BindBuffer(gl.ARRAY_BUFFER, buffer.Id)
 			bindStream = bind.stream
 			bindStride = buffer.layout
@@ -46,17 +46,20 @@ func (sh *Shader) BindAttributes(R *ResManager, streams []Stream) {
 		if enable {
 			gl.EnableVertexAttribArray(slot)
 
-			comp := bind.comp
-			num := int32(comp.Num)
-			xType := g_AttrType[comp.Type]
-			offset := int(comp.Offset)
+			var (
+				comp   = bind.comp
+				num    = int32(comp.Num)
+				xType  = g_AttrType[comp.Type]
+				offset = int(comp.Offset)
+				base   = int(stream.firstVertex)*int(bindStride)
+			)
 
 			var norm bool
 			if (comp.Normalized & 0x01) != 0 {
 				norm = true
 			}
 			if offset < int(bindStride) {
-				gl.VertexAttribPointer(slot, num, xType, norm, int32(bindStride), offset)
+				gl.VertexAttribPointer(slot, num, xType, norm, int32(bindStride), base+offset)
 			} else {
 				gl.DisableVertexAttribArray(slot)
 			}

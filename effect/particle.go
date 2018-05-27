@@ -152,15 +152,10 @@ func effectCompResize(slice []ParticleComp, size int) []ParticleComp {
 type ParticleRenderFeature struct {
 	*gfx.MeshRender
 	id int
+	BufferContext
 
 	et *ParticleSystemTable
 	xt *gfx.TransformTable
-
-	bigBuffer struct{
-		vertex uint16
-		index  uint16
-	}
-	BufferContext
 }
 
 // 此处初始化所有的依赖
@@ -194,7 +189,8 @@ func (f *ParticleRenderFeature) Extract(v *gfx.View) {
 	for i, pc := range f.et.comps[:f.et.index] {
 		if xf := xt.Comp(pc.Entity); pc.visible != 0 && camera.InView(xf, pc.size, f32.Vec2{.5, .5}) {
 			sid := gfx.PackSortId(pc.zOrder, 0)
-			v.RenderNodes = append(v.RenderNodes, gfx.SortObject{sid,fi+uint32(i)})
+			val := fi+uint32(i)
+			v.RenderNodes = append(v.RenderNodes, gfx.SortObject{SortId:sid,Value:val})
 		}
 	}
 }
@@ -208,7 +204,7 @@ func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
 		_, cap := f.et.comps[node.Value&0xFFFF].sim.Size()
 		requireVertexSize += cap * 4
 		if cap > requireIndexSize {
-			requireIndexSize = cap
+			requireIndexSize = cap * 6
 		}
 	}
 	f.AllocBuffer(requireVertexSize, requireIndexSize)
@@ -231,10 +227,10 @@ func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
 
 		live, _ := ps.sim.Size()
 		vsz, isz := live*4, live*6
-		buff := f.vertex[offset:offset+vsz]; offset += vsz
+		buff := f.vertex[offset:offset+vsz]
 		ps.sim.Visualize(buff, ps.tex)
 
-		mesh.FirstVertex = uint16(offset)
+		mesh.FirstVertex = uint16(offset);offset += vsz
 		mesh.NumVertex = uint16(vsz)
 		mesh.FirstIndex = 0
 		mesh.NumIndex = uint16(isz)

@@ -146,7 +146,7 @@ func (g *GravitySimulator) newParticle(new int) {
 
 	cfg := g.GravityConfig
 	for i := start; i < g.live; i++ {
-		g.life[i] = rdm(cfg.Life)
+		g.life[i] = math.Random(cfg.Life.Base, cfg.Life.Base+cfg.Life.Var)
 		invLife := 1/g.life[i]
 
 		g.pose[i] = f32.Vec2{cfg.X.Random(), cfg.Y.Random()}
@@ -185,11 +185,6 @@ func (g *GravitySimulator) newParticle(new int) {
 		g.velocity[i] = f32.Vec2{math.Cos(a)*s, math.Sin(a)*s}
 	}
 }
-
-func rdm(p Var) float32 {
-	return math.Random(p.Base, p.Base + p.Var)
-}
-
 
 func (g *GravitySimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D) {
 	g.VisualController.Visualize(buf, tex, g.live)
