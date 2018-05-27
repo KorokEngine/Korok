@@ -51,15 +51,17 @@ type Simulator interface {
 	// Run the simulator with delta time.
 	Simulate(dt float32)
 
-	Stop()
-
-	Play()
-
 	// Write the result to vertex-buffer.
 	Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D)
 
 	// Return the size of the simulator.
 	Size() (live, cap int)
+}
+
+// ParticleSystem lifecycle controller.
+type Controller interface {
+	Stop()
+	Play()
 }
 
 // TODO:

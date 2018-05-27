@@ -39,11 +39,15 @@ func (pc *ParticleComp) Texture() gfx.Tex2D {
 }
 
 func (pc *ParticleComp) Play() {
-	pc.sim.Play()
+	if ctr, ok := pc.sim.(Controller); ok {
+		ctr.Play()
+	}
 }
 
 func (pc *ParticleComp) Stop() {
-	pc.sim.Stop()
+	if ctr, ok := pc.sim.(Controller); ok {
+		ctr.Stop()
+	}
 }
 
 func (pc *ParticleComp) SetZOrder(z int16) {
