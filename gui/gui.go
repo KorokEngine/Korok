@@ -89,6 +89,13 @@ func SetFont(font font.Font) {
 	gContext.DrawList.PushTextureId(texFont)
 }
 
+// Set Z-Order for
+func SetZOrder(z int16) (old int16){
+	old = gContext.ZOrder
+	gContext.DrawList.ZOrder = z
+	return
+}
+
 // for internal usage, DO NOT call.
 func SetScreenSize(w, h float32) {
 	screen.SetRealSize(w, h)

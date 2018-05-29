@@ -38,11 +38,16 @@ const (
 	AlignBottom		  = 1 << iota
 )
 
+const (
+	DefaultZOrder = int16(0xFFFF>>1-100)
+)
+
 // DrawList provide method to write primitives to buffer
 type DrawCmd struct {
 	ElemCount int
 	ClipRect f32.Vec4
 	TextureId uint16
+	zOrder int16
 }
 
 type DrawIdx uint16
@@ -84,6 +89,7 @@ type DrawList struct {
 	FontSize float32
 
 	Flags DrawListFlags
+	ZOrder int16
 }
 
 func NewDrawList() *DrawList {
@@ -106,6 +112,8 @@ func (dl *DrawList) Initialize() {
 		cos := math.Cos((6.28/12)*float32(i))
 		dl.CircleVtx12[i] = f32.Vec2{cos, sin}
 	}
+	dl.ZOrder = DefaultZOrder
+	dl.cmdIndex = 1 // skip first one
 }
 
 func (dl *DrawList) Empty() bool {
@@ -120,7 +128,7 @@ func (dl *DrawList) Size() (idx, vdx int) {
 
 // TODO
 func (dl *DrawList) Clear() {
-	dl.cmdIndex = 0
+	dl.cmdIndex = 1
 	dl.idxIndex = 0
 	dl.vtxIndex = 0
 }
@@ -325,7 +333,7 @@ func (dl *DrawList) AddPolyLine(points []f32.Vec2, color uint32, thickness float
 
 		diff := p2.Sub(p1)
 
-		invLength := InvLength(diff, 1.0)
+		invLength := math.InvLength(diff[0], diff[1], 1.0)
 		diff = diff.Mul(invLength)
 		dx := diff[0] * (thickness * 0.5)
 		dy := diff[1] * (thickness * 0.5)
@@ -498,13 +506,13 @@ func (dl *DrawList) AddTriangleFilled(a, b, c f32.Vec2, color uint32) {
 }
 
 func (dl *DrawList) AddCircle(centre f32.Vec2, radius float32, color uint32, segments int, thickness float32) {
-	max := PI * 2 * float32(segments-1)/float32(segments)
+	max := math.Pi * 2 * float32(segments-1)/float32(segments)
 	dl.PathArcTo(centre, radius, 0.0, max, segments)
 	dl.PathStroke(color, thickness, true)
 }
 
 func (dl *DrawList) AddCircleFilled(centre f32.Vec2, radius float32, color uint32, segments int) {
-	max := PI * 2 * float32(segments-1)/float32(segments)
+	max := math.Pi * 2 * float32(segments-1)/float32(segments)
 	dl.PathArcTo(centre, radius,0.0, max, segments)
 	dl.PathFillConvex(color)
 }
@@ -678,24 +686,22 @@ func (dl *DrawList) AddText(pos f32.Vec2, text string, font font.Font, fontSize 
 // 每次绘制都会产生一个 Command （可能会造成内存浪费! 1k cmd = 1000 * 6 * 4 = 24k）
 // 为了减少内存可以一边添加一边尝试向前合并
 func (dl *DrawList) AddCommand(elemCount int) {
-	clip := dl.CurrentClipRect()
-	tex  := dl.CurrentTextureId()
-
-	if ii := dl.cmdIndex; ii == 0 {
-		dl.CmdBuffer[ii] = DrawCmd{elemCount, clip, tex}
-		dl.cmdIndex += 1
+	var (
+		clip  = dl.CurrentClipRect()
+		tex   = dl.CurrentTextureId()
+		order = dl.ZOrder
+		index = dl.cmdIndex
+	)
+	if prev := &dl.CmdBuffer[index-1]; prev.ClipRect == clip && prev.TextureId == tex && prev.zOrder == order{
+		prev.ElemCount += elemCount
 	} else {
-		if prev  := &dl.CmdBuffer[ii-1]; prev.ClipRect == clip && prev.TextureId == tex {
-			prev.ElemCount += elemCount
-		} else {
-			dl.CmdBuffer[ii] = DrawCmd{elemCount,clip,tex}
-			dl.cmdIndex += 1
-		}
+		dl.CmdBuffer[index] = DrawCmd{elemCount,clip,tex, order}
+		dl.cmdIndex += 1
 	}
 }
 
 func (dl *DrawList) Commands() []DrawCmd {
-	return dl.CmdBuffer[:dl.cmdIndex]
+	return dl.CmdBuffer[1:dl.cmdIndex]
 }
 
 

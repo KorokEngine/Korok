@@ -1,84 +1,106 @@
 package gui
 
 import (
-	"korok.io/korok/math/f32"
 	"korok.io/korok/gfx"
 	"korok.io/korok/gfx/bk"
+	"korok.io/korok/math/f32"
 
 	"unsafe"
 )
 
-
-type UISystem struct {
+type UIRenderFeature struct {
+	id int
 	*gfx.MeshRender
-	context []*Context
-	mesh gfx.Mesh
+	*DrawList
+
+	Buffer struct{
+		iid, vid uint16
+		isz, vsz int
+		vertex *bk.VertexBuffer
+		index *bk.IndexBuffer
+	}
 }
 
-func NewUISystem(render *gfx.MeshRender) *UISystem {
-	ui :=  &UISystem{
-		MeshRender: render,
-	}
-	// &m.d.VtxBuffer[0]
-	if id, _ := bk.R.AllocVertexBuffer(bk.Memory{nil, 4000*20}, 20); id != bk.InvalidId {
-		ui.mesh.VertexId = id
-	}
-	// &m.d.IdxBuffer[0]
-	if id, _ := bk.R.AllocIndexBuffer(bk.Memory{nil, 4000*6}); id != bk.InvalidId {
-		ui.mesh.IndexId = id
-	}
-	return ui
+func (f *UIRenderFeature) SetDrawList(dl *DrawList) {
+	f.DrawList = dl
 }
 
-func (ui *UISystem) RegisterContext(c *Context) {
-	ui.context = append(ui.context, c)
-}
-
-// Loop!!
-func (ui *UISystem) Draw(dt float32) {
-	// --------------
-	for _, c := range ui.context {
-		dl := &c.DrawList
-
-		if dl.Empty() {
-			continue
+func (f *UIRenderFeature) Register(rs *gfx.RenderSystem) {
+	// init render
+	for _, r := range rs.RenderList {
+		switch render := r.(type) {
+		case *gfx.MeshRender:
+			f.MeshRender = render; break
 		}
+	}
+	// add new feature, use the index as id
+	f.id = rs.Accept(f)
+	f.DrawList = &gContext.DrawList
+	f.Buffer.vid = bk.InvalidId
+	f.Buffer.iid = bk.InvalidId
+}
 
-		// 1. update buffer
-		iSize, vSize := dl.Size()
-		vBuffer := (*[4*10000]gfx.PosTexColorVertex)(unsafe.Pointer(&dl.VtxBuffer[0]))[:vSize]
-		iBuffer := (*[6*10000]uint16)(unsafe.Pointer(&dl.IdxBuffer[0]))[:iSize]
-
-		ui.mesh.SetVertex(vBuffer)
-		ui.mesh.SetIndex(iBuffer)
-		ui.mesh.Update()
-
-		// 2. draw command
-		firstIndex := uint16(0)
-		for _, cmd := range dl.Commands() {
-			ui.mesh.FirstVertex = 0
-			ui.mesh.NumVertex = uint16(len(vBuffer))
-			ui.mesh.FirstIndex = firstIndex
-			ui.mesh.NumIndex = uint16(cmd.ElemCount)
-			firstIndex += uint16(cmd.ElemCount)
-			ui.mesh.SetTexture(cmd.TextureId)
-
-			ui.MeshRender.Draw(&ui.mesh, &mat4, 0)
+func (f *UIRenderFeature) Extract(v *gfx.View) {
+	if dl := f.DrawList; !dl.Empty() {
+		fi := uint32(f.id)<<16
+		for i, cmd := range dl.Commands() {
+			sid := gfx.PackSortId(cmd.zOrder, 0)
+			val := fi + uint32(i)
+			v.RenderNodes = append(v.RenderNodes, gfx.SortObject{SortId:sid, Value:val})
 		}
-
-		//log.Println("cmds:", dl.Commands())
-		//log.Println("vbuffer:", vBuffer)
-		//log.Println("ibuffer:", iBuffer)
-
-		// reset drawlist
-		dl.Clear()
 	}
 }
 
-var	mat4 = f32.Ident4()
+func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
+	// setup buffer
+	isz, vsz := f.DrawList.Size()
+	f.allocBuffer(isz, vsz)
+	mesh := &gfx.Mesh{
+		IndexId:f.Buffer.iid,
+		VertexId:f.Buffer.vid,
+	}
+	mat4 := &f32.Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
+	offset := 0
+	commands := f.DrawList.Commands()
+	for _, node := range nodes {
+		index := node.Value&0xFFFF
+		cmd := commands[index]
 
-func (ui *UISystem) Destroy() {
+		mesh.FirstVertex = 0
+		mesh.NumVertex = uint16(vsz)
+		mesh.FirstIndex = uint16(offset); offset += cmd.ElemCount
+		mesh.NumIndex = uint16(cmd.ElemCount)
+		mesh.SetTexture(cmd.TextureId)
 
+		f.MeshRender.Draw(mesh, mat4, int32(cmd.zOrder))
+	}
+	f.Buffer.vertex.Update(0, uint32(vsz*20), unsafe.Pointer(&f.DrawList.VtxBuffer[0]),false)
+	f.Buffer.index.Update(0, uint32(isz*2), unsafe.Pointer(&f.DrawList.IdxBuffer[0]), false)
+	f.DrawList.Clear()
 }
 
+func (f *UIRenderFeature) allocBuffer(isz, vsz int) {
+	if isz > f.Buffer.isz {
+		if iid := f.Buffer.iid; iid != bk.InvalidId {
+			bk.R.Free(iid)
+		}
+		{
+			isz--
+			isz |= isz >> 1
+			isz |= isz >> 2
+			isz |= isz >> 3
+			isz |= isz >> 8
+			isz |= isz >> 16
+			isz++
+		}
+		id, ib := bk.R.AllocIndexBuffer(bk.Memory{nil, uint32(isz)*2})
+		f.Buffer.iid = id
+		f.Buffer.isz = isz
+		f.Buffer.index = ib
+	}
+
+	vid, _, vb := gfx.Context.TempVertexBuffer(vsz, 20)
+	f.Buffer.vid = vid
+	f.Buffer.vertex = vb
+}
 

@@ -51,7 +51,6 @@ type Game struct {
 
 	// system
 	*gfx.RenderSystem
-	*gui.UISystem
 	*input.InputSystem
 	*effect.ParticleSimulateSystem
 	*ScriptSystem
@@ -125,11 +124,6 @@ func (g *Game) Create(ratio float32) {
 	meshRender := gfx.NewMeshRender(vertex, color)
 	rs.RegisterRender(gfx.RenderType(1), meshRender)
 
-	log.Println("Load Render:", len(rs.RenderList))
-	for i, v := range rs.RenderList {
-		log.Println(i, " render - ", reflect.TypeOf(v))
-	}
-
 	// set feature
 	srf := &gfx.SpriteRenderFeature{}
 	srf.Register(rs)
@@ -138,14 +132,9 @@ func (g *Game) Create(ratio float32) {
 	trf := &gfx.TextRenderFeature{}
 	trf.Register(rs)
 
-	log.Println("Load Feature:", len(rs.FeatureList))
-	for i, v := range rs.FeatureList {
-		log.Println(i, " feature - ", reflect.TypeOf(v))
-	}
-
 	// gui system
-	g.UISystem = gui.NewUISystem(meshRender)
-	g.UISystem.RegisterContext(gui.DefaultContext())
+	ui := &gui.UIRenderFeature{}
+	ui.Register(rs)
 
 	/// init debug
 	dbg.Init(g.Options.W, g.Options.H)
@@ -173,6 +162,11 @@ func (g *Game) Create(ratio float32) {
 
 	/// setup scene manager
 	g.SceneManager.Setup(g)
+
+	log.Println("Load Feature:", len(rs.FeatureList))
+	for i, v := range rs.FeatureList {
+		log.Println(i, " feature - ", reflect.TypeOf(v))
+	}
 }
 
 // destroy subsystem
@@ -242,9 +236,6 @@ func (g *Game) Update() {
 
 	// Render
 	g.RenderSystem.Update(dt)
-
-	// GUI
-	g.UISystem.Draw(dt)
 
 	// fps & profile
 	g.DrawProfile()

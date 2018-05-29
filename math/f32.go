@@ -19,6 +19,11 @@ func InvSqrt(x float32) float32 {
 	return x
 }
 
+func InvLength(x, y , fail float32) float32 {
+	return 1/float32(math.Sqrt(float64(x*x + y*y)))
+}
+
+
 /// a faster way ?
 func Random(low, high float32) float32 {
 	return low + (high - low) * rand.Float32()
