@@ -7,6 +7,14 @@ import (
 	"sort"
 )
 
+type SortMode int
+
+const (
+	Sequential SortMode = iota
+	Ascending
+	Descending
+)
+
 type Rect struct {
 	x, y uint16
 	w, h uint16
@@ -60,6 +68,7 @@ func (rd *RenderDraw) reset() {
 const MAX_QUEUE_SIZE = 8 << 10
 
 type RenderQueue struct {
+	SortMode
 	// render list
 	sortKey    [MAX_QUEUE_SIZE]uint64
 	sortValues [MAX_QUEUE_SIZE]uint16
@@ -255,7 +264,12 @@ func (rq *RenderQueue) Flush() int {
 	)
 
 	// Sort by SortKey
-	sort.Stable(ByKey{sortKeys, sortVals})
+	switch rq.SortMode {
+	case Ascending:
+		sort.Stable(ByKeyAscending{sortKeys, sortVals})
+	case Descending:
+		sort.Stable(ByKeyDescending{sortKeys, sortVals})
+	}
 
 	// Draw respect to sorted values
 	rq.ctx.Draw(sortKeys, sortVals, drawList)
@@ -274,22 +288,41 @@ func (rq *RenderQueue) Flush() int {
 // A simple default sort method will be OK.
 
 // sort draw-call based on SortKey
-type ByKey struct {
+type ByKeyAscending struct {
 	k []uint64
 	v []uint16
 }
 
-func (a ByKey) Len() int           {
+func (a ByKeyAscending) Len() int           {
 	return len(a.k)
 }
 
-func (a ByKey) Swap(i, j int)      {
+func (a ByKeyAscending) Swap(i, j int)      {
 	a.k[i], a.k[j] = a.k[j], a.k[i]
 	a.v[i], a.v[j] = a.v[j], a.v[i]
 }
 
-func (a ByKey) Less(i, j int) bool {
+func (a ByKeyAscending) Less(i, j int) bool {
 	return a.k[i] < a.k[j]
 }
+
+type ByKeyDescending struct {
+	k []uint64
+	v []uint16
+}
+
+func (a ByKeyDescending) Len() int           {
+	return len(a.k)
+}
+
+func (a ByKeyDescending) Swap(i, j int)      {
+	a.k[i], a.k[j] = a.k[j], a.k[i]
+	a.v[i], a.v[j] = a.v[j], a.v[i]
+}
+
+func (a ByKeyDescending) Less(i, j int) bool {
+	return a.k[i] > a.k[j]
+}
+
 
 
