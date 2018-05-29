@@ -271,11 +271,11 @@ type BufferContext struct {
 }
 
 func (ctx *BufferContext) AllocBuffer(vertexSize, indexSize int) {
-	if vertexSize > ctx.vertexSize {
-		id, sz, vb := gfx.Context.TempVertexBuffer(vertexSize, 20)
-		ctx.vertexId = id
+	id, sz, vb := gfx.Context.TempVertexBuffer(vertexSize, 20)
+	ctx.vertexId = id
+	ctx.vb = vb
+	if sz > ctx.vertexSize {
 		ctx.vertexSize = sz
-		ctx.vb = vb
 		ctx.vertex = make([]gfx.PosTexColorVertex, sz)
 	}
 
