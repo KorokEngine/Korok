@@ -31,6 +31,31 @@ func (c Color) U32() uint32 {
 	return *(*uint32)(unsafe.Pointer(&c))
 }
 
+// Color value should follow byte-order: 0xAABBGGRR
+func U32Color(v uint32) Color {
+	return *(*Color)(unsafe.Pointer(&v))
+}
+
+// PMAColor returns a pre-multiplied alpha Color.
+func PMAColor(r, g, b, a uint8) Color {
+	f := float32(a)/255
+	return Color{
+		R:uint8(float32(r)*f),
+		G:uint8(float32(g)*f),
+		B:uint8(float32(b)*f),
+		A:a,
+	}
+}
+
+func PMAColorf(r, g, b, a float32) Color{
+	return Color{
+		R:uint8(r*a*255),
+		G:uint8(g*a*255),
+		B:uint8(b*a*255),
+		A:uint8(a*255),
+	}
+}
+
 func (c Color) RGBA() (r, g, b, a uint32) {
 	r = uint32(c.R)
 	r |= r << 8
