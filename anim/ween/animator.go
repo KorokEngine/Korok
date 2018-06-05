@@ -1,6 +1,6 @@
 package ween
 
-import "korok.io/korok/anim/ween/ease"
+import "korok.io/korok/math/ease"
 
 type Animator struct {
 	en *TweenEngine

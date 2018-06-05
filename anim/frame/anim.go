@@ -14,7 +14,7 @@ type Animation struct {
 }
 
 // Sprite Animation System
-type Engine struct {
+type SpriteEngine struct {
 	// raw frames
 	frames []gfx.Tex2D
 	// raw animation
@@ -27,11 +27,11 @@ type Engine struct {
 	at *FlipbookTable
 }
 
-func NewEngine() *Engine {
-	return &Engine{ names:make(map[string]int) }
+func NewEngine() *SpriteEngine {
+	return &SpriteEngine{ names:make(map[string]int) }
 }
 
-func (eng *Engine) RequireTable(tables []interface{}) {
+func (eng *SpriteEngine) RequireTable(tables []interface{}) {
 	for _, t := range tables {
 		switch table := t.(type) {
 		case *gfx.SpriteTable:
@@ -49,7 +49,7 @@ func (eng *Engine) RequireTable(tables []interface{}) {
 // 或者说无法删除动画，只能全部删除或者完全重新加载...
 // 如何动画以组的形式存在，那么便可以避免很多问题
 //
-func (eng *Engine) NewAnimation(name string, frames []gfx.Tex2D, loop bool) {
+func (eng *SpriteEngine) NewAnimation(name string, frames []gfx.Tex2D, loop bool) {
 	// copy frames
 	start, size := len(eng.frames), len(frames)
 	eng.frames = append(eng.frames, frames...)
@@ -60,7 +60,7 @@ func (eng *Engine) NewAnimation(name string, frames []gfx.Tex2D, loop bool) {
 }
 
 // 返回动画定义 - 好像并没有太大的意义
-func (eng *Engine) Animation(name string) (anim *Animation, seq []gfx.Tex2D) {
+func (eng *SpriteEngine) Animation(name string) (anim *Animation, seq []gfx.Tex2D) {
 	if ii, ok := eng.names[name]; ok {
 		anim = &eng.data[ii]
 		seq  = eng.frames[anim.Start:anim.Start+anim.Len]
@@ -68,7 +68,7 @@ func (eng *Engine) Animation(name string) (anim *Animation, seq []gfx.Tex2D) {
 	return
 }
 
-func (eng *Engine) Update(dt float32) {
+func (eng *SpriteEngine) Update(dt float32) {
 	var (
 		at, st = eng.at, eng.st
 		anims  = at.comps[:at.index]

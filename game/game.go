@@ -157,6 +157,7 @@ func (g *Game) Create(ratio float32) {
 	/// Tex2D animation system
 	g.AnimationSystem = anim.NewAnimationSystem()
 	g.AnimationSystem.RequireTable(g.DB.Tables)
+	anim.SetDefaultAnimationSystem(g.AnimationSystem)
 
 	// audio system
 

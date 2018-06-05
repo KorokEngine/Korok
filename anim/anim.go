@@ -7,8 +7,8 @@ import (
 )
 
 type AnimationSystem struct {
-	SpriteEngine *frame.Engine
-	TweenEngine *ween.TweenEngine
+	*frame.SpriteEngine
+	*ween.TweenEngine
 
 	// tables
 	st *gfx.SpriteTable
@@ -16,17 +16,10 @@ type AnimationSystem struct {
 }
 
 func NewAnimationSystem() *AnimationSystem {
-	var (
-		se = frame.NewEngine()
-		te = ween.NewEngine()
-	)
-	spriteEngine = se
-	tweenEngine = te
-	as = &AnimationSystem{
-		SpriteEngine:se,
-		TweenEngine:te,
+	return &AnimationSystem{
+		SpriteEngine: frame.NewEngine(),
+		TweenEngine: ween.NewEngine(),
 	}
-	return as
 }
 
 func (as *AnimationSystem) RequireTable(tables []interface{}) {
@@ -47,7 +40,14 @@ func (as *AnimationSystem) Update(dt float32) {
 	as.TweenEngine.Update(dt)
 }
 
+// set shortcut
+func SetDefaultAnimationSystem(as *AnimationSystem) {
+	animationSystem = as
+	spriteEngine = as.SpriteEngine
+	tweenEngine = as.TweenEngine
+}
+
 // shortcut
-var spriteEngine *frame.Engine
+var spriteEngine *frame.SpriteEngine
 var tweenEngine *ween.TweenEngine
-var as *AnimationSystem
+var animationSystem *AnimationSystem

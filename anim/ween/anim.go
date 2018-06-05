@@ -1,7 +1,9 @@
 package ween
 
 import (
-	"korok.io/korok/anim/ween/ease"
+	"korok.io/korok/math/ease"
+	"korok.io/korok/gfx/dbg"
+	"fmt"
 )
 
 type UpdateCallback func(reverse bool, f float32)
@@ -15,13 +17,6 @@ type Callback struct {
 type Value struct {
 	f float32
 }
-
-type AnimationStatus uint8
-const (
-	Forward AnimationStatus = iota
-	Reverse
-	Completed
-)
 
 type AnimState uint8
 
@@ -178,6 +173,9 @@ func (eng *TweenEngine) Update(dt float32) {
 		}
 	}
 	eng.active = i
+
+	dbg.Move(10, 280)
+	dbg.DrawStrScaled(fmt.Sprintf("animation: %d", i), .6)
 }
 
 // Play an animation, produces values that range from 0.0 to 1.0,

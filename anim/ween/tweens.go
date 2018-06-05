@@ -42,16 +42,20 @@ func ColorLerp(from, to gfx.Color, f float32) gfx.Color {
 	return c
 }
 
+// A float32 linear interpolation between a beginning and ending value.
+// It use the Animator as the input.
 type F32Tween struct {
 	am Animator
 	from, to float32
 }
 
+// Animate sets the Animator that drives the Tween.
 func (t *F32Tween) Animate(am Animator) Animator {
 	t.am = am
 	return am
 }
 
+// Animator returns the Animator driving the Tween.
 func (t *F32Tween) Animator() Animator {
 	if !t.am.Valid() {
 		log.Println("animator is unavailable")
@@ -59,56 +63,74 @@ func (t *F32Tween) Animator() Animator {
 	return t.am
 }
 
-func (t *F32Tween) Initialize(from, to float32, engine *TweenEngine) {
-	t.from = from
-	t.to = to
-	t.am = engine.NewAnimator()
-}
-
+// Range sets the beginning and ending value of the F32Tween.
 func (t *F32Tween) Range(from, to float32) *F32Tween {
 	t.from = from
 	t.to = to
 	return t
 }
 
+// Returns the interpolated value for the current value of the given Animator.
 func (t *F32Tween) Value() float32 {
 	return F32Lerp(t.from, t.to, t.am.Value())
 }
 
+// A f32.Vec2 linear interpolation between a beginning and ending value.
+// It use the Animator as the input.
 type Vec2Tween struct {
-	Animator
+	am Animator
 	from, to f32.Vec2
 }
 
-func (t *Vec2Tween) Initialize(from, to f32.Vec2, engine *TweenEngine) {
-	t.from = from
-	t.to = to
-	t.Animator = engine.NewAnimator()
+// Animate sets the Animator that drives the Tween.
+func (t *Vec2Tween) Animate(am Animator) Animator {
+	t.am = am
+	return am
 }
 
+// Animator returns the Animator driving the Tween.
+func (t *Vec2Tween) Animator() Animator {
+	return t.am
+}
+
+// Range sets the beginning and ending value of the Vec2Tween.
+func (t *Vec2Tween) Range(from, to f32.Vec2) *Vec2Tween {
+	t.from, t.to = from, to
+	return t
+}
+
+// Returns the interpolated value for the current value of the given Animator.
 func (t *Vec2Tween) Value() f32.Vec2 {
-	return Vec2Lerp(t.from, t.to, t.Animator.Value())
+	return Vec2Lerp(t.from, t.to, t.am.Value())
 }
 
+// A gfx.Color linear interpolation between a beginning and ending value.
+// It use the Animator as the input.
 type ColorTween struct {
-	Animator
+	am Animator
 	from, to gfx.Color
 }
 
-func (t *ColorTween) Initialize(from, to gfx.Color, engine *TweenEngine) {
-	t.from = from
-	t.to = to
-	t.Animator = engine.NewAnimator()
+// Range sets the beginning and ending value of the ColorTween.
+func (t *ColorTween) Range(from, to gfx.Color) *ColorTween {
+	t.from, t.to = from, to
+	return t
 }
 
+// Animate sets the Animator that drives the Tween.
+func (t *ColorTween) Animate(animator Animator) Animator {
+	t.am = animator
+	return animator
+}
+
+// Animator returns the Animator driving the Tween.
+func (t *ColorTween) Animator() Animator {
+	return t.am
+}
+
+// Returns the interpolated value for the current value of the given Animator.
 func (t *ColorTween) Value() gfx.Color {
-	f := t.Animator.Value()
-	return gfx.Color{
-		R: U8Lerp(t.from.R, t.to.R, f),
-		G: U8Lerp(t.from.G, t.to.G, f),
-		B: U8Lerp(t.from.B, t.to.B, f),
-		A: U8Lerp(t.from.A, t.to.A, f),
-	}
+	return ColorLerp(t.from, t.to, t.am.Value())
 }
 
 

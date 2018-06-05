@@ -101,9 +101,9 @@ func newLightTheme() *Theme {
 			Background:gfx.LTGray,
 			Rounding:5,
 		},
-		Image:ImageStyle{gfx.While},
+		Image:ImageStyle{gfx.White},
 		ImageButton:ImageButtonStyle{
-			ImageStyle:ImageStyle{ Tint:gfx.While},
+			ImageStyle:ImageStyle{ Tint:gfx.White},
 			Padding:Padding{0, 0,0,0},
 		},
 		Slider:SliderStyle{
