@@ -2,13 +2,13 @@ package anim
 
 import (
 	"korok.io/korok/anim/frame"
-	"korok.io/korok/anim/tween"
+	"korok.io/korok/anim/ween"
 	"korok.io/korok/gfx"
 )
 
 type AnimationSystem struct {
 	SpriteEngine *frame.Engine
-	TweenEngine *tween.Engine
+	TweenEngine *ween.TweenEngine
 
 	// tables
 	st *gfx.SpriteTable
@@ -18,7 +18,7 @@ type AnimationSystem struct {
 func NewAnimationSystem() *AnimationSystem {
 	var (
 		se = frame.NewEngine()
-		te = tween.NewEngine()
+		te = ween.NewEngine()
 	)
 	spriteEngine = se
 	tweenEngine = te
@@ -49,5 +49,5 @@ func (as *AnimationSystem) Update(dt float32) {
 
 // shortcut
 var spriteEngine *frame.Engine
-var tweenEngine *tween.Engine
+var tweenEngine *ween.TweenEngine
 var as *AnimationSystem

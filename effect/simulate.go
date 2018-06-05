@@ -136,22 +136,15 @@ type LifeController struct {
 
 // GC removes dead particles from the Pool.
 func (ctr *LifeController) GC(p *Pool) {
-	for i, n := 0, ctr.live ; i < n; i++{
-		if ctr.life[i] <= 0 {
-			// find last live
-			j := ctr.live - 1
-			for ; j > i && ctr.life[j] <= 0; j-- {
-				ctr.live --
-				n = ctr.live
-			}
-
-			if j > i {
-				p.Swap(i, j)
-			}
-			ctr.live --
-			n = ctr.live
+	i, j := int(0), int(ctr.live-1)
+	for i <= j {
+		if ctr.life[j] <= 0 {
+			p.Swap(i, j);j--
+		} else {
+			i++
 		}
 	}
+	ctr.live = i
 }
 
 // VisualController is a helper struct to write simulation result to vertex-buffer.
