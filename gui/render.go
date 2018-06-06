@@ -60,7 +60,6 @@ func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 		VertexId:f.Buffer.vid,
 	}
 	mat4 := &f32.Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
-	offset := 0
 	commands := f.DrawList.Commands()
 	for _, node := range nodes {
 		index := node.Value&0xFFFF
@@ -68,8 +67,8 @@ func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 
 		mesh.FirstVertex = 0
 		mesh.NumVertex = uint16(vsz)
-		mesh.FirstIndex = uint16(offset); offset += cmd.ElemCount
-		mesh.NumIndex = uint16(cmd.ElemCount)
+		mesh.FirstIndex = cmd.FirstIndex
+		mesh.NumIndex = cmd.ElemCount
 		mesh.SetTexture(cmd.TextureId)
 
 		f.MeshRender.Draw(mesh, mat4, int32(cmd.zOrder))

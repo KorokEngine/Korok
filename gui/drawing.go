@@ -44,7 +44,8 @@ const (
 
 // DrawList provide method to write primitives to buffer
 type DrawCmd struct {
-	ElemCount int
+	FirstIndex uint16
+	ElemCount uint16
 	ClipRect f32.Vec4
 	TextureId uint16
 	zOrder int16
@@ -693,9 +694,10 @@ func (dl *DrawList) AddCommand(elemCount int) {
 		index = dl.cmdIndex
 	)
 	if prev := &dl.CmdBuffer[index-1]; prev.ClipRect == clip && prev.TextureId == tex && prev.zOrder == order{
-		prev.ElemCount += elemCount
+		prev.ElemCount += uint16(elemCount)
 	} else {
-		dl.CmdBuffer[index] = DrawCmd{elemCount,clip,tex, order}
+		fi := prev.FirstIndex+prev.ElemCount
+		dl.CmdBuffer[index] = DrawCmd{fi,uint16(elemCount),clip,tex, order}
 		dl.cmdIndex += 1
 	}
 }
