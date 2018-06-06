@@ -2,8 +2,6 @@ package ween
 
 import (
 	"korok.io/korok/math/ease"
-	"korok.io/korok/gfx/dbg"
-	"fmt"
 )
 
 type UpdateCallback func(reverse bool, f float32)
@@ -119,8 +117,9 @@ func (eng *TweenEngine) New() (uid int) {
 	eng.active ++
 	anim := &eng.anims[index];
 	anim.Reset()
-	anim.index = index
+	anim.index = uid
 	eng.values[index] = Value{}
+	eng.callbacks[index] = Callback{}
 	eng.lookup[uid] = index
 	return
 }
@@ -135,6 +134,12 @@ func (eng *TweenEngine) SetTimeScale(sk float32) {
 	eng.scale = sk
 }
 
+// It's not easy to maintain the callback, one many add or delete animation
+// while looping. Thanks to our delayed deleting strategy that delete operation
+// only mark the animation 'Disposed' and will not change the size of the
+// active animation. But add new animation will change the size, since new
+// animation is always appended to the end. We can easily know the real size.
+// Note: we need a BETTER callback policy.
 func (eng *TweenEngine) Update(dt float32) {
 	size := eng.active
 	// 1. update
@@ -146,7 +151,7 @@ func (eng *TweenEngine) Update(dt float32) {
 	}
 
 	// 2. callback
-	for i := 0; i < size; i++ {
+	for i := 0; i < eng.active; i++ {
 		if anim := &eng.anims[i]; anim.state.AnimState == Stopped && anim.state.dirty {
 			anim.state.dirty = false
 			if cb := eng.callbacks[i].EndCallback; cb != nil {
@@ -159,7 +164,7 @@ func (eng *TweenEngine) Update(dt float32) {
 		}
 	}
 	// 3. delete dead
-	var	i, j = 0, size-1
+	var	i, j = 0, eng.active-1
 	for i <= j {
 		if anim := &eng.anims[i]; anim.state.AnimState == Dispose {
 			eng.lookup[eng.anims[j].index] = i
@@ -174,8 +179,8 @@ func (eng *TweenEngine) Update(dt float32) {
 	}
 	eng.active = i
 
-	dbg.Move(10, 280)
-	dbg.DrawStrScaled(fmt.Sprintf("animation: %d", i), .6)
+	//dbg.Move(10, 300)
+	//dbg.DrawStrScaled(fmt.Sprintf("animation: %d", i), .6)
 }
 
 // Play an animation, produces values that range from 0.0 to 1.0,
@@ -188,6 +193,8 @@ func (eng *TweenEngine) Forward(index int) {
 		anim.state.dirty = true
 		anim.iteration = 0
 		anim.reverse = false
+
+		eng.values[v] = Value{}
 	}
 }
 
