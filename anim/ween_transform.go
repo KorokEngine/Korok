@@ -11,13 +11,13 @@ import (
 // Move the Entity to given value.
 func Move(e engi.Entity, from, to f32.Vec2) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(r bool, f float32) {
+	proxy.Animator.OnUpdate(func(r bool, f float32) {
 		animationSystem.xf.Comp(e).SetPosition(ween.Vec2Lerp(from, to, f))
 		if fn := proxy.update; fn != nil {
 			fn(r, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)
@@ -29,7 +29,7 @@ func Move(e engi.Entity, from, to f32.Vec2) *proxyAnimator {
 // Move the 'x' to given value.
 func MoveX(e engi.Entity, from, to float32) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(r bool, f float32) {
+	proxy.Animator.OnUpdate(func(r bool, f float32) {
 		xf := animationSystem.xf.Comp(e)
 		x  := ween.F32Lerp(from, to, f)
 		xf.SetPosition(f32.Vec2{x, xf.Position()[1]})
@@ -37,7 +37,7 @@ func MoveX(e engi.Entity, from, to float32) *proxyAnimator {
 			fn(r, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)
@@ -49,7 +49,7 @@ func MoveX(e engi.Entity, from, to float32) *proxyAnimator {
 // Move the 'y' to given value.
 func MoveY(e engi.Entity, from, to float32) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(r bool, f float32) {
+	proxy.Animator.OnUpdate(func(r bool, f float32) {
 		xf := animationSystem.xf.Comp(e)
 		y  := ween.F32Lerp(from, to, f)
 		xf.SetPosition(f32.Vec2{xf.Position()[0], y})
@@ -57,7 +57,7 @@ func MoveY(e engi.Entity, from, to float32) *proxyAnimator {
 			fn(r, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)
@@ -69,13 +69,13 @@ func MoveY(e engi.Entity, from, to float32) *proxyAnimator {
 // Scale the Entity to the given value.
 func Scale(e engi.Entity, from, to f32.Vec2) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(reverse bool, f float32) {
+	proxy.Animator.OnUpdate(func(reverse bool, f float32) {
 		animationSystem.xf.Comp(e).SetScale(ween.Vec2Lerp(from, to, f))
 		if fn := proxy.update; fn != nil {
 			fn(reverse, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)
@@ -87,7 +87,7 @@ func Scale(e engi.Entity, from, to f32.Vec2) *proxyAnimator {
 // Scale the 'x' to the given value.
 func ScaleX(e engi.Entity, from, to float32) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(reverse bool, f float32) {
+	proxy.Animator.OnUpdate(func(reverse bool, f float32) {
 		xf := animationSystem.xf.Comp(e)
 		x  := ween.F32Lerp(from, to, f)
 		xf.SetScale(f32.Vec2{x, xf.Scale()[1]})
@@ -95,7 +95,7 @@ func ScaleX(e engi.Entity, from, to float32) *proxyAnimator {
 			fn(reverse, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)
@@ -107,7 +107,7 @@ func ScaleX(e engi.Entity, from, to float32) *proxyAnimator {
 // Scale the 'x' to the given value.
 func ScaleY(e engi.Entity, from, to float32) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(reverse bool, f float32) {
+	proxy.Animator.OnUpdate(func(reverse bool, f float32) {
 		xf := animationSystem.xf.Comp(e)
 		y  := ween.F32Lerp(from, to, f)
 		xf.SetScale(f32.Vec2{xf.Scale()[0], y})
@@ -115,7 +115,7 @@ func ScaleY(e engi.Entity, from, to float32) *proxyAnimator {
 			fn(reverse, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)
@@ -127,13 +127,13 @@ func ScaleY(e engi.Entity, from, to float32) *proxyAnimator {
 // Rotate the Entity to given value.
 func Rotate(e engi.Entity, from, to float32) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(reverse bool, f float32) {
+	proxy.Animator.OnUpdate(func(reverse bool, f float32) {
 		animationSystem.xf.Comp(e).SetRotation(ween.F32Lerp(from, to, f))
 		if fn := proxy.update; fn != nil {
 			fn(reverse, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)

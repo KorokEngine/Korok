@@ -11,7 +11,7 @@ import (
 // Tint the Entity to given color.
 func Tint(e engi.Entity, from, to gfx.Color) *proxyAnimator {
 	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-	proxy.OnUpdate(func(reverse bool, f float32) {
+	proxy.Animator.OnUpdate(func(reverse bool, f float32) {
 		if spr := animationSystem.st.Comp(e); spr != nil {
 			c := ween.ColorLerp(from, to, f)
 			spr.SetColor(c.U32())
@@ -20,7 +20,7 @@ func Tint(e engi.Entity, from, to gfx.Color) *proxyAnimator {
 			fn(reverse, f)
 		}
 	})
-	proxy.OnComplete(func(reverse bool) {
+	proxy.Animator.OnComplete(func(reverse bool) {
 		proxy.Dispose()
 		if fn := proxy.complete; fn != nil {
 			fn(reverse)
@@ -31,7 +31,7 @@ func Tint(e engi.Entity, from, to gfx.Color) *proxyAnimator {
 //
 //func Alpha(e engi.Entity, from, to float32) *proxyAnimator {
 //	proxy := &proxyAnimator{Animator:tweenEngine.NewAnimator()}
-//	proxy.OnUpdate(func(reverse bool, f float32) {
+//	proxy.Animator.OnUpdate(func(reverse bool, f float32) {
 //		if spr := animationSystem.st.Comp(e); spr != nil {
 //			c := spr.Color()
 //			a := ween.F32Lerp(from, to, f)
@@ -41,7 +41,7 @@ func Tint(e engi.Entity, from, to gfx.Color) *proxyAnimator {
 //			fn(reverse, f)
 //		}
 //	})
-//	proxy.OnComplete(func(reverse bool) {
+//	proxy.Animator.OnComplete(func(reverse bool) {
 //		proxy.Dispose()
 //		if fn := proxy.complete; fn != nil {
 //			fn(reverse)
