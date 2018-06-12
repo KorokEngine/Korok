@@ -190,9 +190,9 @@ func (bc *BatchContext) end() {
 	batch.depth = bc.depth
 
 	batch.VertexId = bk.InvalidId
-	batch.firstVertex = uint16(bc.firstVertex)
+	batch.firstVertex = 0 //uint16(bc.firstVertex)
 	batch.numVertex = uint16(bc.vertexPos-bc.firstVertex)
-	batch.firstIndex = uint16(batch.firstVertex/4 * 6)
+	batch.firstIndex = uint16(bc.firstVertex/4 * 6)
 	batch.numIndex = uint16(batch.numVertex/4 * 6)
 
 	bc.batchUsed += 1

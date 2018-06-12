@@ -143,6 +143,7 @@ func (mt *MeshTable) NewComp(entity engi.Entity) (mc *MeshComp) {
 	mc = &mt.comps[mt.index]
 	mc.Entity = entity
 	mc.size = f32.Vec2{64, 64}
+	mc.visible = true
 	mt._map[ei] = mt.index
 	mt.index ++
 	return
@@ -250,7 +251,7 @@ func (f *MeshRenderFeature) Draw(nodes RenderNodes) {
 	mat4 := f32.Ident4()
 
 	for _, b := range nodes {
-		mesh := &mt.comps[b.Value]
+		mesh := &mt.comps[b.Value&0xFFFF]
 		entity := mesh.Entity
 		xf  := xt.Comp(entity)
 		srt := xf.world
