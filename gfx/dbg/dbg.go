@@ -7,6 +7,7 @@ import (
 	"unsafe"
 	"log"
 	"fmt"
+	"korok.io/korok/math"
 )
 
 type DrawType uint8
@@ -100,6 +101,10 @@ func DrawCircle(x,y float32, r float32) {
 
 }
 
+func Line(from, to f32.Vec2) {
+	gBuffer.Line(from, to)
+}
+
 // draw string
 func DrawStr(str string) {
 	gBuffer.String(str, 1)
@@ -183,6 +188,13 @@ func (dr *DebugRender) Draw() {
 	bk.Submit(0, dr.program, zOrder)
 }
 
+// Rect:
+//   3 ---- 2
+//   | `    |
+//   |   `  |
+//   0------1
+// Order:
+// 3, 0, 1, 3, 1, 2
 type TextShapeBuffer struct {
 	// real data
 	vertex []PosTexColorVertex
@@ -205,7 +217,7 @@ type TextShapeBuffer struct {
 func (buff *TextShapeBuffer) init(maxVertex uint32) {
 	iboSize := maxVertex * 6 / 4
 	buff.index = make([]uint16, iboSize)
-	iFormat := [6]uint16 {3, 1, 2, 3, 2, 0}
+	iFormat := [6]uint16 {3, 0, 1, 3, 1, 2}
 	for i := uint32(0); i < iboSize; i += 6 {
 		copy(buff.index[i:], iFormat[:])
 		iFormat[0] += 4
@@ -237,11 +249,6 @@ func (buff *TextShapeBuffer) init(maxVertex uint32) {
 	}
 }
 
-//
-//  3-------0
-//  |       |
-//  |       |
-//  1-------2
 func (buff *TextShapeBuffer) String(chars string, scale float32) {
 	x, y := float32(0), float32(0)
 	w, h := font_width * scale, font_height * scale
@@ -254,19 +261,19 @@ func (buff *TextShapeBuffer) String(chars string, scale float32) {
 		var left, right, bottom, top float32 = GlyphRegion(chars[i])
 		bottom, top = top, bottom
 
-		b[0].X, b[0].Y = buff.x + x + w, buff.y + y + h
-		b[0].U, b[0].V = right, top
+		b[0].X, b[0].Y = buff.x + x, buff.y + y
+		b[0].U, b[0].V = left, bottom
 		b[0].RGBA = buff.color
 
-		b[1].X, b[1].Y = buff.x + x + 0, buff.y + y + 0
-		b[1].U, b[1].V = left, bottom
+		b[1].X, b[1].Y = buff.x + x + w, buff.y + y
+		b[1].U, b[1].V = right, bottom
 		b[1].RGBA = buff.color
 
-		b[2].X, b[2].Y = buff.x + x + w, buff.y + y + 0
-		b[2].U, b[2].V = right, bottom
+		b[2].X, b[2].Y = buff.x + x + w, buff.y + y + h
+		b[2].U, b[2].V = right, top
 		b[2].RGBA = buff.color
 
-		b[3].X, b[3].Y = buff.x + x + 0, buff.y + y + h
+		b[3].X, b[3].Y = buff.x + x, buff.y + y + h
 		b[3].U, b[3].V = left, top
 		b[3].RGBA = buff.color
 
@@ -277,27 +284,55 @@ func (buff *TextShapeBuffer) String(chars string, scale float32) {
 
 
 //
-//  3-------0
+//  3-------2
 //  |       |
 //  |       |
-//  1-------2
+//  0-------1
 func (buff *TextShapeBuffer) Rect(x,y, w, h float32) {
 	b := buff.vertex[buff.pos: buff.pos+4]
 	buff.pos += 4
 
-	b[0].X, b[0].Y = buff.x + x + w, buff.y + y + h
+	b[0].X, b[0].Y = buff.x + x, buff.y + y
 	b[0].U, b[0].V = 2, 0
 	b[0].RGBA = buff.color
 
-	b[1].X, b[1].Y = buff.x + x + 0, buff.y + y + 0
+	b[1].X, b[1].Y = buff.x + x + w, buff.y + y
 	b[1].U, b[1].V = 2, 0
 	b[1].RGBA = buff.color
 
-	b[2].X, b[2].Y = buff.x + x + w, buff.y + y + 0
+	b[2].X, b[2].Y = buff.x + x + w, buff.y + y + h
 	b[2].U, b[2].V = 2, 0
 	b[2].RGBA = buff.color
 
-	b[3].X, b[3].Y = buff.x + x + 0, buff.y + y + h
+	b[3].X, b[3].Y = buff.x + x, buff.y + y + h
+	b[3].U, b[3].V = 2, 0
+	b[3].RGBA = buff.color
+}
+
+func (buff *TextShapeBuffer) Line(from, to f32.Vec2) {
+	b := buff.vertex[buff.pos: buff.pos+4]
+	buff.pos += 4
+
+	diff := to.Sub(from)
+	invLength := math.InvLength(diff[0], diff[1], 1.0)
+	diff = diff.Mul(invLength)
+	thickness := float32(2)
+	dx := diff[0] * (thickness * 0.5)
+	dy := diff[1] * (thickness * 0.5)
+
+	b[0].X, b[0].Y = buff.x + from[0]+dx, buff.y + from[1]-dy
+	b[0].U, b[0].V = 2, 0
+	b[0].RGBA = buff.color
+
+	b[1].X, b[1].Y = buff.x + to[0]+dx, buff.y + to[1]-dy
+	b[1].U, b[1].V = 2, 0
+	b[1].RGBA = buff.color
+
+	b[2].X, b[2].Y = buff.x + to[0]-dx, buff.y + to[1]+dy
+	b[2].U, b[2].V = 2, 0
+	b[2].RGBA = buff.color
+
+	b[3].X, b[3].Y = buff.x + from[0]-dx, buff.y + from[1]+dy
 	b[3].U, b[3].V = 2, 0
 	b[3].RGBA = buff.color
 }
