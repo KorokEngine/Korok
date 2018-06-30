@@ -57,6 +57,10 @@ func SetScreenSize(w, h float32) {
 	log.Println("set dbg size", w, h)
 }
 
+func SetCameraPosition(x, y float32) {
+	gRender.SetPosition(x, y)
+}
+
 func Destroy() {
 	if gBuffer != nil {
 		gBuffer.Destroy()
@@ -98,20 +102,20 @@ func DrawBorder(x, y, w, h, thickness float32) {
 
 // draw a circle
 func DrawCircle(x,y float32, r float32) {
-
+	gBuffer.Circle(x, y, r)
 }
 
-func Line(from, to f32.Vec2) {
+func DrawLine(from, to f32.Vec2) {
 	gBuffer.Line(from, to)
 }
 
 // draw string
-func DrawStr(str string) {
-	gBuffer.String(str, 1)
+func DrawStr(str string, args ...interface{}) {
+	gBuffer.String(fmt.Sprintf(str, args), 1)
 }
 
-func DrawStrScaled(str string, scale float32) {
-	gBuffer.String(str, scale)
+func DrawStrScaled(scale float32, str string, args ...interface{}) {
+	gBuffer.String(fmt.Sprintf(str, args), scale)
 }
 
 func NextFrame() {
@@ -125,6 +129,9 @@ func NextFrame() {
 type DebugRender struct {
 	stateFlags uint64
 	rgba       uint32
+	view struct{
+		w, h float32
+	}
 
 	// shader program
 	program uint16
@@ -170,7 +177,22 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 	return dr
 }
 
+// TODO: 更新 debug 系统相机位置
+func (br *DebugRender) SetPosition(x, y float32) {
+	left := x - br.view.w/2
+	right := x + br.view.w/2
+	bottom := y - br.view.h/2
+	top := y + br.view.h/2
+
+	p := f32.Ortho2D(left, right, bottom, top)
+
+	// setup uniform
+	bk.SetUniform(br.umhProjection, unsafe.Pointer(&p[0]))
+	bk.Submit(0, br.program, 0)
+}
+
 func (dr *DebugRender) SetViewPort(w, h float32) {
+	dr.view.w, dr.view.h = w, h
 	p := f32.Ortho2D(0, w, 0, h)
 	bk.SetUniform(dr.umhProjection, unsafe.Pointer(&p[0]))
 	bk.Submit(0, dr.program, zOrder)
@@ -316,9 +338,10 @@ func (buff *TextShapeBuffer) Line(from, to f32.Vec2) {
 	diff := to.Sub(from)
 	invLength := math.InvLength(diff[0], diff[1], 1.0)
 	diff = diff.Mul(invLength)
-	thickness := float32(2)
-	dx := diff[0] * (thickness * 0.5)
-	dy := diff[1] * (thickness * 0.5)
+	thickness := float32(1)
+
+	dx := diff[1] * (thickness * 0.5)
+	dy := diff[0] * (thickness * 0.5)
 
 	b[0].X, b[0].Y = buff.x + from[0]+dx, buff.y + from[1]-dy
 	b[0].U, b[0].V = 2, 0
@@ -342,6 +365,38 @@ func (buff *TextShapeBuffer) Border(x, y, w, h, thick float32) {
 	buff.Rect(x,y+h-thick,w,thick)
 	buff.Rect(x, y, thick, h)
 	buff.Rect(x+w-thick,y,thick,h)
+}
+
+func (buff *TextShapeBuffer) Circle(x, y float32, radius float32) {
+	var (
+		segments = 12
+		path = [24]f32.Vec2{}
+		angle = float32(3.14*2)
+	)
+
+	switch {
+	case radius < 4:
+		segments = 4
+	case radius < 100:
+		segments = int(radius/100 * 16) + 8
+	default:
+		segments = 24
+	}
+
+	for i := 0; i < segments; i++ {
+		a := float32(i)/float32(segments) * angle
+		x1 := x + math.Cos(a) * radius
+		y1 := y + math.Sin(a) * radius
+		path[i] = f32.Vec2{x1, y1}
+	}
+	for i := 0; i < segments; i++ {
+		j := i+1
+		if j == segments {
+			j = 0
+		}
+		p1, p2 := path[i],path[j]
+		buff.Line(p1, p2)
+	}
 }
 
 func (buff *TextShapeBuffer) Update() {
