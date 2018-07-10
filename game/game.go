@@ -2,7 +2,6 @@ package game
 
 import (
 	"korok.io/korok/engi"
-	"korok.io/korok/math"
 	"korok.io/korok/gfx"
 	"korok.io/korok/effect"
 	"korok.io/korok/anim"
@@ -44,7 +43,7 @@ type DB struct {
 var G *Game
 
 type Game struct {
-	Options; Stats; FPS; DB
+	Options; FPS; DB
 
 	// scene manager
 	SceneManager
@@ -89,10 +88,9 @@ func (g *Game) OnResize(w, h int32) {
 
 func (g *Game) setGameSize(w, h float32) {
 	// setup camera
-	min, max := -math.MaxFloat32, math.MaxFloat32
 	camera := &g.MainCamera
 	camera.SetViewPort(w, h)
-	camera.SetBound(min, max, max, min)
+	camera.MoveTo(w/2, h/2)
 
 	// gui real screen size
 	gui.SetScreenSize(w, h)
@@ -248,19 +246,11 @@ func (g *Game) Update() {
 	num := gfx.Flush()
 
 	// drawCall = all-drawCall - camera-drawCall
-	g.Stats.drawCall = num - len(g.RenderSystem.RenderList)
+	dc := num - len(g.RenderSystem.RenderList)
+	dbg.LogFPS(int(g.fps), dc)
 }
 
 func (g *Game) DrawProfile() {
-	// print info
-	g.Stats.printVerb()
-
-	// show drawCall
-	g.Stats.printDrawCall()
-
-	// dbg.FPS(g.FPS.fps)
-	g.Stats.printFPS(g.fps)
-
 	// Advance frame
 	dbg.NextFrame()
 }
