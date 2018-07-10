@@ -13,6 +13,7 @@ type FlipbookComp struct {
 	ii int
 	running bool
 	loop bool
+	frameIndex, lastFrameIndex uint16
 }
 
 func (fb *FlipbookComp) Play(name string) {
@@ -42,6 +43,10 @@ func (fb *FlipbookComp) Rate() float32 {
 
 func (fb *FlipbookComp) SetRate(r float32) {
 	fb.rate = r
+}
+
+func (fb *FlipbookComp) FrameIndex() (frame, lastFrame uint16) {
+	return fb.frameIndex, fb.lastFrameIndex
 }
 
 // Sprite Animation Table

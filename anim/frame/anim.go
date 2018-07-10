@@ -86,12 +86,17 @@ func (eng *SpriteEngine) Update(dt float32) {
 	}
 
 	// update sprite-component
-	for _, am := range anims {
+	for i, am := range anims {
 		comp := st.Comp(am.Entity)
 		ii := eng.names[am.define]
 		anim := eng.data[ii]
-
 		jj := am.ii % anim.Len
+
+		// update frame index
+		anims[i].lastFrameIndex = am.frameIndex
+		anims[i].frameIndex = uint16(jj)
+
+		// update sprite
 		frame := eng.frames[anim.Start+jj]
 		comp.SetSprite(frame)
 	}
