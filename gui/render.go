@@ -12,6 +12,7 @@ type UIRenderFeature struct {
 	id int
 	*gfx.MeshRender
 	*DrawList
+	*gfx.Camera
 
 	Buffer struct{
 		iid, vid uint16
@@ -26,6 +27,7 @@ func (f *UIRenderFeature) SetDrawList(dl *DrawList) {
 }
 
 func (f *UIRenderFeature) Register(rs *gfx.RenderSystem) {
+	f.Camera = &rs.MainCamera
 	// init render
 	for _, r := range rs.RenderList {
 		switch render := r.(type) {
@@ -51,7 +53,16 @@ func (f *UIRenderFeature) Extract(v *gfx.View) {
 	}
 }
 
+// TODO scale.. and rotatation..
 func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
+	var (
+		sw, _ = f.Camera.Screen()
+		x, y, w, h = f.Camera.View()
+		dx = x - w/2
+		dy = y - h/2
+		sk = w/sw
+	)
+
 	// setup buffer
 	isz, vsz := f.DrawList.Size()
 	f.allocBuffer(isz, vsz)
@@ -59,7 +70,7 @@ func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 		IndexId:f.Buffer.iid,
 		VertexId:f.Buffer.vid,
 	}
-	mat4 := &f32.Mat4{1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1}
+	mat4 := &f32.Mat4{sk, 0, 0, 0, 0, sk, 0, 0, dx, dy, 1, 0, 0, 0, 0, 1}
 	commands := f.DrawList.Commands()
 	for _, node := range nodes {
 		index := node.Value&0xFFFF
