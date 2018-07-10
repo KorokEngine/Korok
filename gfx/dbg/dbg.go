@@ -10,14 +10,13 @@ import (
 	"korok.io/korok/math"
 )
 
-type DrawType uint8
+type DebugEnum uint32
+
 const (
-	TEXT DrawType = iota
-	RECT
-	CIRCLE
+	FPS DebugEnum = 0x01
 )
 
-const step = 14
+
 var screen struct{
 	w, h float32
 }
@@ -43,6 +42,7 @@ func Init(w, h int) {
 	if gRender == nil {
 		gRender = NewDebugRender(vsh, fsh)
 		gBuffer = &gRender.Buffer
+		hud = &HudLog{}
 	}
 	screen.w = float32(w)
 	screen.h = float32(h)
@@ -65,26 +65,6 @@ func Destroy() {
 	if gBuffer != nil {
 		gBuffer.Destroy()
 	}
-}
-
-func FPS(fps int32) {
-	x, y := gBuffer.x, gBuffer.y
-	color := gBuffer.color
-
-	gBuffer.x, gBuffer.y = 10, 10
-	gBuffer.color = 0xFF121212
-	DrawStr(fmt.Sprintf("%d FPS", fps))
-
-	gBuffer.x, gBuffer.y = x, y
-	gBuffer.color = color
-}
-
-func Move(x, y float32) {
-	gBuffer.x, gBuffer.y = x, y
-}
-
-func Return() {
-	gBuffer.y -= step
 }
 
 func Color(argb uint32) {
@@ -110,19 +90,23 @@ func DrawLine(from, to f32.Vec2) {
 }
 
 // draw string
-func DrawStr(str string, args ...interface{}) {
-	gBuffer.String(fmt.Sprintf(str, args), 1)
+func DrawStr(x,y float32, str string, args ...interface{}) {
+	gBuffer.String(x, y, fmt.Sprintf(str, args...), 1)
 }
 
-func DrawStrScaled(scale float32, str string, args ...interface{}) {
-	gBuffer.String(fmt.Sprintf(str, args), scale)
+func DrawStrScaled(x, y float32, scale float32, str string, args ...interface{}) {
+	gBuffer.String(x, y, fmt.Sprintf(str, args...), scale)
 }
 
 func NextFrame() {
+	// draw hud
+	hud.draw()
+	hud.reset()
+
+	// flush
 	gBuffer.Update()
 	gRender.Draw()
 	gBuffer.Reset()
-
 }
 
 
@@ -130,7 +114,7 @@ type DebugRender struct {
 	stateFlags uint64
 	rgba       uint32
 	view struct{
-		w, h float32
+		x, y, w, h float32
 	}
 
 	// shader program
@@ -173,22 +157,26 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		bk.Submit(0, id, zOrder)
 	}
 	// setup buffer, we can draw 512 rect at most!!
-	dr.Buffer.init(2048)
+	dr.Buffer.init(2048*4)
 	return dr
 }
 
-// TODO: 更新 debug 系统相机位置
-func (br *DebugRender) SetPosition(x, y float32) {
-	left := x - br.view.w/2
-	right := x + br.view.w/2
-	bottom := y - br.view.h/2
-	top := y + br.view.h/2
+func (dr *DebugRender) SetPosition(x, y float32) {
+	dr.view.x = x
+	dr.view.y = y
+
+	var (
+		left   = x - dr.view.w/2
+		right  = x + dr.view.w/2
+		bottom = y - dr.view.h/2
+		top    = y + dr.view.h/2
+	)
 
 	p := f32.Ortho2D(left, right, bottom, top)
 
 	// setup uniform
-	bk.SetUniform(br.umhProjection, unsafe.Pointer(&p[0]))
-	bk.Submit(0, br.program, 0)
+	bk.SetUniform(dr.umhProjection, unsafe.Pointer(&p[0]))
+	bk.Submit(0, dr.program, 0)
 }
 
 func (dr *DebugRender) SetViewPort(w, h float32) {
@@ -228,8 +216,7 @@ type TextShapeBuffer struct {
 	vb *bk.VertexBuffer
 	fontTexId uint16
 
-	// current cursor position and painter color
-	x, y float32
+	// current painter color
 	color uint32
 
 	// current buffer position
@@ -271,8 +258,7 @@ func (buff *TextShapeBuffer) init(maxVertex uint32) {
 	}
 }
 
-func (buff *TextShapeBuffer) String(chars string, scale float32) {
-	x, y := float32(0), float32(0)
+func (buff *TextShapeBuffer) String(x, y float32, chars string, scale float32) {
 	w, h := font_width * scale, font_height * scale
 
 	for i, N := 0, len(chars); i < N; i++ {
@@ -283,19 +269,19 @@ func (buff *TextShapeBuffer) String(chars string, scale float32) {
 		var left, right, bottom, top float32 = GlyphRegion(chars[i])
 		bottom, top = top, bottom
 
-		b[0].X, b[0].Y = buff.x + x, buff.y + y
+		b[0].X, b[0].Y = x, y
 		b[0].U, b[0].V = left, bottom
 		b[0].RGBA = buff.color
 
-		b[1].X, b[1].Y = buff.x + x + w, buff.y + y
+		b[1].X, b[1].Y = x + w, y
 		b[1].U, b[1].V = right, bottom
 		b[1].RGBA = buff.color
 
-		b[2].X, b[2].Y = buff.x + x + w, buff.y + y + h
+		b[2].X, b[2].Y = x + w, y + h
 		b[2].U, b[2].V = right, top
 		b[2].RGBA = buff.color
 
-		b[3].X, b[3].Y = buff.x + x, buff.y + y + h
+		b[3].X, b[3].Y = x, y + h
 		b[3].U, b[3].V = left, top
 		b[3].RGBA = buff.color
 
@@ -314,19 +300,19 @@ func (buff *TextShapeBuffer) Rect(x,y, w, h float32) {
 	b := buff.vertex[buff.pos: buff.pos+4]
 	buff.pos += 4
 
-	b[0].X, b[0].Y = buff.x + x, buff.y + y
+	b[0].X, b[0].Y = x, y
 	b[0].U, b[0].V = 2, 0
 	b[0].RGBA = buff.color
 
-	b[1].X, b[1].Y = buff.x + x + w, buff.y + y
+	b[1].X, b[1].Y = x + w, y
 	b[1].U, b[1].V = 2, 0
 	b[1].RGBA = buff.color
 
-	b[2].X, b[2].Y = buff.x + x + w, buff.y + y + h
+	b[2].X, b[2].Y = x + w, y + h
 	b[2].U, b[2].V = 2, 0
 	b[2].RGBA = buff.color
 
-	b[3].X, b[3].Y = buff.x + x, buff.y + y + h
+	b[3].X, b[3].Y = x, y + h
 	b[3].U, b[3].V = 2, 0
 	b[3].RGBA = buff.color
 }
@@ -343,19 +329,19 @@ func (buff *TextShapeBuffer) Line(from, to f32.Vec2) {
 	dx := diff[1] * (thickness * 0.5)
 	dy := diff[0] * (thickness * 0.5)
 
-	b[0].X, b[0].Y = buff.x + from[0]+dx, buff.y + from[1]-dy
+	b[0].X, b[0].Y = from[0]+dx, from[1]-dy
 	b[0].U, b[0].V = 2, 0
 	b[0].RGBA = buff.color
 
-	b[1].X, b[1].Y = buff.x + to[0]+dx, buff.y + to[1]-dy
+	b[1].X, b[1].Y = to[0]+dx, to[1]-dy
 	b[1].U, b[1].V = 2, 0
 	b[1].RGBA = buff.color
 
-	b[2].X, b[2].Y = buff.x + to[0]-dx, buff.y + to[1]+dy
+	b[2].X, b[2].Y = to[0]-dx, to[1]+dy
 	b[2].U, b[2].V = 2, 0
 	b[2].RGBA = buff.color
 
-	b[3].X, b[3].Y = buff.x + from[0]-dx, buff.y + from[1]+dy
+	b[3].X, b[3].Y = from[0]-dx, from[1]+dy
 	b[3].U, b[3].V = 2, 0
 	b[3].RGBA = buff.color
 }
@@ -405,8 +391,6 @@ func (buff *TextShapeBuffer) Update() {
 
 func (buff *TextShapeBuffer) Reset() {
 	buff.pos = 0
-	buff.x = 10
-	buff.y = screen.h - step*1.5
 }
 
 func (buff *TextShapeBuffer) Destroy() {
@@ -416,4 +400,5 @@ func (buff *TextShapeBuffer) Destroy() {
 //// static filed
 var gRender *DebugRender
 var gBuffer *TextShapeBuffer
-
+var hud *HudLog
+var d DebugEnum
