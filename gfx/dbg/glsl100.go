@@ -33,6 +33,10 @@ varying vec4 outColor;
 varying vec2 outTexCoord;
 
 void main() {
-	gl_FragColor = outColor * texture2D(tex, outTexCoord);
+	if (outTexCoord.x == 2.0) {
+		gl_FragColor = outColor;
+	} else {
+		gl_FragColor = outColor * texture2D(tex, outTexCoord);
+	}
 }
 ` + "\x00"
