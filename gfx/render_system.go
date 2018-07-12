@@ -3,9 +3,9 @@ package gfx
 import (
 	"korok.io/korok/math/f32"
 	"korok.io/korok/engi"
-	"korok.io/korok/gfx/dbg"
-	"fmt"
 	"sort"
+	"korok.io/korok/math"
+	"korok.io/korok/gfx/dbg"
 )
 
 type RenderType int32
@@ -93,16 +93,21 @@ func (th *RenderSystem) Update(dt float32) {
 	if c := &th.MainCamera; c.follow != engi.Ghost {
 		xf := th.xfs.Comp(c.follow)
 		p  := xf.Position()
-		c.MoveTo(p[0], p[1])
+		dx := (p[0]-c.pos.x)*.1
+		dy := (p[1]-c.pos.y)*.1
+		c.MoveBy(dx, dy)
 
 		// debug draw camera
-		dbg.Move(10, 280)
-		dbg.DrawStrScaled(fmt.Sprintf("camera: %v", c.pos), .6)
+		//dbg.Move(10, 280)
+		//dbg.DrawStrScaled(.6, "camera: %v", c.pos)
 	}
 
 	// main camera
 	for _, r := range th.RenderList {
 		r.SetCamera(&th.MainCamera)
+	}
+	if dbg.DEBUG != dbg.None {
+		dbg.SetCamera(th.MainCamera.View())
 	}
 
 	// build view
@@ -144,5 +149,9 @@ func NewRenderSystem() (rs *RenderSystem) {
 	rs = &RenderSystem{MainCamera:Camera{follow:engi.Ghost}}
 	rs.View.Camera = &rs.MainCamera
 	rs.View.RenderNodes = make([]SortObject, 0)
+
+	// set default camera bounding-box
+	min, max := -math.MaxFloat32, math.MaxFloat32
+	rs.MainCamera.SetBound(min, max, max, min)
 	return
 }

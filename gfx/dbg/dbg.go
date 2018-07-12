@@ -56,18 +56,11 @@ func Init(w, h int) {
 }
 
 func SetDebug(enum DebugEnum) {
-	d = enum
+	DEBUG = enum
 }
 
-func SetScreenSize(w, h float32) {
-	screen.w, screen.h = w, h
-	gRender.SetViewPort(w, h)
-
-	log.Println("set dbg size", w, h)
-}
-
-func SetCameraPosition(x, y float32) {
-	gRender.SetPosition(x, y)
+func SetCamera(x,y, w,h float32) {
+	gRender.SetViewPort(x, y, w, h)
 }
 
 func Destroy() {
@@ -82,39 +75,39 @@ func Color(argb uint32) {
 
 // draw a rect
 func DrawRect(x, y, w, h float32) {
-	if (d & Draw) != 0 {
+	if (DEBUG & Draw) != 0 {
 		gBuffer.Rect(x, y, w, h)
 	}
 }
 
 func DrawBorder(x, y, w, h, thickness float32) {
-	if (d & Draw) != 0 {
+	if (DEBUG & Draw) != 0 {
 		gBuffer.Border(x, y, w, h, thickness)
 	}
 }
 
 // draw a circle
 func DrawCircle(x,y float32, r float32) {
-	if (d & Draw) != 0 {
+	if (DEBUG & Draw) != 0 {
 		gBuffer.Circle(x, y, r)
 	}
 }
 
 func DrawLine(from, to f32.Vec2) {
-	if (d & Draw) != 0 {
+	if (DEBUG & Draw) != 0 {
 		gBuffer.Line(from, to)
 	}
 }
 
 // draw string
 func DrawStr(x,y float32, str string, args ...interface{}) {
-	if (d & Draw) != 0 {
+	if (DEBUG & Draw) != 0 {
 		gBuffer.String(x, y, fmt.Sprintf(str, args...), 1)
 	}
 }
 
 func DrawStrScaled(x, y float32, scale float32, str string, args ...interface{}) {
-	if (d & Draw) != 0 {
+	if (DEBUG & Draw) != 0 {
 		gBuffer.String(x, y, fmt.Sprintf(str, args...), scale)
 	}
 }
@@ -182,9 +175,11 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 	return dr
 }
 
-func (dr *DebugRender) SetPosition(x, y float32) {
+func (dr *DebugRender) SetViewPort(x,y, w,h float32) {
 	dr.view.x = x
 	dr.view.y = y
+	dr.view.w = w
+	dr.view.h = h
 
 	var (
 		left   = x - dr.view.w/2
@@ -197,15 +192,15 @@ func (dr *DebugRender) SetPosition(x, y float32) {
 
 	// setup uniform
 	bk.SetUniform(dr.umhProjection, unsafe.Pointer(&p[0]))
-	bk.Submit(0, dr.program, 0)
-}
-
-func (dr *DebugRender) SetViewPort(w, h float32) {
-	dr.view.w, dr.view.h = w, h
-	p := f32.Ortho2D(0, w, 0, h)
-	bk.SetUniform(dr.umhProjection, unsafe.Pointer(&p[0]))
 	bk.Submit(0, dr.program, zOrder)
 }
+
+//func (dr *DebugRender) SetViewPort(x, y, w, h float32) {
+//	dr.view.w, dr.view.h = w, h
+//	p := f32.Ortho2D(0, w, 0, h)
+//	bk.SetUniform(dr.umhProjection, unsafe.Pointer(&p[0]))
+//	bk.Submit(0, dr.program, zOrder)
+//}
 
 func (dr *DebugRender) Draw() {
 	bk.SetState(dr.stateFlags, dr.rgba)
@@ -423,4 +418,4 @@ func (buff *TextShapeBuffer) Destroy() {
 var gRender *DebugRender
 var gBuffer *TextShapeBuffer
 var hud *HudLog
-var d DebugEnum = FPS|Draw
+var DEBUG DebugEnum = FPS|Draw

@@ -2,14 +2,12 @@ package korok
 
 import (
 	"log"
-	"io/ioutil"
 	"reflect"
 
 	"korok.io/korok/gfx"
 	"korok.io/korok/engi"
 	"korok.io/korok/game"
 	"korok.io/korok/hid"
-	"korok.io/korok/gfx/dbg"
 	"korok.io/korok/effect"
 	"korok.io/korok/hid/input"
 	"korok.io/korok/math/f32"
@@ -75,11 +73,6 @@ func Run(options *Options, sc game.Scene)  {
 	})
 }
 
-func SetDebug(enable bool) {
-	if enable == false {
-		dbg.SetOutput(ioutil.Discard)
-	}
-}
 var G *game.Game
 var SceneMan *game.SceneManager
 

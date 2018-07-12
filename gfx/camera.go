@@ -24,8 +24,40 @@ type Camera struct {
 	}
 	view struct{
 		w, h float32
+		ratio float32  // ratio=w/h
+		scale float32  // scale=view_width/screen_width
+		invScale float32
 	}
 	follow engi.Entity
+
+	desire struct{
+		w, h float32
+	}
+	screen struct{
+		w, h float32
+	}
+}
+
+func (c *Camera) View() (x, y, w, h float32) {
+	return c.pos.x, c.pos.y, c.view.w, c.view.h
+}
+
+func (c *Camera) Bounding() (left, top, right, bottom float32){
+	return c.bound.left, c.bound.top, c.bound.right, c.bound.bottom
+}
+
+// Screen2Scene converts (x,y) in screen coordinate to (x1,y1) in game's world coordinate.
+func (c *Camera) Screen2Scene(x, y float32) (x1, y1 float32) {
+	x1 = c.pos.x - c.view.w/2 + x*c.view.scale
+	y1 = c.pos.y + c.view.h/2 - y*c.view.scale
+	return
+}
+
+// Scene2Screen converts (x,y) in game's world coordinate to screen coordinate.
+func (c *Camera) Scene2Screen(x, y float32) (x1, y1 float32) {
+	x1 =  (x + c.view.w/2 - c.pos.x)*c.view.invScale
+	y1 = -(y - c.view.h/2 - c.pos.y)*c.view.invScale
+	return
 }
 
 func (c *Camera) Flow(entity engi.Entity) {
@@ -51,10 +83,35 @@ func (c *Camera) SetBound(left, top, right, bottom float32) {
 	c.clamp()
 }
 
+func (c *Camera) Screen() (w,h float32) {
+	return c.screen.w, c.screen.h
+}
+
+// TODO:相机默认位置应该在屏幕中间
 func (c *Camera) SetViewPort(w, h float32) {
-	c.view.w = w
-	c.view.h = h
+	c.screen.w = w
+	c.screen.h = h
+
+	if c.desire.w == 0 && c.desire.h == 0 {
+		c.view.w = w
+		c.view.h = h
+		c.view.ratio = 1
+		c.view.scale = 1
+		c.view.invScale = 1
+	} else { // 计算得到一个正确比例的期望值..
+		ratio := w/h
+		c.view.w = ratio * c.desire.h
+		c.view.h = c.desire.h
+		c.view.ratio = ratio
+		c.view.scale = c.desire.h/h
+		c.view.invScale = h/c.desire.h
+	}
 	c.clamp()
+}
+
+func (c *Camera) SetDesireViewport(w, h float32) {
+	c.desire.w = w
+	c.desire.h = h
 }
 
 func (c *Camera) clamp() {

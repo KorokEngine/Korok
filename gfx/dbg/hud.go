@@ -7,6 +7,9 @@ import (
 func LogFPS(fps, drawCall int) {
 	hud.fps = fps
 	hud.drawCall = drawCall
+	if DEBUG != None {
+		hud.drawCall = drawCall-1
+	}
 }
 
 func Hud(format string, args... interface{}) {
@@ -30,13 +33,13 @@ func (hud *HudLog) draw() {
 	)
 
 	// draw fps & draw call
-	if (d & FPS) != 0 {
+	if (DEBUG & FPS) != 0 {
 		drawFps(x, y, hud.fps)
 		drawDrawCall(x, y, hud.drawCall)
 	}
 
 	// draw string
-	if (d & Stats) != 0 {
+	if (DEBUG & Stats) != 0 {
 		d := float32(0)
 		x += 10
 		y += gRender.view.h - 20
