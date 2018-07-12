@@ -37,7 +37,7 @@ func NewFireSimulator(cap int) *FireSimulator {
 	sim.Config.Duration = math.MaxFloat32
 	sim.Config.Rate = 10
 	sim.Config.Life = Var{3, 4}
-	sim.Config.Color = f32.Vec4{.76, .25, .12, 1}
+	sim.Config.Color = f32.Vec4{1, 0, 0, 1}
 	sim.Config.Size = Var{34, 10}
 	sim.Config.Position[0] = Var{0, 40}
 	sim.Config.Position[1] = Var{0, 20}

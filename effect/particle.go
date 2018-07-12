@@ -8,7 +8,6 @@ import (
 	"korok.io/korok/gfx/dbg"
 
 	"unsafe"
-	"fmt"
 )
 
 // Particle Component
@@ -250,8 +249,7 @@ func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
 	updateSize := uint32(requireVertexSize * 20)
 	f.vb.Update(0, updateSize, unsafe.Pointer(&f.vertex[0]), false)
 
-	dbg.Move(400, 300)
-	dbg.DrawStrScaled(fmt.Sprintf("lives: %d", offset>>2), .6)
+	dbg.Hud("lives: %d", offset>>2)
 }
 
 // 目前所有的粒子都会使用一个VBO进行渲染 TODO

@@ -125,6 +125,7 @@ func (ctr *RateController) Stop() {
 
 func (ctr *RateController) Play() {
 	ctr.stop = false
+	ctr.lifeTime = 0
 }
 
 // LifeController is a helper struct to manage the Life of particles.

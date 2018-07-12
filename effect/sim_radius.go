@@ -73,7 +73,7 @@ func (r *RadiusSimulator) Initialize() {
 }
 
 func (r *RadiusSimulator) Simulate(dt float32) {
-	if new := r.Rate(); new > 0 {
+	if new := r.RateController.Rate(dt); new > 0 {
 		r.newParticle(new)
 	}
 	n := int32(r.live)
@@ -93,10 +93,6 @@ func (r *RadiusSimulator) Simulate(dt float32) {
 	r.rot.Integrate(n, r.rotDelta, dt)
 	// recycle dead particle
 	r.GC(&r.Pool)
-}
-
-func (r *RadiusSimulator) Rate() int {
-	return 1
 }
 
 func (r *RadiusSimulator) newParticle(new int) {
