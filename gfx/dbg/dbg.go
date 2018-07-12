@@ -13,7 +13,12 @@ import (
 type DebugEnum uint32
 
 const (
-	FPS DebugEnum = 0x01
+	FPS DebugEnum = 1 << iota
+	Stats
+	Draw
+
+	ALL = FPS|Stats|Draw
+	None = DebugEnum(0)
 )
 
 
@@ -50,6 +55,10 @@ func Init(w, h int) {
 	log.Println("dbg init w,h", w, h)
 }
 
+func SetDebug(enum DebugEnum) {
+	d = enum
+}
+
 func SetScreenSize(w, h float32) {
 	screen.w, screen.h = w, h
 	gRender.SetViewPort(w, h)
@@ -73,29 +82,41 @@ func Color(argb uint32) {
 
 // draw a rect
 func DrawRect(x, y, w, h float32) {
-	gBuffer.Rect(x, y, w, h)
+	if (d & Draw) != 0 {
+		gBuffer.Rect(x, y, w, h)
+	}
 }
 
 func DrawBorder(x, y, w, h, thickness float32) {
-	gBuffer.Border(x, y, w, h, thickness)
+	if (d & Draw) != 0 {
+		gBuffer.Border(x, y, w, h, thickness)
+	}
 }
 
 // draw a circle
 func DrawCircle(x,y float32, r float32) {
-	gBuffer.Circle(x, y, r)
+	if (d & Draw) != 0 {
+		gBuffer.Circle(x, y, r)
+	}
 }
 
 func DrawLine(from, to f32.Vec2) {
-	gBuffer.Line(from, to)
+	if (d & Draw) != 0 {
+		gBuffer.Line(from, to)
+	}
 }
 
 // draw string
 func DrawStr(x,y float32, str string, args ...interface{}) {
-	gBuffer.String(x, y, fmt.Sprintf(str, args...), 1)
+	if (d & Draw) != 0 {
+		gBuffer.String(x, y, fmt.Sprintf(str, args...), 1)
+	}
 }
 
 func DrawStrScaled(x, y float32, scale float32, str string, args ...interface{}) {
-	gBuffer.String(x, y, fmt.Sprintf(str, args...), scale)
+	if (d & Draw) != 0 {
+		gBuffer.String(x, y, fmt.Sprintf(str, args...), scale)
+	}
 }
 
 func NextFrame() {
@@ -256,6 +277,7 @@ func (buff *TextShapeBuffer) init(maxVertex uint32) {
 	if id, _ := bk.R.AllocTexture(img); id != bk.InvalidId {
 		buff.fontTexId = id
 	}
+	buff.color = 0xFF000000
 }
 
 func (buff *TextShapeBuffer) String(x, y float32, chars string, scale float32) {
@@ -401,4 +423,4 @@ func (buff *TextShapeBuffer) Destroy() {
 var gRender *DebugRender
 var gBuffer *TextShapeBuffer
 var hud *HudLog
-var d DebugEnum
+var d DebugEnum = FPS|Draw
