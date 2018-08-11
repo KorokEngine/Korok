@@ -65,7 +65,10 @@ func SetCamera(x,y, w,h float32) {
 
 func Destroy() {
 	if gBuffer != nil {
-		gBuffer.Destroy()
+		gBuffer.Destroy(); gBuffer = nil
+	}
+	if gRender != nil {
+		gRender.Destroy(); gRender = nil
 	}
 }
 
@@ -173,6 +176,12 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 	// setup buffer, we can draw 512 rect at most!!
 	dr.Buffer.init(2048*4)
 	return dr
+}
+
+func (dr *DebugRender) Destroy() {
+	bk.R.Free(dr.program)
+	bk.R.Free(dr.umhProjection)
+	bk.R.Free(dr.umhSampler0)
 }
 
 func (dr *DebugRender) SetViewPort(x,y, w,h float32) {
@@ -411,7 +420,11 @@ func (buff *TextShapeBuffer) Reset() {
 }
 
 func (buff *TextShapeBuffer) Destroy() {
-
+	buff.vertex = nil
+	buff.index = nil
+	bk.R.Free(buff.vertexId)
+	bk.R.Free(buff.indexId)
+	bk.R.Free(buff.fontTexId)
 }
 
 //// static filed
