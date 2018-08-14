@@ -13,6 +13,15 @@ type WindowCallback interface {
 
 	// 窗口销毁
 	OnDestroy()
+
+	// 窗口切回？
+	OnResume()
+
+	// 窗口切入后台
+	OnPause()
+
+	// 窗口焦点变化
+	OnFocusChanged(focused bool)
 }
 
 // 输入系统

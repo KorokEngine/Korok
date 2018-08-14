@@ -8,6 +8,7 @@ import (
 
 	"fmt"
 	"runtime"
+	"log"
 )
 
 var windowCallback WindowCallback
@@ -34,8 +35,7 @@ func CreateWindow(option *WindowOptions)  {
 	defer glfw.Terminate()
 
 	if err != nil {
-		fmt.Println(err)
-		return
+		log.Fatal(err)
 	}
 
 	// 设置API版本兼容, 最低支持：3.2
@@ -43,23 +43,58 @@ func CreateWindow(option *WindowOptions)  {
 	glfw.WindowHint(glfw.ContextVersionMinor, 2)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
+	glfw.WindowHint(glfw.Resizable, glfw.False)
+
+	monitor := glfw.GetPrimaryMonitor()
+	mode := &glfw.VidMode{
+		Width:       1,
+		Height:      1,
+		RedBits:     8,
+		GreenBits:   8,
+		BlueBits:    8,
+		RefreshRate: 60,
+	}
+	if monitor != nil {
+		mode = monitor.GetVideoMode()
+	}
+
+	if option.FullScreen {
+		option.Width = mode.Width
+		option.Height = mode.Height
+		glfw.WindowHint(glfw.Decorated, 0)
+	} else {
+		monitor = nil
+	}
+	if option.NoTitleBar {
+		glfw.WindowHint(glfw.Visible, glfw.False)
+	}
 
 	// 创建窗口
-	window, err := glfw.CreateWindow(option.Width, option.Height, option.Title, nil, nil)
+	window, err := glfw.CreateWindow(option.Width, option.Height, option.Title, monitor, nil)
 	if err != nil {
 		fmt.Println("fail window:", err)
 		return
 	}
 	defer window.Destroy()
 
+	if !option.FullScreen {
+		window.SetPos((mode.Width-option.Width)/2, (mode.Height-option.Height)/2)
+	}
+
+
+
 	// make the window's context current
 	window.MakeContextCurrent()
 
-	if option.VsyncOff {
+	if option.NoVsync {
 		glfw.SwapInterval(0)
 	} else {
 		glfw.SwapInterval(1)
 	}
+
+	window.SetFramebufferSizeCallback(func(w *glfw.Window, width int, height int) {
+		gl.Viewport(0, 0, int32(width), int32(height))
+	})
 
 	// Handle input callback
 	window.SetKeyCallback(func(w *glfw.Window, key glfw.Key, scancode int, action glfw.Action, mods glfw.ModifierKey) {
@@ -93,6 +128,21 @@ func CreateWindow(option *WindowOptions)  {
 				inputCallback.OnPointEvent(pb, false, float32(x), float32(y))
 			}
 		}
+	})
+
+	window.SetIconifyCallback(func(w *glfw.Window, iconified bool) {
+		if iconified {
+			windowCallback.OnPause()
+		} else {
+			windowCallback.OnResume()
+		}
+	})
+	window.SetFocusCallback(func(w *glfw.Window, focused bool) {
+		windowCallback.OnFocusChanged(focused)
+	})
+
+	window.SetSizeCallback(func(w *glfw.Window, width int, height int) {
+		windowCallback.OnResize(int32(width), int32(height))
 	})
 
 	// init openGL
@@ -145,5 +195,6 @@ func CreateWindow(option *WindowOptions)  {
 			inputCallback.OnPointEvent(-1000, false, float32(x), float32(y))
 		}
 	}
+	windowCallback.OnDestroy()
 }
 

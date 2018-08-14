@@ -14,6 +14,7 @@ import (
 
 	"log"
 	"reflect"
+	"time"
 )
 
 const (
@@ -54,6 +55,10 @@ type Game struct {
 	*effect.ParticleSimulateSystem
 	*ScriptSystem
 	*anim.AnimationSystem
+
+	// game state
+	paused bool
+	lostFocus bool
 }
 
 func (g *Game) Camera() *gfx.Camera {
@@ -71,6 +76,20 @@ func (g *Game) OnLoop() {
 
 func (g *Game) OnDestroy() {
 	g.Destroy()
+}
+
+func (g *Game) OnPause() {
+	g.Pause()
+}
+
+func (g *Game) OnResume() {
+	g.Resume()
+}
+
+func (g *Game) OnFocusChanged(focused bool) {
+	g.lostFocus = !focused
+
+	log.Println("window focuse changed !!", focused)
 }
 
 /// input callback
@@ -167,8 +186,25 @@ func (g *Game) Create(ratio float32) {
 
 // destroy subsystem
 func (g *Game) Destroy() {
+	// clear scene stack
+	g.SceneManager.Clear()
+
+	// destroy other system
 	g.RenderSystem.Destroy()
+	dbg.Destroy()
+
+	// audio
 	audio.Destroy()
+}
+
+func (g *Game) Pause() {
+	g.paused = true
+	log.Println("game paused..")
+}
+
+func (g *Game) Resume() {
+	g.paused = false
+	log.Println("game resumed..")
 }
 
 func (g *Game) Init() {
@@ -205,6 +241,11 @@ func (g *Game) Input(dt float32) {
 func (g *Game) Update() {
 	// update
 	dt := g.FPS.Smooth()
+
+	// ease cpu usage TODO
+	if g.paused || (g.lostFocus && dt < 0.016) {
+		time.Sleep(time.Duration((0.016-dt)*1000)*time.Millisecond)
+	}
 
 	// update input-system
 	g.InputSystem.Frame()

@@ -109,3 +109,9 @@ func (sm *SceneManager) Peek() (sn Scene, ok bool) {
 	return
 }
 
+func (sm *SceneManager) Clear() {
+	for i := len(sm.stack)-1; i >= 0; i-- {
+		sm.stack[i].OnExit()
+	}
+}
+
