@@ -1,11 +1,11 @@
-// +build darwin,!ios
+// +build ios
 
 package hid
 
 /*
 #cgo CFLAGS: -x objective-c
-#cgo LDFLAGS: -framework Cocoa
-#import <Cocoa/Cocoa.h>
+#cgo LDFLAGS: -framework Foundation -framework UIKit
+#import <UIKit/UIKit.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -26,16 +26,28 @@ char* kk_getLanguage() {
 	return retString;
 }
 
-*/
+char* kk_getFileDir() {
+	NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
+    NSString *documentsDirectory = [paths objectAtIndex:0];
+
+    // get utf8 string and copy it
+    const char* str = [documentsDirectory UTF8String];
+    char* retString = strdup(str);
+    return retString;
+}
+ */
 import "C"
 import (
-	"os"
 	"unsafe"
 )
 
 func FileDir() string {
 	return deviceAttr.File(func() string {
-		return os.Getenv("HOME") + "/Library/Application Support"
+		var ret string
+		cstring := C.kk_getFileDir()
+		ret = C.GoString(cstring)
+		C.free(unsafe.Pointer(cstring))
+		return ret
 	})
 }
 
