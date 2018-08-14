@@ -64,12 +64,6 @@ func SetCamera(x,y, w,h float32) {
 }
 
 func Destroy() {
-	if gBuffer != nil {
-		gBuffer.Destroy(); gBuffer = nil
-	}
-	if gRender != nil {
-		gRender.Destroy(); gRender = nil
-	}
 }
 
 func Color(argb uint32) {
@@ -164,7 +158,7 @@ func NewDebugRender(vsh, fsh string) *DebugRender {
 		if pid, _ := bk.R.AllocUniform(id, "projection\x00", bk.UniformMat4, 1); pid != bk.InvalidId {
 			dr.umhProjection = pid
 		}
-		if sid,_ := bk.R.AllocUniform(id, "tex\x00", bk.UniformSampler, 1); sid != bk.InvalidId {
+		if sid, _ := bk.R.AllocUniform(id, "tex\x00", bk.UniformSampler, 1); sid != bk.InvalidId {
 			dr.umhSampler0 = sid
 			bk.SetUniform(sid, unsafe.Pointer(&s0))
 		}

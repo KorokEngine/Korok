@@ -109,7 +109,7 @@ func (c *Camera) SetViewPort(w, h float32) {
 	c.clamp()
 }
 
-func (c *Camera) SetDesireViewport(w, h float32) {
+func (c *Camera) SetDesiredViewport(w, h float32) {
 	c.desire.w = w
 	c.desire.h = h
 }
