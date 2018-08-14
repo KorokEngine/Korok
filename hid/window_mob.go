@@ -11,6 +11,7 @@ import (
 
 	"korok.io/korok/hid/gl"
 	"sync"
+	"log"
 )
 
 var options *WindowOptions
@@ -45,6 +46,12 @@ func CreateWindow(opt *WindowOptions) {
 		for e := range a.Events() {
 			switch e := a.Filter(e).(type) {
 			case lifecycle.Event:
+				switch e.Crosses(lifecycle.StageAlive) {
+				case lifecycle.CrossOn:
+					onCreate()
+				case lifecycle.CrossOff:
+					onDestroy()
+				}
 				switch e.Crosses(lifecycle.StageVisible) {
 				case lifecycle.CrossOn:
 					glctx = e.DrawContext
@@ -79,6 +86,10 @@ func CreateWindow(opt *WindowOptions) {
 	})
 }
 
+func onCreate() {
+	log.Println("==========application create")
+}
+
 func onStart(e lifecycle.Event) {
 	if e.DrawContext == nil {
 		return
@@ -96,8 +107,17 @@ func onStart(e lifecycle.Event) {
 }
 
 func onStop() {
-	windowCallback.OnDestroy()
 	gl.Release()
+}
+
+func onDestroy() {
+	windowCallback.OnDestroy()
+	log.Println("==========application destroy")
+	KillProcess() // An easy way to release resources
+}
+
+func KillProcess() {
+	panic("kill process")
 }
 
 func onResize(e size.Event) {
