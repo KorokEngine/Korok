@@ -76,28 +76,45 @@ func (eng *SpriteEngine) Update(dt float32) {
 
 	// update animation state
 	for i := range anims {
-		if seq := &anims[i]; seq.running {
-			seq.dt += dt
-			if seq.dt > seq.rate {
-				seq.ii = seq.ii + 1
-				seq.dt = 0
+		if am := &anims[i]; am.running {
+			var (
+				id    = eng.names[am.define]
+				data  = eng.data[id]
+			)
+			am.gfi = data.Start+int(am.frameIndex)
+			if am.dt += dt; am.dt > am.rate {
+				am.ii = am.ii + 1
+				am.dt = 0
+				frame := am.ii% data.Len
+
+				// frame end
+				if frame == 0 {
+					if am.loop && am.typ == PingPong {
+						am.reverse = !am.reverse
+						am.ii += 1 // skip one frame, or it'll repeat last frame
+						frame += 1
+					}
+					if !am.loop {
+						am.running = false
+						break
+					}
+				}
+
+				if am.reverse {
+					frame = data.Len-frame-1
+				}
+				// update frame index
+				am.lastFrameIndex = am.frameIndex
+				am.frameIndex = uint16(frame)
+				am.gfi = data.Start+frame
 			}
 		}
 	}
 
 	// update sprite-component
-	for i, am := range anims {
+	for _, am := range anims {
 		comp := st.Comp(am.Entity)
-		ii := eng.names[am.define]
-		anim := eng.data[ii]
-		jj := am.ii % anim.Len
-
-		// update frame index
-		anims[i].lastFrameIndex = am.frameIndex
-		anims[i].frameIndex = uint16(jj)
-
-		// update sprite
-		frame := eng.frames[anim.Start+jj]
+		frame := eng.frames[am.gfi]
 		comp.SetSprite(frame)
 	}
 }

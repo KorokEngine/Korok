@@ -5,36 +5,63 @@ import (
 	"korok.io/korok/gfx"
 )
 
+// Defines what this animation should do when it reaches the end.
+type LoopType uint8
+const (
+	Restart LoopType = iota
+	PingPong
+	None
+)
+
 // Sprite Animation Component
 type FlipbookComp struct {
 	engi.Entity
-	define string
-	dt, rate float32
-	ii int
-	running bool
-	loop bool
+	define                     string
+	dt, rate                   float32
+	ii                         int
+	running                    bool
+	loop                       bool
 	frameIndex, lastFrameIndex uint16
+	gfi                        int
+	typ                        LoopType
+	reverse                    bool
 }
 
 func (fb *FlipbookComp) Play(name string) {
 	fb.define = name
 	fb.running = true
+	fb.reverse = false
+	fb.frameIndex = 0
+	fb.lastFrameIndex = 0
+	fb.dt, fb.ii = 0, 0
+}
+
+func (fb *FlipbookComp) Resume() {
+	fb.running = true
+}
+
+func (fb *FlipbookComp) Pause() {
+	fb.running = false
 }
 
 func (fb *FlipbookComp) Stop() {
 	fb.running = false
 }
 
+func (fb *FlipbookComp) Running() bool {
+	return fb.running
+}
+
 func (fb *FlipbookComp) SetAnimation(name string) {
 	fb.define = name
 }
 
-func (fb *FlipbookComp) Loop() bool {
-	return fb.loop
+func (fb *FlipbookComp) Loop() (bool, LoopType) {
+	return fb.loop, fb.typ
 }
 
-func (fb *FlipbookComp) SetLoop(v bool) {
-	fb.loop = v
+func (fb *FlipbookComp) SetLoop(v bool, typ LoopType) {
+	fb.loop, fb.typ = v, typ
 }
 
 func (fb *FlipbookComp) Rate() float32 {
