@@ -118,7 +118,6 @@ func (ctx *Context) Text(id ID, bb *Rect, text string, style *TextStyle) {
 		sz := ctx.CalcTextSize(text, 0, style.Font, style.Size)
 		bb.W = sz[0]
 		bb.H = sz[1]
-
 		ctx.DrawText(bb, text, style)
 	}
 	return
@@ -137,31 +136,42 @@ func (ctx *Context) Image(id ID, bb *Rect, tex gfx.Tex2D, style *ImageStyle) {
 // Widget: Button
 func (ctx *Context) Button(id ID, bb *Rect, text string, style *ButtonStyle) (event EventType) {
 	if style == nil {
-		style = &ThemeLight.Button
+		style = &ctx.Theme.Button
 	}
 
 	var (
 		round = ctx.Theme.Button.Rounding
+		offset f32.Vec2
 	)
 
 	if bb.W == 0 {
-		textStyle := style
-		textSize := ctx.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
+		textSize := ctx.CalcTextSize(text, 0, style.Font, style.Size)
 		extW := style.Padding.Left+style.Padding.Right
 		extH := style.Padding.Top+style.Padding.Bottom
 		bb.W = textSize[0] + extW
 		bb.H = textSize[1] + extH
+	} else {
+		// if button has size, gravity will effect text's position
+		textSize := ctx.CalcTextSize(text, 0, style.Font, style.Size)
+		g := style.Gravity
+		offset[0] = (bb.W-textSize[0]-style.Padding.Left-style.Padding.Right) * g[0]
+		offset[1] = (bb.H-textSize[1]-style.Padding.Top-style.Padding.Bottom) * g[1]
 	}
 
 	// Check Event
 	event = ctx.ClickEvent(id, bb)
 
 	// Render Frame
-	ctx.ColorBackground(event, bb, round)
+	if bg := style.Background; bg.Normal != (gfx.Color{}) {
+		ctx.ColorBackground(event, bb, bg.Normal, bg.Pressed, round)
+	} else {
+		ctx.ColorBackground(event, bb, ThemeLight.Normal, ThemeLight.Pressed, round)
+	}
 
 	// Render Text
-	bb.X += style.Padding.Left
-	bb.Y += style.Padding.Top
+	bb.X +=  offset[0] + style.Padding.Left
+	bb.Y +=  offset[1] + style.Padding.Top
+
 	ctx.DrawText(bb, text, &style.TextStyle)
 	return
 }
@@ -395,11 +405,11 @@ func (ctx *Context) CalcTextSize(text string, wrapWidth float32, fnt font.Font, 
 // 在 Android 中，Widget的前景和背景都可以根据控件状态发生变化
 // 但是在大部分UI中，比如 Text/Image 只会改变背景的状态
 // 偷懒的自定义UI，不做任何状态的改变... 所以说呢, 我们也采用偷懒的做法呗。。
-func (ctx *Context) ColorBackground(event EventType, bb *Rect, round float32) {
+func (ctx *Context) ColorBackground(event EventType, bb *Rect, normal, pressed gfx.Color, round float32) {
 	if (event & EventDown) != 0 {
-		ctx.DrawRect(bb, ThemeLight.Pressed, round)
+		ctx.DrawRect(bb, pressed, round)
 	} else {
-		ctx.DrawRect(bb, ThemeLight.Normal, round)
+		ctx.DrawRect(bb, normal, round)
 	}
 }
 

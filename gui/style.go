@@ -3,6 +3,7 @@ package gui
 import (
 	"korok.io/korok/gfx/font"
 	"korok.io/korok/gfx"
+	"korok.io/korok/math/f32"
 )
 
 type Visibility uint8
@@ -62,7 +63,11 @@ type InputStyle struct {
 type ButtonStyle struct {
 	TextStyle
 	Padding
-	Background gfx.Color
+	Background struct{
+		Normal gfx.Color
+		Pressed gfx.Color
+	}
+	Gravity f32.Vec2
 	Rounding float32
 }
 
@@ -98,7 +103,7 @@ func newLightTheme() *Theme {
 		Button:ButtonStyle{
 			TextStyle:TextStyle{Color:gfx.Blank, Size:12},
 			Padding:Padding{10, 10, 10, 10},
-			Background:gfx.LTGray,
+			Gravity:f32.Vec2{.5, .5},
 			Rounding:5,
 		},
 		Image:ImageStyle{gfx.White},
