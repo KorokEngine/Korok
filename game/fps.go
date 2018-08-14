@@ -10,6 +10,7 @@ type FPS struct {
 	preTime time.Duration
 
 	dt, scale float32
+	realdt float32
 	fps int32
 	pause bool
 }
@@ -41,6 +42,7 @@ func (fps *FPS) Smooth() float32 {
 	sdt := predt * .8 + float32(dt*.2)
 	fps.dt = sdt
 	fps.fps = int32(1/sdt)
+	fps.realdt = dt
 
 	return fps.dt
 }
