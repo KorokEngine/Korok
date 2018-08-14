@@ -47,7 +47,7 @@ func (fm *FontManager) LoadBitmap(name string, img, fc string) {
 	fmt.Println("load bitmap font sucess...", name)
 }
 
-func (fm *FontManager) LoadTrueType(name string, fc string) {
+func (fm *FontManager) LoadTrueType(name string, file string, lc font.TTFConfig) {
 	var cnt int32 = 0
 	var fnt interface{}
 
@@ -55,13 +55,13 @@ func (fm *FontManager) LoadTrueType(name string, fc string) {
 		cnt = v.cnt
 		fnt = v.ref
 	} else {
-		fcr, err := asset.Open(fc)
+		fcr, err := asset.Open(file)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 
-		f, err := font.LoadTrueType(fcr, 24,  32, 126, 0)
+		f, err := font.LoadTrueType(fcr, lc)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -94,4 +94,5 @@ func (fm *FontManager) Get(name string) (fnt font.Font, ok  bool) {
 	}
 	return
 }
+
 

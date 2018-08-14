@@ -20,7 +20,7 @@ import (
 //
 // The low and high values determine the lower and upper rune limits
 // we should load for this Font. For standard ASCII this would be:32, 127.
-func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAtlas, error) {
+func LoadTrueType(r io.Reader, lc TTFConfig) (*fontAtlas, error) {
 	data, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 
 	// Use a FreeType context to do the drawing.
 	face := truetype.NewFace(ttf, &truetype.Options{
-		Size:    float64(size),
+		Size:    float64(lc.FontSize()),
 		DPI:     72,
 	})
 
@@ -51,7 +51,7 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 	// Iterate over all relevant glyphs in the truetype fontAtlas and
 	// draw them all to the image buffer.
 	var (
-		gb = ttf.Bounds(fixed.I(size))
+		gb = ttf.Bounds(fixed.I(lc.FontSize()))
 		gw = gb.Max.X - gb.Min.X
 		gh = gb.Max.Y - gb.Min.Y
 		hh = face.Metrics().Ascent+face.Metrics().Descent
@@ -62,7 +62,8 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 	dot := fixed.Point26_6{X: padding,Y: padding}
 	adjust := padding/2
 
-	for ch := low; ch <= high; ch++ {
+	//for ch := low; ch <= high; ch++ {
+	for _, ch := range lc.Runes() {
 		bb, advance, ok := face.GlyphBounds(ch)
 		if !ok {
 			continue
@@ -79,7 +80,7 @@ func LoadTrueType(r io.Reader, size int, low, high rune, dir Direction) (*fontAt
 		d := dot
 		d.Y -= bb.Min.Y
 		d.X -= bb.Min.X
-		dr, mask, mp, _, _ := face.Glyph(d, ch)
+		dr, mask, mp, _, ok := face.Glyph(d, ch)
 		draw.DrawMask(img, dr, fg, image.Point{}, mask, mp, draw.Over)
 
 		// record glyph region
