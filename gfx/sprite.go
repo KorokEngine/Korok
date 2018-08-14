@@ -110,6 +110,7 @@ func (st *SpriteTable) NewComp(entity engi.Entity) (sc *SpriteComp) {
 	sc.gravity.x, sc.gravity.y = .5, .5
 	sc.color = 0xFFFFFFFF
 	sc.visible = true
+	sc.height, sc.width = 0, 0
 	st._map[ei] = st.index
 	st.index ++
 	return
