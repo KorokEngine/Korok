@@ -242,8 +242,18 @@ func (dl *DrawList) PopTextureId() {
 	}
 }
 
-// primitive operation
+// primitive operation, auto scale by 1024
 func (dl *DrawList) PrimReserve(idxCount, vtxCount int) {
+	if sz, require := len(dl.VtxBuffer), dl.vtxIndex+vtxCount; require >= sz {
+		vtxBuffer := make([]DrawVert, sz+1024)
+		copy(vtxBuffer, dl.VtxBuffer)
+		dl.VtxBuffer = vtxBuffer
+	}
+	if sz, require := len(dl.IdxBuffer), dl.idxIndex+idxCount; require >= sz {
+		idxBuffer := make([]DrawIdx, sz+1024)
+		copy(idxBuffer, dl.IdxBuffer)
+		dl.IdxBuffer = idxBuffer
+	}
 	dl.VtxWriter = dl.VtxBuffer[dl.vtxIndex:dl.vtxIndex+vtxCount]
 	dl.IdxWriter = dl.IdxBuffer[dl.idxIndex:dl.idxIndex+idxCount]
 }
