@@ -43,7 +43,19 @@ func CreateWindow(option *WindowOptions)  {
 	glfw.WindowHint(glfw.ContextVersionMinor, 2)
 	glfw.WindowHint(glfw.OpenGLProfile, glfw.OpenGLCoreProfile)
 	glfw.WindowHint(glfw.OpenGLForwardCompatible, glfw.True)
-	glfw.WindowHint(glfw.Resizable, glfw.False)
+
+	// window resizable hint
+	if option.Resizable {
+		glfw.WindowHint(glfw.Resizable, glfw.True)
+	} else {
+		glfw.WindowHint(glfw.Resizable, glfw.False)
+	}
+	// hide title-bar
+	if option.NoTitleBar {
+		glfw.WindowHint(glfw.Decorated, glfw.False)
+	} else {
+		glfw.WindowHint(glfw.Decorated, glfw.True)
+	}
 
 	monitor := glfw.GetPrimaryMonitor()
 	mode := &glfw.VidMode{
@@ -58,15 +70,12 @@ func CreateWindow(option *WindowOptions)  {
 		mode = monitor.GetVideoMode()
 	}
 
+	// if full-screen ignore width and height
 	if option.FullScreen {
 		option.Width = mode.Width
 		option.Height = mode.Height
-		glfw.WindowHint(glfw.Decorated, 0)
 	} else {
 		monitor = nil
-	}
-	if option.NoTitleBar {
-		glfw.WindowHint(glfw.Visible, glfw.False)
 	}
 
 	// 创建窗口
@@ -77,10 +86,9 @@ func CreateWindow(option *WindowOptions)  {
 	}
 	defer window.Destroy()
 
-	if !option.FullScreen {
+	if !option.FullScreen && mode.Width != 1 {
 		window.SetPos((mode.Width-option.Width)/2, (mode.Height-option.Height)/2)
 	}
-
 
 
 	// make the window's context current
@@ -143,6 +151,7 @@ func CreateWindow(option *WindowOptions)  {
 
 	window.SetSizeCallback(func(w *glfw.Window, width int, height int) {
 		windowCallback.OnResize(int32(width), int32(height))
+		// 此处应该判断是否全屏 TODO
 	})
 
 	// init openGL

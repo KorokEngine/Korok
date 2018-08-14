@@ -10,19 +10,13 @@ import (
 	"korok.io/korok/hid"
 	"korok.io/korok/effect"
 	"korok.io/korok/hid/input"
-	"korok.io/korok/math/f32"
 	"korok.io/korok/anim/frame"
 )
 
 const VERSION_CODE  = 2
 const VERSION_NAME  = "0.2"
 
-type Options struct {
-	Title string
-	Width, Height int
-	Clear f32.Vec4
-	VsyncOff bool
-}
+type Options hid.WindowOptions
 
 func Run(options *Options, sc game.Scene)  {
 	log.Println("Game Start! " + options.Title)
@@ -64,13 +58,7 @@ func Run(options *Options, sc game.Scene)  {
 
 	hid.RegisterWindowCallback(g)
 	hid.RegisterInputCallback(g)
-	hid.CreateWindow(&hid.WindowOptions{
-		options.Title,
-		options.Width,
-		options.Height,
-		options.Clear,
-		options.VsyncOff,
-	})
+	hid.CreateWindow((*hid.WindowOptions)(options))
 }
 
 var G *game.Game
