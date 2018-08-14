@@ -58,6 +58,9 @@ func (anim *Animation) Reset() {
 	anim.interpolator = ease.Linear
 	anim.state.AnimState = Waiting
 	anim.clock = 0
+	anim.LoopType = Restart
+	anim.repeatCount = 0
+	anim.reverse = false
 }
 
 // 动画核心算法
