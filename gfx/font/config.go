@@ -1,9 +1,12 @@
 package font
 
+type Directional interface {
+	Direction() Direction
+}
+
 type TTFConfig interface {
 	FontSize() int
 	Runes() []rune
-	Direction() Direction
 }
 
 // TTF config based on range
