@@ -312,7 +312,7 @@ func (ctx *Context) DrawRect(bb *Rect, fill gfx.Color, round float32) {
 	x, y = Gui2Game(x, y)
 	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
 	max := f32.Vec2{(x+bb.W) * screen.scaleX, y * screen.scaleY}
-	ctx.DrawList.AddRectFilled(min, max, fill.U32(), round, FlagCornerAll)
+	ctx.DrawList.AddRectFilled(min, max, fill.U32(), round * screen.scaleX, FlagCornerAll)
 }
 
 func (ctx *Context) DrawBorder(bb *Rect, color uint32, round, thick float32) {
@@ -323,7 +323,7 @@ func (ctx *Context) DrawBorder(bb *Rect, color uint32, round, thick float32) {
 	x, y = Gui2Game(x, y)
 	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
 	max := f32.Vec2{(x+bb.W) * screen.scaleX, y * screen.scaleY}
-	ctx.DrawList.AddRect(min, max, color, round, FlagCornerAll, thick)
+	ctx.DrawList.AddRect(min, max, color, round * screen.scaleX, FlagCornerAll, thick)
 }
 
 func (ctx *Context) DrawDebugBorder(x, y, w, h float32, color uint32) {

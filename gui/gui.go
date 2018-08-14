@@ -110,6 +110,10 @@ func VirtualSize() (w, h float32) {
 	return screen.vtWidth, screen.vtHeight
 }
 
+func HintAndScale() (hintx, hinty, skx, sky float32) {
+	return screen.hintX, screen.hintY, screen.scaleX, screen.scaleY
+}
+
 // SetVirtualResolution set the virtual resolution.
 func SetVirtualResolution(w, h float32) {
 	screen.SetVirtualSize(w, h)

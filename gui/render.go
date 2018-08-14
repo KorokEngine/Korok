@@ -6,6 +6,7 @@ import (
 	"korok.io/korok/math/f32"
 
 	"unsafe"
+	"korok.io/korok/gfx/dbg"
 )
 
 type UIRenderFeature struct {
@@ -87,6 +88,8 @@ func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 	f.Buffer.vertex.Update(0, uint32(vsz*20), unsafe.Pointer(&f.DrawList.VtxBuffer[0]),false)
 	f.Buffer.index.Update(0, uint32(isz*2), unsafe.Pointer(&f.DrawList.IdxBuffer[0]), false)
 	f.DrawList.Clear()
+
+	dbg.Hud("gui DrawList: %d, %d", isz, vsz)
 }
 
 func (f *UIRenderFeature) allocBuffer(isz, vsz int) {
