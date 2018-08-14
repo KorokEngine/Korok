@@ -4,6 +4,7 @@ import (
 	"unsafe"
 	"math/rand"
 	"math"
+	"korok.io/korok/math/f32"
 )
 
 const MaxFloat32 float32 = 3.40282346638528859811704183484516925440e+38
@@ -61,6 +62,10 @@ func Cos(r float32) float32 {
 	return float32(math.Cos(float64(r)))
 }
 
+func Atan2(y, x float32) float32 {
+	return float32(math.Atan2(float64(y), float64(x)))
+}
+
 // Radian converts degree to radian.
 func Radian(d float32) float32 {
 	return d * Pi / 180
@@ -69,4 +74,27 @@ func Radian(d float32) float32 {
 // Degree converts radian to degree.
 func Degree(r float32) float32 {
 	return r * 180 / Pi
+}
+
+
+func AngleTo(v1, v2 f32.Vec2) (dot float32) {
+	l1 := InvLength(v1[0], v1[1], 1)
+	l2 := InvLength(v2[0], v2[1], 1)
+
+	x1, y1 := v1[0]*l1, v1[1]*l1
+	x2, y2 := v2[0]*l2, v2[1]*l2
+	dot = x1 * x2 + y1 * y2
+	return
+}
+
+func Direction(v1, v2 f32.Vec2) float32 {
+	return v1[0]*v2[1] - v1[1]*v2[0]
+}
+
+func Angle(v f32.Vec2) float32 {
+	return float32(math.Atan2(float64(v[1]), float64(v[0])))
+}
+
+func Vector(a float32) f32.Vec2 {
+	return f32.Vec2{Cos(a), Sin(a)}
 }
