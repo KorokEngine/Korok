@@ -40,6 +40,41 @@ type DB struct {
 	Tables  []interface{}
 }
 
+type appState struct {
+	old struct{
+		paused bool
+		lostFocus bool
+	}
+	now struct{
+		paused bool
+		lostFocus bool
+	}
+	PauseCallback func(paused bool)
+	FocusCallback func(focused bool)
+}
+
+//func (app appState) Paused() (paused bool, old bool){
+//	paused = app.now.paused
+//	old = app.old.paused
+//	return
+//}
+//
+//func (app appState) Focused() (focused bool, old bool) {
+//	focused = !app.now.lostFocus
+//	old = !app.old.lostFocus
+//	return
+//}
+
+func (app *appState) setPaused(paused bool) {
+	app.old.paused = app.now.paused
+	app.now.paused = paused
+}
+
+func (app *appState) setFocused(focused bool) {
+	app.old.lostFocus = app.now.lostFocus
+	app.now.lostFocus = !focused
+}
+
 // 统一管理游戏各个子系统的创建和销毁的地方
 var G *Game
 
@@ -57,12 +92,15 @@ type Game struct {
 	*anim.AnimationSystem
 
 	// game state
-	paused bool
-	lostFocus bool
+	appState
 }
 
 func (g *Game) Camera() *gfx.Camera {
 	return &g.RenderSystem.MainCamera
+}
+
+func (g *Game) AppState() appState {
+	return g.appState
 }
 
 /// window callback
@@ -87,8 +125,10 @@ func (g *Game) OnResume() {
 }
 
 func (g *Game) OnFocusChanged(focused bool) {
-	g.lostFocus = !focused
-
+	g.appState.setFocused(focused)
+	if fn := g.FocusCallback; fn != nil {
+		fn(focused)
+	}
 	log.Println("window focuse changed !!", focused)
 }
 
@@ -194,19 +234,27 @@ func (g *Game) Destroy() {
 
 	// destroy other system
 	g.RenderSystem.Destroy()
+
+	// dbg system
 	dbg.Destroy()
 
-	// audio
+	// audio system
 	audio.Destroy()
 }
 
 func (g *Game) Pause() {
-	g.paused = true
+	g.setPaused(true)
+	if fn := g.PauseCallback; fn != nil {
+		fn(true)
+	}
 	log.Println("game paused..")
 }
 
 func (g *Game) Resume() {
-	g.paused = false
+	g.setPaused(false)
+	if fn := g.PauseCallback; fn != nil {
+		fn(false)
+	}
 	log.Println("game resumed..")
 }
 
@@ -246,7 +294,7 @@ func (g *Game) Update() {
 	dt := g.FPS.Smooth()
 
 	// ease cpu usage TODO
-	if g.paused || (g.lostFocus && dt < 0.016) {
+	if g.now.paused || (g.now.lostFocus && dt < 0.016) {
 		time.Sleep(time.Duration((0.016-dt)*1000)*time.Millisecond)
 	}
 

@@ -109,9 +109,11 @@ func onStart(e lifecycle.Event) {
 	once.Do(func() {
 		windowCallback.OnCreate(w, h,1)
 	})
+	windowCallback.OnResume()
 }
 
 func onStop() {
+	windowCallback.OnPause()
 	gl.Release()
 }
 
