@@ -115,7 +115,11 @@ func (ctx *Context) Text(id ID, bb *Rect, text string, style *TextStyle) {
 	if bb.W != 0 {
 		ctx.DrawText(bb, text, style)
 	} else {
-		sz := ctx.CalcTextSize(text, 0, style.Font, style.Size)
+		var font = style.Font
+		if font == nil {
+			font = ctx.Theme.Font
+		}
+		sz := ctx.CalcTextSize(text, 0, font, style.Size)
 		bb.W = sz[0]
 		bb.H = sz[1]
 		ctx.DrawText(bb, text, style)
@@ -135,24 +139,33 @@ func (ctx *Context) Image(id ID, bb *Rect, tex gfx.Tex2D, style *ImageStyle) {
 
 // Widget: Button
 func (ctx *Context) Button(id ID, bb *Rect, text string, style *ButtonStyle) (event EventType) {
-	if style == nil {
-		style = &ctx.Theme.Button
-	}
-
 	var (
 		round = ctx.Theme.Button.Rounding
 		offset f32.Vec2
+		font font.Font
 	)
+	if style == nil {
+		style = &ctx.Theme.Button
+	}
+	if style.Font != nil {
+		font = style.Font
+	} else {
+		font = ctx.Theme.Font
+	}
 
 	if bb.W == 0 {
-		textSize := ctx.CalcTextSize(text, 0, style.Font, style.Size)
+		textSize := ctx.CalcTextSize(text, 0, font, style.Size)
 		extW := style.Padding.Left+style.Padding.Right
 		extH := style.Padding.Top+style.Padding.Bottom
 		bb.W = textSize[0] + extW
 		bb.H = textSize[1] + extH
 	} else {
 		// if button has size, gravity will effect text's position
-		textSize := ctx.CalcTextSize(text, 0, style.Font, style.Size)
+		var font = style.Font
+		if font == nil {
+			font = ctx.Theme.Font
+		}
+		textSize := ctx.CalcTextSize(text, 0, font, style.Size)
 		g := style.Gravity
 		offset[0] = (bb.W-textSize[0]-style.Padding.Left-style.Padding.Right) * g[0]
 		offset[1] = (bb.H-textSize[1]-style.Padding.Top-style.Padding.Bottom) * g[1]
@@ -393,6 +406,9 @@ func (ctx *Context) DrawText(bb *Rect, text string, style *TextStyle) (size f32.
 		wrapWidth = (bb.W + 10) * screen.scaleX
 		pos = f32.Vec2{x * screen.scaleX, y * screen.scaleY}
 	)
+	if font == nil {
+		font = ctx.Theme.Font
+	}
 	size = ctx.DrawList.AddText(pos, text, font, fontSize, color, wrapWidth)
 	return
 }

@@ -83,8 +83,7 @@ func UseTheme(style *Theme) {
 }
 
 func SetFont(font font.Font) {
-	gContext.Theme.Text.Font = font
-	gContext.Theme.Button.Font = font
+	gContext.Theme.Font = font
 	texFont, _ := font.Tex2D()
 	gContext.DrawList.PushTextureId(texFont)
 }

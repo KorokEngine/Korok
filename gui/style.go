@@ -25,6 +25,9 @@ type Theme struct {
 	Pressed gfx.Color
 	// item 之间的空隙
 	Spacing float32
+
+	// default font
+	font.Font
 }
 
 type Padding struct {
