@@ -26,6 +26,16 @@ char* kk_getLanguage(uintptr_t java_vm, uintptr_t jni_env, jobject ctx) {
 	(*env)->ReleaseStringUTFChars(env, (jstring)lang, str);
 	return retString;
 }
+
+// Equivalent to:
+// Activity.Finish()
+void kk_finish(uintptr_t java_vm, uintptr_t jni_env, jobject ctx) {
+	JavaVM* vm = (JavaVM*)java_vm;
+	JNIEnv* env = (JNIEnv*)jni_env;
+	jclass clazz = (*env)->GetObjectClass(env, ctx);
+	jmethodID finish_id = (*env)->GetMethodID(env, clazz, "finish", "()V");
+	(*env)->CallVoidMethod(env, ctx, finish_id);
+}
  */
 import "C"
 import (
@@ -51,5 +61,12 @@ func Language() string {
 			return nil
 		})
 		return ret
+	})
+}
+
+func Quit() {
+	app.RunOnJVM(func(vm, jniEnv, ctx uintptr) error {
+		C.kk_finish(C.uintptr_t(vm), C.uintptr_t(jniEnv), C.jobject(ctx))
+		return nil
 	})
 }

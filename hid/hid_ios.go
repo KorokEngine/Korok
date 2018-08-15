@@ -60,3 +60,7 @@ func Language() string {
 		return ret
 	})
 }
+
+func Quit() {
+	// TODO
+}
