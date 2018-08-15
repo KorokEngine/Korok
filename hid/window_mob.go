@@ -12,6 +12,7 @@ import (
 	"korok.io/korok/hid/gl"
 	"sync"
 	"log"
+	"golang.org/x/mobile/event/key"
 )
 
 var options *WindowOptions
@@ -81,6 +82,8 @@ func CreateWindow(opt *WindowOptions) {
 				a.Send(paint.Event{})
 			case touch.Event:
 				onTouch(e)
+			case key.Event:
+				onKey(e)
 			}
 		}
 	})
@@ -88,6 +91,8 @@ func CreateWindow(opt *WindowOptions) {
 
 func onCreate() {
 	log.Println("==========application create")
+	w = float32(app.Window.WidthPx)
+	h = float32(app.Window.HeightPx)
 }
 
 func onStart(e lifecycle.Event) {
@@ -102,7 +107,7 @@ func onStart(e lifecycle.Event) {
 		gl.ClearColor(bg[0], bg[1], bg[2], bg[3])
 	}
 	once.Do(func() {
-		windowCallback.OnCreate(1)
+		windowCallback.OnCreate(w, h,1)
 	})
 }
 
@@ -143,4 +148,8 @@ func onTouch(e touch.Event) {
 		pressed = false
 	}
 	inputCallback.OnPointEvent(0, pressed, e.X, e.Y)
+}
+
+func onKey(e key.Event) {
+	inputCallback.OnKeyEvent(e.Origin, e.Direction == key.DirPress)
 }

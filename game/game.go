@@ -66,8 +66,8 @@ func (g *Game) Camera() *gfx.Camera {
 }
 
 /// window callback
-func (g *Game) OnCreate(ratio float32) {
-	g.Create(ratio)
+func (g *Game) OnCreate(w, h float32, ratio float32) {
+	g.Create(w, h, ratio)
 }
 
 func (g *Game) OnLoop() {
@@ -116,7 +116,7 @@ func (g *Game) setGameSize(w, h float32) {
 }
 
 // init subsystem
-func (g *Game) Create(ratio float32) {
+func (g *Game) Create(w, h float32, ratio float32) {
 	g.FPS.initialize()
 	gfx.Init(ratio)
 	audio.Init()
@@ -124,6 +124,9 @@ func (g *Game) Create(ratio float32) {
 	// render system
 	rs := gfx.NewRenderSystem()
 	g.RenderSystem = rs
+
+	// init game window size
+	g.setGameSize(w, h)
 
 	// set table
 	rs.RequireTable(g.DB.Tables)

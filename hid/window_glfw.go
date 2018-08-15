@@ -172,7 +172,7 @@ func CreateWindow(option *WindowOptions)  {
 
 	// DEBUG
 	// ========== Engine Start
-	windowCallback.OnCreate(float32(w)/float32(option.Width))
+	windowCallback.OnCreate(float32(option.Width), float32(option.Height), float32(w)/float32(option.Width))
 	windowCallback.OnResize(int32(option.Width), int32(option.Height))
 
 	// ========== Engine End
