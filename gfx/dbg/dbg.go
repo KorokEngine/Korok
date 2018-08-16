@@ -406,7 +406,9 @@ func (buff *TextShapeBuffer) Circle(x, y float32, radius float32) {
 }
 
 func (buff *TextShapeBuffer) Update() {
-	buff.vb.Update(0, buff.pos * 20, unsafe.Pointer(&buff.vertex[0]), false)
+	if DEBUG != None && buff.pos > 0 {
+		buff.vb.Update(0, buff.pos * 20, unsafe.Pointer(&buff.vertex[0]), false)
+	}
 }
 
 func (buff *TextShapeBuffer) Reset() {
