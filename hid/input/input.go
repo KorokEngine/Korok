@@ -67,6 +67,13 @@ func (in *InputSystem) Button(name string) *button {
 	return in.buttons[name]
 }
 
+func (in *InputSystem) AnyKeyChanged() bool {
+	if in.dirty.used > 0 {
+		return true
+	}
+	return false
+}
+
 /// 将物理按键映射到虚拟按键
 func (in *InputSystem) RegisterButton(name string, keys ...Key) {
 	btn := NewButton()
@@ -150,6 +157,10 @@ type KeyBind struct {
 // short API
 func Button(name string) *button {
 	return Input.Button(name)
+}
+
+func AnyKeyChanged() bool {
+	return Input.AnyKeyChanged()
 }
 
 func RegisterButton(name string, keys...Key) {
