@@ -66,6 +66,14 @@ func Atan2(y, x float32) float32 {
 	return float32(math.Atan2(float64(y), float64(x)))
 }
 
+func Floor(v float32) float32 {
+	return float32(math.Floor(float64(v)))
+}
+
+func Ceil(v float32) float32 {
+	return float32(math.Ceil(float64(v)))
+}
+
 // Radian converts degree to radian.
 func Radian(d float32) float32 {
 	return d * Pi / 180
