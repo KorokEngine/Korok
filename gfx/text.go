@@ -300,6 +300,10 @@ func (f *TextRenderFeature) Draw(nodes RenderNodes) {
 	render.Flush()
 }
 
+func (f *TextRenderFeature) Flush() {
+
+}
+
 type textBatchObject struct {
 	*TextComp
 	*Transform

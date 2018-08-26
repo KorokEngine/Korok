@@ -272,3 +272,7 @@ func (f *MeshRenderFeature) Draw(nodes RenderNodes) {
 		mr.Draw(&mesh.Mesh, &mat4, int32(mesh.zOrder.value))
 	}
 }
+
+func (f *MeshRenderFeature) Flush() {
+
+}

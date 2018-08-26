@@ -16,6 +16,7 @@ type UIRenderFeature struct {
 	*gfx.Camera
 
 	Buffer struct{
+		firstDraw bool
 		iid, vid uint16
 		isz, vsz int
 		vertex *bk.VertexBuffer
@@ -66,7 +67,13 @@ func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 
 	// setup buffer
 	isz, vsz := f.DrawList.Size()
-	f.allocBuffer(isz, vsz)
+	if f.Buffer.firstDraw {
+		f.Buffer.firstDraw = false
+		f.allocBuffer(isz, vsz)
+		f.Buffer.vertex.Update(0, uint32(vsz*20), unsafe.Pointer(&f.DrawList.VtxBuffer[0]),false)
+		f.Buffer.index.Update(0, uint32(isz*2), unsafe.Pointer(&f.DrawList.IdxBuffer[0]), false)
+	}
+
 	mesh := &gfx.Mesh{
 		IndexId:f.Buffer.iid,
 		VertexId:f.Buffer.vid,
@@ -85,11 +92,13 @@ func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 
 		f.MeshRender.Draw(mesh, mat4, int32(cmd.zOrder))
 	}
-	f.Buffer.vertex.Update(0, uint32(vsz*20), unsafe.Pointer(&f.DrawList.VtxBuffer[0]),false)
-	f.Buffer.index.Update(0, uint32(isz*2), unsafe.Pointer(&f.DrawList.IdxBuffer[0]), false)
-	f.DrawList.Clear()
 
 	dbg.Hud("gui DrawList: %d, %d", isz, vsz)
+}
+
+func (f *UIRenderFeature) Flush() {
+	f.DrawList.Clear()
+	f.Buffer.firstDraw = true
 }
 
 func (f *UIRenderFeature) allocBuffer(isz, vsz int) {

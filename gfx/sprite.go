@@ -265,6 +265,11 @@ func (f *SpriteRenderFeature) Draw(nodes RenderNodes) {
 	render.Flush()
 }
 
+func (f *SpriteRenderFeature) Flush() {
+
+}
+
+
 type spriteBatchObject struct {
 	*SpriteComp
 	*Transform

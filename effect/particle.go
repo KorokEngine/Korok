@@ -252,6 +252,10 @@ func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
 	dbg.Hud("lives: %d", offset>>2)
 }
 
+func (f *ParticleRenderFeature) Flush() {
+
+}
+
 // 目前所有的粒子都会使用一个VBO进行渲染 TODO
 // 这么做同时可渲染的例子数量会受限于VBO的大小，需要一些经验数据支持
 type BufferContext struct {

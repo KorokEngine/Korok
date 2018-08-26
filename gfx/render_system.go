@@ -42,6 +42,7 @@ type View struct {
 type RenderFeature interface {
 	Extract(v *View)
 	Draw(nodes RenderNodes)
+	Flush()
 }
 
 // 所有的Table和Render都在此管理
@@ -136,6 +137,12 @@ func (th *RenderSystem) Update(dt float32) {
 		f := th.FeatureList[fi]
 		f.Draw(v.RenderNodes[i:j])
 	}
+
+	// flush, release any resource
+	for _, f := range  th.FeatureList {
+		f.Flush()
+	}
+
 
 	// view reset
 	th.View.RenderNodes = th.View.RenderNodes[:0]
