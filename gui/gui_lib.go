@@ -327,6 +327,47 @@ func (ctx *Context) DraggingEvent(id ID, bound *Rect) EventType {
 	return event
 }
 
+func (ctx *Context) DrawGradient(bb Rect, c0, c1 gfx.Color, vertical bool) {
+	var (
+		x = bb.X+ctx.Cursor.X
+		y = bb.Y+ctx.Cursor.Y
+	)
+	x, y = Gui2Game(x, y)
+
+	min := f32.Vec2{x * screen.scaleX, (y-bb.H) * screen.scaleY}
+	max := f32.Vec2{(x+bb.W) * screen.scaleX, y * screen.scaleY}
+
+	dl := &ctx.DrawList
+	dl.PrimReserve(6, 4)
+	uv := dl.TexUVWhitePixel
+	a, b, c, d := min, f32.Vec2{max[0], min[1]}, max, f32.Vec2{min[0], max[1]}
+	if vertical {
+		top, down := c0.U32(), c1.U32()
+		dl.VtxWriter[0] = DrawVert{a, uv, down}
+		dl.VtxWriter[1] = DrawVert{b, uv, down}
+		dl.VtxWriter[2] = DrawVert{c, uv, top}
+		dl.VtxWriter[3] = DrawVert{d, uv, top}
+	} else {
+		left, right := c0.U32(), c1.U32()
+		dl.VtxWriter[0] = DrawVert{a, uv, left}
+		dl.VtxWriter[1] = DrawVert{b, uv, right}
+		dl.VtxWriter[2] = DrawVert{c, uv, right}
+		dl.VtxWriter[3] = DrawVert{d, uv, left}
+	}
+
+	dl.IdxWriter[0] = DrawIdx(dl.vtxIndex+0)
+	dl.IdxWriter[1] = DrawIdx(dl.vtxIndex+1)
+	dl.IdxWriter[2] = DrawIdx(dl.vtxIndex+2)
+
+	dl.IdxWriter[3] = DrawIdx(dl.vtxIndex+0)
+	dl.IdxWriter[4] = DrawIdx(dl.vtxIndex+2)
+	dl.IdxWriter[5] = DrawIdx(dl.vtxIndex+3)
+
+	dl.vtxIndex += 4
+	dl.idxIndex += 6
+	dl.AddCommand(6)
+}
+
 func (ctx *Context) DrawRect(bb *Rect, fill gfx.Color, round float32) {
 	var (
 		x = bb.X+ctx.Cursor.X
@@ -362,6 +403,14 @@ func (ctx *Context) DrawCircle(x, y, radius float32, fill gfx.Color) {
 	x = x * screen.scaleX
 	y = y * screen.scaleY
 	ctx.DrawList.AddCircleFilled(f32.Vec2{x, y}, radius * screen.scaleX, fill.U32(), 12)
+}
+
+// segment default=12
+func (ctx *Context) DrawCircleNoneFill(x, y, radius float32, strokeColor gfx.Color, segment int, thickness float32) {
+	x, y = Gui2Game(x+ctx.Cursor.X, y+ctx.Cursor.Y)
+	x = x * screen.scaleX
+	y = y * screen.scaleY
+	ctx.DrawList.AddCircle(f32.Vec2{x, y}, radius * screen.scaleX, strokeColor.U32(), segment, thickness)
 }
 
 func (ctx *Context) DrawImage(bound *Rect, tex gfx.Tex2D, style *ImageStyle) {
