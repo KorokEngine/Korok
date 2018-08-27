@@ -8,10 +8,12 @@ import (
 	"korok.io/korok/gfx/dbg"
 
 	"unsafe"
+	"log"
 )
 
 // Particle Component
 type ParticleComp struct {
+	init bool
 	engi.Entity
 	sim Simulator
 	zOrder int16
@@ -46,6 +48,13 @@ func (pc *ParticleComp) Play() {
 func (pc *ParticleComp) Stop() {
 	if ctr, ok := pc.sim.(Controller); ok {
 		ctr.Stop()
+	}
+}
+
+func (pc *ParticleComp) Prewarm(t float32) {
+	if ctr, ok := pc.sim.(WarmupController); ok {
+		ctr.Prewarm(t)
+		log.Println("prewarm time, t:", t)
 	}
 }
 

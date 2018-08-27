@@ -64,6 +64,12 @@ type Controller interface {
 	Play()
 }
 
+// Prewarm particle system
+type WarmupController interface {
+	Prewarm(t float32)
+	WarmTime() float32
+}
+
 // TODO:
 // Emitter的概念可以提供一种可能：
 // 在这里可以通过各种各样的Emitter实现，生成不同的初始粒子位置
@@ -82,6 +88,8 @@ type Updater interface {
 
 // RateController is a helper struct to manage the EmitterRate.
 type RateController struct {
+	warmupTime float32
+
 	// control emitter-rate
 	accTime float32
 	threshTime float32
@@ -126,6 +134,14 @@ func (ctr *RateController) Stop() {
 func (ctr *RateController) Play() {
 	ctr.stop = false
 	ctr.lifeTime = 0
+}
+
+func (ctr *RateController) Prewarm(t float32) {
+	ctr.warmupTime = t
+}
+
+func (ctr *RateController) WarmTime() float32 {
+	return ctr.warmupTime
 }
 
 // LifeController is a helper struct to manage the Life of particles.
@@ -211,7 +227,6 @@ func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2
 // ParticleSimulateSystem is the system that manage ParticleComp's simulation.
 type ParticleSimulateSystem struct {
 	pst *ParticleSystemTable
-	init bool
 }
 
 func NewSimulationSystem () *ParticleSimulateSystem {
@@ -228,19 +243,34 @@ func (pss *ParticleSimulateSystem) RequireTable(tables []interface{}) {
 }
 
 // System 的生命周期中，应该安排一个 Initialize 的阶段
-func (pss *ParticleSimulateSystem) Initialize() {
-	et := pss.pst
-	for i, n := 0, et.index; i < n; i++ {
-		et.comps[i].sim.Initialize()
+func (pss *ParticleSimulateSystem) Initialize() {}
+
+func (pc *ParticleComp) initialize() {
+	sim := pc.sim; sim.Initialize()
+	if warmup, ok := sim.(WarmupController); ok && warmup.WarmTime() > 0 {
+		pc.warmup(sim, warmup.WarmTime())
 	}
 }
 
-func (pss *ParticleSimulateSystem) Update(dt float32) {
-	if !pss.init {
-		pss.Initialize()
-		pss.init = true
+func (*ParticleComp) warmup(sim Simulator, t float32) {
+	for dt := float32(1)/30; t > 0; t -= dt {
+		sim.Simulate(dt)
 	}
+}
+
+// TODO:
+// Need a better way to initialize each simulator
+func (pss *ParticleSimulateSystem) Update(dt float32) {
+	// initialize
 	et := pss.pst
+	for i, n := 0, et.index; i < n; i++ {
+		if comp := et.comps[i]; !comp.init {
+			et.comps[i].init = true
+			comp.initialize()
+		}
+	}
+
+	// simulate
 	for i, n := 0, et.index; i < n; i++ {
 		et.comps[i].sim.Simulate(dt)
 	}
