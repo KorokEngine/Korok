@@ -92,11 +92,11 @@ func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 
 		f.MeshRender.Draw(mesh, mat4, int32(cmd.zOrder))
 	}
-
-	dbg.Hud("gui DrawList: %d, %d", isz, vsz)
 }
 
 func (f *UIRenderFeature) Flush() {
+	isz, vsz := f.DrawList.Size()
+	dbg.Hud("gui DrawList: %d, %d", isz, vsz)
 	f.DrawList.Clear()
 	f.Buffer.firstDraw = true
 }
