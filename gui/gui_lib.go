@@ -327,6 +327,16 @@ func (ctx *Context) DraggingEvent(id ID, bound *Rect) EventType {
 	return event
 }
 
+func (ctx *Context) DrawQuad(vertex [4]f32.Vec2, fill gfx.Color) {
+	var (
+		cx, cy = ctx.Cursor.X, ctx.Cursor.Y
+	)
+	for i := 0; i < 4; i++ {
+		vertex[i][0], vertex[i][1] = Gui2Game(vertex[i][0]+cx, vertex[i][1]+cy)
+	}
+	ctx.AddQuadFilled(vertex[0], vertex[1], vertex[2], vertex[3], fill.U32())
+}
+
 func (ctx *Context) DrawGradient(bb Rect, c0, c1 gfx.Color, vertical bool) {
 	var (
 		x = bb.X+ctx.Cursor.X
