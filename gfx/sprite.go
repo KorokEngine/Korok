@@ -62,6 +62,10 @@ func (sc *SpriteComp) SetVisible(v bool) {
 	sc.visible = v
 }
 
+func (sc *SpriteComp) Visible() bool {
+	return sc.visible
+}
+
 func (sc *SpriteComp) Color() uint32 {
 	return sc.color
 }
