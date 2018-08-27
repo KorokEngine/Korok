@@ -168,6 +168,10 @@ type ParticleRenderFeature struct {
 
 	et *ParticleSystemTable
 	xt *gfx.TransformTable
+
+	stats struct{
+		lives int
+	}
 }
 
 // 此处初始化所有的依赖
@@ -252,17 +256,18 @@ func (f *ParticleRenderFeature) Draw(nodes gfx.RenderNodes) {
 		mat4.Set(0, 3, p[0])
 		mat4.Set(1, 3, p[1])
 		f.MeshRender.Draw(mesh, mat4, int32(z))
+
+		f.stats.lives += live
 	}
 
 	// update buffer
 	updateSize := uint32(requireVertexSize * 20)
 	f.vb.Update(0, updateSize, unsafe.Pointer(&f.vertex[0]), false)
-
-	dbg.Hud("lives: %d", offset>>2)
 }
 
 func (f *ParticleRenderFeature) Flush() {
-
+	dbg.Hud("lives: %d", f.stats.lives)
+	f.stats.lives = 0
 }
 
 // 目前所有的粒子都会使用一个VBO进行渲染 TODO
