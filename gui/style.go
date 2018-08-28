@@ -99,12 +99,12 @@ type SliderStyle struct {
 func newLightTheme() *Theme {
 	return &Theme{
 		Text:TextStyle{
-			Color:gfx.Blank,
+			Color:gfx.Black,
 			Size:12,
 			LineSpace:6,
 		},
 		Button:ButtonStyle{
-			TextStyle:TextStyle{Color:gfx.Blank, Size:12},
+			TextStyle:TextStyle{Color:gfx.Black, Size:12},
 			Padding:Padding{10, 10, 10, 10},
 			Gravity:f32.Vec2{.5, .5},
 			Rounding:5,
