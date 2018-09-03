@@ -112,6 +112,22 @@ func (c *Camera) SetViewPort(w, h float32) {
 func (c *Camera) SetDesiredViewport(w, h float32) {
 	c.desire.w = w
 	c.desire.h = h
+
+	if c.desire.w == 0 && c.desire.h == 0 {
+		c.view.w = w
+		c.view.h = h
+		c.view.ratio = 1
+		c.view.scale = 1
+		c.view.invScale = 1
+	} else { // 计算得到一个正确比例的期望值..
+		ratio := c.screen.w/c.screen.h
+		c.view.w = ratio * c.desire.h
+		c.view.h = c.desire.h
+		c.view.ratio = ratio
+		c.view.scale = c.desire.h/h
+		c.view.invScale = h/c.desire.h
+	}
+	c.clamp()
 }
 
 func (c *Camera) clamp() {
