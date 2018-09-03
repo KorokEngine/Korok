@@ -1,7 +1,8 @@
-// +build android
+// +build ios
 
 package input
 
+// dummy TODO
 const (
 	Back = Key(4)
 	Menu = Key(82)
