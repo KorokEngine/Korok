@@ -69,6 +69,10 @@ func (tc *TextComp) SetFontSize(sz float32) {
 	tc.size = sz
 }
 
+func (tc *TextComp) Size() (w, h float32) {
+	return tc.width, tc.height
+}
+
 // generate text-vertex with the string
 //
 //		+----------+
