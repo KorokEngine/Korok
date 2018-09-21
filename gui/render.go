@@ -55,15 +55,16 @@ func (f *UIRenderFeature) Extract(v *gfx.View) {
 	}
 }
 
-// TODO scale.. and rotatation..
+// TODO rotation..
 func (f *UIRenderFeature) Draw(nodes gfx.RenderNodes) {
 	var (
 		sw, _ = f.Camera.Screen()
 		x, y, w, h = f.Camera.View()
-		dx = x - w/2
-		dy = y - h/2
-		sk = w/sw
+		sx, sy = f.Camera.Scale()
 	)
+	dx := x - w*sx/2
+	dy := y - h*sy/2
+	sk := w*sx/sw
 
 	// setup buffer
 	isz, vsz := f.DrawList.Size()
