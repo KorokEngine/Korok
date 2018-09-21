@@ -60,11 +60,7 @@ func NewBatchRender(vsh, fsh string) *BatchRender {
 }
 
 func (br *BatchRender) SetCamera(camera *Camera) {
-	left := camera.pos.x - camera.view.w/2
-	right := camera.pos.x + camera.view.w/2
-	bottom := camera.pos.y - camera.view.h/2
-	top := camera.pos.y + camera.view.h/2
-
+	left, right, bottom, top := camera.P()
 	p := f32.Ortho2D(left, right, bottom, top)
 
 	// setup uniform

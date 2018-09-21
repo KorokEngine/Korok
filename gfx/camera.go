@@ -19,8 +19,10 @@ type Camera struct {
 	bound struct{
 		left, top, right, bottom float32
 	}
-	pos struct{
+	mat struct{
 		x, y float32
+		sx, sy float32
+		rt float32
 	}
 	view struct{
 		w, h float32
@@ -38,8 +40,27 @@ type Camera struct {
 	}
 }
 
+func (c *Camera) initialize() {
+	// bounding-box
+	min, max := -math.MaxFloat32, math.MaxFloat32
+	c.SetBound(min, max, max, min)
+
+	// scale
+	c.mat.sx, c.mat.sy = 1, 1
+}
+
+func (c *Camera) P() (left, right, bottom, top float32){
+	hx := c.view.w*c.mat.sx/2
+	hy := c.view.h*c.mat.sy/2
+	left   = c.mat.x - hx
+	right  = c.mat.x + hx
+	bottom = c.mat.y - hy
+	top    = c.mat.y + hy
+	return
+}
+
 func (c *Camera) View() (x, y, w, h float32) {
-	return c.pos.x, c.pos.y, c.view.w, c.view.h
+	return c.mat.x, c.mat.y, c.view.w, c.view.h
 }
 
 func (c *Camera) Bounding() (left, top, right, bottom float32){
@@ -48,15 +69,15 @@ func (c *Camera) Bounding() (left, top, right, bottom float32){
 
 // Screen2Scene converts (x,y) in screen coordinate to (x1,y1) in game's world coordinate.
 func (c *Camera) Screen2Scene(x, y float32) (x1, y1 float32) {
-	x1 = c.pos.x - c.view.w/2 + x*c.view.scale
-	y1 = c.pos.y + c.view.h/2 - y*c.view.scale
+	x1 = c.mat.x - c.view.w/2 + x*c.view.scale
+	y1 = c.mat.y + c.view.h/2 - y*c.view.scale
 	return
 }
 
 // Scene2Screen converts (x,y) in game's world coordinate to screen coordinate.
 func (c *Camera) Scene2Screen(x, y float32) (x1, y1 float32) {
-	x1 =  (x + c.view.w/2 - c.pos.x)*c.view.invScale
-	y1 = -(y - c.view.h/2 - c.pos.y)*c.view.invScale
+	x1 =  (x + c.view.w/2 - c.mat.x)*c.view.invScale
+	y1 = -(y - c.view.h/2 - c.mat.y)*c.view.invScale
 	return
 }
 
@@ -65,14 +86,39 @@ func (c *Camera) Flow(entity engi.Entity) {
 }
 
 func (c *Camera) MoveTo(x, y float32) {
-	c.pos.x, c.pos.y = x, y
+	c.mat.x, c.mat.y = x, y
 	c.clamp()
 }
 
 func (c *Camera) MoveBy(dx, dy float32) {
-	c.pos.x += dx
-	c.pos.y += dy
+	c.mat.x += dx
+	c.mat.y += dy
 	c.clamp()
+}
+
+func (c *Camera) Scale() (sx, sy float32) {
+	return c.mat.sx, c.mat.sy
+}
+
+func (c *Camera) ScaleTo(sx, sy float32) {
+	c.mat.sx, c.mat.sy = sx, sy
+}
+
+func (c *Camera) ScaleBy(dsx, dsy float32) {
+	c.mat.sx += dsx
+	c.mat.sy += dsy
+}
+
+func (c *Camera) Rotation() float32 {
+	return c.mat.rt
+}
+
+func (c *Camera) RotateTo(rt float32) {
+	c.mat.rt = rt
+}
+
+func (c *Camera) RotateBy(d float32) {
+	c.mat.rt += d
 }
 
 func (c *Camera) SetBound(left, top, right, bottom float32) {
@@ -132,17 +178,17 @@ func (c *Camera) SetDesiredViewport(w, h float32) {
 
 func (c *Camera) clamp() {
 	// x
-	if left := c.pos.x - c.view.w/2; left < c.bound.left {
-		c.pos.x += c.bound.left - left
-	} else if right := c.pos.x + c.view.w/2; right > c.bound.right {
-		c.pos.x += c.bound.right - right
+	if left := c.mat.x - c.view.w/2; left < c.bound.left {
+		c.mat.x += c.bound.left - left
+	} else if right := c.mat.x + c.view.w/2; right > c.bound.right {
+		c.mat.x += c.bound.right - right
 	}
 
 	// y
-	if bottom := c.pos.y - c.view.h/2; bottom < c.bound.bottom {
-		c.pos.y += c.bound.bottom - bottom
-	} else if top := c.pos.y + c.view.h/2; top > c.bound.top {
-		c.pos.y += c.bound.top - top
+	if bottom := c.mat.y - c.view.h/2; bottom < c.bound.bottom {
+		c.mat.y += c.bound.bottom - bottom
+	} else if top := c.mat.y + c.view.h/2; top > c.bound.top {
+		c.mat.y += c.bound.top - top
 	}
 }
 
@@ -151,7 +197,7 @@ func (c *Camera) InView(xf *Transform, size, gravity f32.Vec2) bool {
 		p := xf.world.Position
 		size[0], size[1] = size[0]*xf.world.Scale[0], size[1]*xf.world.Scale[1]
 		a := AABB{p[0]-size[0]*gravity[0], p[1]-size[1]*gravity[1], size[0], size[1]}
-		b := AABB{c.pos.x-c.view.w/2, c.pos.y-c.view.h/2, c.view.w, c.view.h}
+		b := AABB{c.mat.x-c.view.w/2, c.mat.y-c.view.h/2, c.view.w, c.view.h}
 		return OverlapAB(&a, &b)
 	} else {
 		srt := xf.world
@@ -171,7 +217,7 @@ func (c *Camera) InView(xf *Transform, size, gravity f32.Vec2) bool {
 		}
 		ex, ey = m.TransformNormal(ex, ey)
 		a := AABB{cx-ex, cy-ey, ex*2, ey*2}
-		b := AABB{c.pos.x-c.view.w/2, c.pos.y-c.view.h/2, c.view.w, c.view.h}
+		b := AABB{c.mat.x-c.view.w/2, c.mat.y-c.view.h/2, c.view.w, c.view.h}
 		return OverlapAB(&a, &b)
 	}
 }
