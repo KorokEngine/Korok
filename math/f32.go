@@ -30,6 +30,13 @@ func Random(low, high float32) float32 {
 	return low + (high - low) * rand.Float32()
 }
 
+func ABS(a float32) float32 {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
+
 func Max(a, b float32) float32 {
 	if a < b {
 		return b
