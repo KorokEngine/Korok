@@ -149,7 +149,6 @@ func (g *Game) setGameSize(w, h float32) {
 	// setup camera
 	camera := &g.MainCamera
 	camera.SetViewPort(w, h)
-	camera.MoveTo(w/2, h/2)
 
 	// gui real screen size
 	gui.SetScreenSize(w, h)
@@ -166,7 +165,7 @@ func (g *Game) Create(w, h float32, ratio float32) {
 	g.RenderSystem = rs
 
 	// init game window size
-	g.setGameSize(w, h)
+	g.setGameSize(w, h); g.MainCamera.MoveTo(w/2, h/2)
 
 	// set table
 	rs.RequireTable(g.DB.Tables)
