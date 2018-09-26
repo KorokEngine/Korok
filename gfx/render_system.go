@@ -31,6 +31,10 @@ type RenderObject struct {
 
 type RenderNodes []SortObject
 
+func (nodes RenderNodes) Len() int           { return len(nodes) }
+func (nodes RenderNodes) Swap(i, j int)      { nodes[i], nodes[j] = nodes[j], nodes[i] }
+func (nodes RenderNodes) Less(i, j int) bool { return nodes[i].SortId < nodes[j].SortId }
+
 type View struct {
 	*Camera
 	RenderNodes
@@ -118,9 +122,10 @@ func (th *RenderSystem) Update(dt float32) {
 	var (
 		nodes, n = v.RenderNodes, len(v.RenderNodes)
 	)
-	sort.Slice(nodes, func(i, j int) bool {
-		return nodes[i].SortId < nodes[j].SortId
-	})
+	//sort.Slice(nodes, func(i, j int) bool {
+	//	return nodes[i].SortId < nodes[j].SortId
+	//})
+	sort.Stable(nodes)
 
 	// draw
 	for i, j := 0, 0; i < n; i = j {
