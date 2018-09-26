@@ -14,7 +14,7 @@ type SnowSimulator struct {
 	LifeController
 	VisualController
 
-	velocity channel_v2
+	velocity Channel_v2
 
 	// Configuration.
 	Config struct{
@@ -28,7 +28,7 @@ type SnowSimulator struct {
 }
 
 func NewSnowSimulator(cap int, w, h float32) *SnowSimulator {
-	sim := SnowSimulator{Pool: Pool{cap: cap}}
+	sim := SnowSimulator{Pool: Pool{Cap: cap}}
 	sim.AddChan(Life, Size)
 	sim.AddChan(Position, Velocity)
 	sim.AddChan(Color)
@@ -51,12 +51,12 @@ func NewSnowSimulator(cap int, w, h float32) *SnowSimulator {
 func (sim *SnowSimulator) Initialize() {
 	sim.Pool.Initialize()
 
-	sim.life = sim.Field(Life).(channel_f32)
-	sim.size = sim.Field(Size).(channel_f32)
-	sim.pose = sim.Field(Position).(channel_v2)
-	sim.velocity = sim.Field(Velocity).(channel_v2)
-	sim.color = sim.Field(Color).(channel_v4)
-	sim.rots = sim.Field(Rotation).(channel_f32)
+	sim.Life = sim.Field(Life).(Channel_f32)
+	sim.ParticleSize = sim.Field(Size).(Channel_f32)
+	sim.Position = sim.Field(Position).(Channel_v2)
+	sim.velocity = sim.Field(Velocity).(Channel_v2)
+	sim.Color = sim.Field(Color).(Channel_v4)
+	sim.Rotation = sim.Field(Rotation).(Channel_f32)
 
 	sim.RateController.Initialize(sim.Config.Duration, sim.Config.Rate)
 }
@@ -66,13 +66,13 @@ func (sim *SnowSimulator) Simulate(dt float32) {
 		sim.NewParticle(new)
 	}
 
-	n := int32(sim.live)
+	n := int32(sim.Live)
 
 	// update old particle
-	sim.life.Sub(n, dt)
+	sim.Life.Sub(n, dt)
 
 	// position integrate: p' = p + v * t
-	sim.pose.Integrate(n, sim.velocity, dt)
+	sim.Position.Integrate(n, sim.velocity, dt)
 
 	// GC
 	sim.GC(&sim.Pool)
@@ -80,27 +80,27 @@ func (sim *SnowSimulator) Simulate(dt float32) {
 
 
 func (sim *SnowSimulator) Size() (live, cap int) {
-	return int(sim.live), sim.cap
+	return int(sim.Live), sim.Cap
 }
 
 func (sim *SnowSimulator) NewParticle(new int) {
-	if (sim.live + new) > sim.cap {
+	if (sim.Live + new) > sim.Cap {
 		return
 	}
-	start := sim.live
-	sim.live += new
+	start := sim.Live
+	sim.Live += new
 
-	for i := start; i < sim.live; i++ {
-		sim.life[i] = sim.Config.Life.Random()
-		sim.color[i] = sim.Config.Color
-		sim.size[i] = sim.Config.Size.Random()
+	for i := start; i < sim.Live; i++ {
+		sim.Life[i] = sim.Config.Life.Random()
+		sim.Color[i] = sim.Config.Color
+		sim.ParticleSize[i] = sim.Config.Size.Random()
 
-		f := sim.size[i]/(sim.Config.Size.Base+sim.Config.Size.Var)
-		sim.color[i][3] = f
+		f := sim.ParticleSize[i]/(sim.Config.Size.Base+sim.Config.Size.Var)
+		sim.Color[i][3] = f
 
 		px := sim.Config.Position[0].Random()
 		py := sim.Config.Position[1].Random()
-		sim.pose[i] = f32.Vec2{px, py}
+		sim.Position[i] = f32.Vec2{px, py}
 
 		dx := sim.Config.Velocity[0].Random()
 		dy := sim.Config.Velocity[1].Random()
@@ -109,5 +109,5 @@ func (sim *SnowSimulator) NewParticle(new int) {
 }
 
 func (sim *SnowSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D) {
-	sim.VisualController.Visualize(buf, tex, int(sim.live))
+	sim.VisualController.Visualize(buf, tex, int(sim.Live))
 }

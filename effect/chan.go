@@ -18,66 +18,66 @@ const (
 	ChanV4
 )
 
-type channel_f32 []float32
+type Channel_f32 []float32
 
-func (ch channel_f32) SetConst(n int32, v float32) {
+func (ch Channel_f32) SetConst(n int32, v float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i] = v
 	}
 }
 
-func (ch channel_f32) SetRandom(n int32, v Var) {
+func (ch Channel_f32) SetRandom(n int32, v Var) {
 	for i := int32(0); i < n; i++ {
 		ch[i] = math.Random(v.Base, v.Base+v.Var)
 	}
 }
 
-func (ch channel_f32) Add(n int32, v float32) {
+func (ch Channel_f32) Add(n int32, v float32) {
 	for i := int32(0); i < n; i ++ {
 		ch[i] += v
 	}
 }
 
-func (ch channel_f32) Sub(n int32, v float32) {
+func (ch Channel_f32) Sub(n int32, v float32) {
 	for i := int32(0); i < n; i ++ {
 		ch[i] -= v
 	}
 }
 
-func (ch channel_f32) Mul(n int32, v float32) {
+func (ch Channel_f32) Mul(n int32, v float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i] *= v
 	}
 }
 
-func (ch channel_f32) Integrate(n int32, ch1 channel_f32, dt float32) {
+func (ch Channel_f32) Integrate(n int32, ch1 Channel_f32, dt float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i] += ch1[i] * dt
 	}
 }
 
-type channel_v2 []f32.Vec2
+type Channel_v2 []f32.Vec2
 
-func (ch channel_v2) SetConst(n int32, x, y float32) {
+func (ch Channel_v2) SetConst(n int32, x, y float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i][0], ch[i][1] = x, y
 	}
 }
 
-func (ch channel_v2) SetRandom(n int32, xlow, xhigh float32, ylow, yhigh float32) {
+func (ch Channel_v2) SetRandom(n int32, xlow, xhigh float32, ylow, yhigh float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i][0], ch[i][1] = xlow, ylow
 	}
 }
 
-func (ch channel_v2) Add(n int32, x, y float32) {
+func (ch Channel_v2) Add(n int32, x, y float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i][0] += x
 		ch[i][1] += y
 	}
 }
 
-func (ch channel_v2) Integrate(n int32, ch1 channel_v2, dt float32) {
+func (ch Channel_v2) Integrate(n int32, ch1 Channel_v2, dt float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i][0] += ch1[i][0] * dt
 		ch[i][1] += ch1[i][1] * dt
@@ -85,7 +85,7 @@ func (ch channel_v2) Integrate(n int32, ch1 channel_v2, dt float32) {
 }
 
 // ch = normal * m, normal = normal_vector(x, y), m = magnitude
-func (ch channel_v2) radialIntegrate(n int32, xy channel_v2, m channel_f32, dt float32) {
+func (ch Channel_v2) radialIntegrate(n int32, xy Channel_v2, m Channel_f32, dt float32) {
 	for i := int32(0); i < n; i++ {
 		normal := [2]float32{0, 0}
 		p := xy[i]
@@ -100,7 +100,7 @@ func (ch channel_v2) radialIntegrate(n int32, xy channel_v2, m channel_f32, dt f
 }
 
 // ch = tangent * m, normal = normal_vector(y, x), m = magnitude
-func (ch channel_v2) tangentIntegrate(n int32, xy channel_v2, m channel_f32, dt float32) {
+func (ch Channel_v2) tangentIntegrate(n int32, xy Channel_v2, m Channel_f32, dt float32) {
 	for i := int32(0); i < n; i++ {
 		tangent := [2]float32{0, 0}
 		p := xy[i]
@@ -114,16 +114,16 @@ func (ch channel_v2) tangentIntegrate(n int32, xy channel_v2, m channel_f32, dt 
 	}
 }
 
-// maybe only color will use it
-type channel_v4 []f32.Vec4
+// maybe only Color will use it
+type Channel_v4 []f32.Vec4
 
-func (ch channel_v4) SetConst(n int32, x, y, z, w float32) {
+func (ch Channel_v4) SetConst(n int32, x, y, z, w float32) {
 	for i := int32(0); i < n; i ++ {
 		ch[i][0], ch[i][1], ch[i][2], ch[i][3] = x, y, z, w
 	}
 }
 
-func (ch channel_v4) SetRandom(n int32, x, y, z, v [4]Var) {
+func (ch Channel_v4) SetRandom(n int32, x, y, z, v [4]Var) {
 	for i := int32(0); i < n; i ++ {
 		ch[i][0] = math.Random(v[0].Base, v[0].Base+v[0].Var)
 		ch[i][1] = math.Random(v[1].Base, v[1].Base+v[1].Var)
@@ -132,7 +132,7 @@ func (ch channel_v4) SetRandom(n int32, x, y, z, v [4]Var) {
 	}
 }
 
-func (ch channel_v4) Add(n int32, x, y, z, w float32) {
+func (ch Channel_v4) Add(n int32, x, y, z, w float32) {
 	for i := int32(0); i < n; i ++ {
 		ch[i][0] += x
 		ch[i][1] += y
@@ -141,7 +141,7 @@ func (ch channel_v4) Add(n int32, x, y, z, w float32) {
 	}
 }
 
-func (ch channel_v4) Sub(n int32, x, y, z, w float32) {
+func (ch Channel_v4) Sub(n int32, x, y, z, w float32) {
 	for i := int32(0); i < n; i ++ {
 		ch[i][0] -= x
 		ch[i][1] -= y
@@ -150,7 +150,7 @@ func (ch channel_v4) Sub(n int32, x, y, z, w float32) {
 	}
 }
 
-func (ch channel_v4) Integrate(n int32, d channel_v4, dt float32) {
+func (ch Channel_v4) Integrate(n int32, d Channel_v4, dt float32) {
 	for i := int32(0); i < n; i++ {
 		ch[i][0] += d[i][0] * dt
 		ch[i][1] += d[i][1] * dt

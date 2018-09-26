@@ -55,7 +55,7 @@ type Simulator interface {
 	// Write the result to vertex-buffer.
 	Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D)
 
-	// Return the size of the simulator.
+	// Return the ParticleSize of the simulator.
 	Size() (live, cap int)
 }
 
@@ -148,38 +148,38 @@ func (ctr *RateController) WarmTime() float32 {
 // LifeController is a helper struct to manage the Life of particles.
 type LifeController struct {
 	// channel ref
-	life channel_f32
-	live int
+	Life Channel_f32
+	Live int
 }
 
 // GC removes dead particles from the Pool.
 func (ctr *LifeController) GC(p *Pool) (dead int){
-	i, j := int(0), int(ctr.live-1)
+	i, j := int(0), int(ctr.Live-1)
 	for i <= j {
-		if ctr.life[i] <= 0 {
+		if ctr.Life[i] <= 0 {
 			p.Swap(i, j);j--
 		} else {
 			i++
 		}
 	}
-	dead = ctr.live-i
-	ctr.live = i
+	dead = ctr.Live -i
+	ctr.Live = i
 	return
 }
 
 // VisualController is a helper struct to write simulation result to vertex-buffer.
 type VisualController struct {
-	pose channel_v2
-	color channel_v4
-	size channel_f32
-	rots channel_f32
+	Position     Channel_v2
+	Color        Channel_v4
+	ParticleSize Channel_f32
+	Rotation     Channel_f32
 }
 
-// Visualize write the live particles to vertex-buffer.
+// Visualize write the Live particles to vertex-buffer.
 func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D, live int) {
-	size := ctr.size
-	pose := ctr.pose
-	rots := ctr.rots
+	size := ctr.ParticleSize
+	pose := ctr.Position
+	rots := ctr.Rotation
 
 	// compute vbo
 	for i := 0; i < live; i ++ {
@@ -188,10 +188,10 @@ func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2
 		half := size/2
 
 		var (
-			r = math.Clamp(ctr.color[i][0], 0, 1)
-			g = math.Clamp(ctr.color[i][1], 0, 1)
-			b = math.Clamp(ctr.color[i][2], 0, 1)
-			a = math.Clamp(ctr.color[i][3], 0, 1)
+			r = math.Clamp(ctr.Color[i][0], 0, 1)
+			g = math.Clamp(ctr.Color[i][1], 0, 1)
+			b = math.Clamp(ctr.Color[i][2], 0, 1)
+			a = math.Clamp(ctr.Color[i][3], 0, 1)
 		)
 
 		c := uint32(a*255) << 24 + uint32(b*255) << 16 + uint32(g*255) << 8 + uint32(r*255)

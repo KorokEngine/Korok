@@ -14,7 +14,7 @@ type FireSimulator struct {
 	LifeController
 	VisualController
 
-	velocity channel_v2
+	velocity Channel_v2
 
 	// Configuration.
 	Config struct{
@@ -28,7 +28,7 @@ type FireSimulator struct {
 }
 
 func NewFireSimulator(cap int) *FireSimulator {
-	sim := FireSimulator{Pool: Pool{cap: cap}}
+	sim := FireSimulator{Pool: Pool{Cap: cap}}
 	sim.AddChan(Life, Size)
 	sim.AddChan(Position, Velocity)
 	sim.AddChan(Color)
@@ -51,12 +51,12 @@ func NewFireSimulator(cap int) *FireSimulator {
 func (f *FireSimulator) Initialize() {
 	f.Pool.Initialize()
 
-	f.life = f.Field(Life).(channel_f32)
-	f.size = f.Field(Size).(channel_f32)
-	f.pose = f.Field(Position).(channel_v2)
-	f.velocity = f.Field(Velocity).(channel_v2)
-	f.color = f.Field(Color).(channel_v4)
-	f.rots = f.Field(Rotation).(channel_f32)
+	f.Life = f.Field(Life).(Channel_f32)
+	f.ParticleSize = f.Field(Size).(Channel_f32)
+	f.Position = f.Field(Position).(Channel_v2)
+	f.velocity = f.Field(Velocity).(Channel_v2)
+	f.Color = f.Field(Color).(Channel_v4)
+	f.Rotation = f.Field(Rotation).(Channel_f32)
 
 	f.RateController.Initialize(f.Config.Duration, f.Config.Rate)
 }
@@ -67,41 +67,41 @@ func (f *FireSimulator) Simulate(dt float32) {
 		f.newParticle(new)
 	}
 
-	n := int32(f.live)
+	n := int32(f.Live)
 
 	// update old particle
-	f.life.Sub(n, dt)
+	f.Life.Sub(n, dt)
 
 	// position integrate: p' = p + v * t
-	f.pose.Integrate(n, f.velocity, dt)
+	f.Position.Integrate(n, f.velocity, dt)
 
-	// color
-	f.color.Sub(n, 0, 0, 0, .3 * dt)
+	// Color
+	f.Color.Sub(n, 0, 0, 0, .3 * dt)
 
 	// GC
 	f.GC(&f.Pool)
 }
 
 func (f *FireSimulator) Size() (live, cap int) {
-	return int(f.live), f.cap
+	return int(f.Live), f.Cap
 }
 
 func (f *FireSimulator) newParticle(new int) {
-	if (f.live + new) > f.cap {
+	if (f.Live + new) > f.Cap {
 		return
 	}
 
-	start := f.live
-	f.live += new
+	start := f.Live
+	f.Live += new
 
-	for i := start; i < f.live; i++ {
-		f.life[i] = f.Config.Life.Random()
-		f.color[i] = f.Config.Color
-		f.size[i] = f.Config.Size.Random()
+	for i := start; i < f.Live; i++ {
+		f.Life[i] = f.Config.Life.Random()
+		f.Color[i] = f.Config.Color
+		f.VisualController.ParticleSize[i] = f.Config.Size.Random()
 
 		px := f.Config.Position[0].Random()
 		py := f.Config.Position[1].Random()
-		f.pose[i] = f32.Vec2{px, py}
+		f.Position[i] = f32.Vec2{px, py}
 
 		dx := f.Config.Velocity[0].Random()
 		dy := f.Config.Velocity[1].Random()
@@ -111,6 +111,6 @@ func (f *FireSimulator) newParticle(new int) {
 }
 
 func (f *FireSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D) {
-	f.VisualController.Visualize(buf, tex, f.live)
+	f.VisualController.Visualize(buf, tex, f.Live)
 }
 

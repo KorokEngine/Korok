@@ -6,7 +6,7 @@ import (
 )
 
 func TestChannel_f32(t *testing.T) {
-	p := channel_f32(make([]float32, 1024))
+	p := Channel_f32(make([]float32, 1024))
 	n  := 10
 
 	p.Add(int32(n), 8)
@@ -32,7 +32,7 @@ func TestChannel_f32(t *testing.T) {
 		}
 	}
 
-	v := channel_f32(make([]float32, 1024))
+	v := Channel_f32(make([]float32, 1024))
 	v.SetConst(int32(n), 1.0/60)
 
 	p.Integrate(10, v, 2)
@@ -47,7 +47,7 @@ func TestChannel_f32(t *testing.T) {
 }
 
 func TestChannel_v2(t *testing.T) {
-	p := channel_v2(make([]f32.Vec2, 1024))
+	p := Channel_v2(make([]f32.Vec2, 1024))
 	n := 10
 
 	p.SetConst(int32(n), 4, 8)
@@ -64,7 +64,7 @@ func TestChannel_v2(t *testing.T) {
 		}
 	}
 
-	v := channel_v2(make([]f32.Vec2, 1024))
+	v := Channel_v2(make([]f32.Vec2, 1024))
 	v.SetConst(int32(n), 16, 32)
 	p.Integrate(int32(n), v, 1.0/60)
 

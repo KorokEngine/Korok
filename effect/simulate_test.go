@@ -33,7 +33,7 @@ func TestRadiusSimulator(t *testing.T) {
 
 	radius.newParticle(2)
 
-	t.Log("life:", radius.life[:2])
+	t.Log("Life:", radius.Life[:2])
 	t.Log("radius:", radius.radius[:2])
 	t.Log("angle:", radius.angle[:2])
 
@@ -59,7 +59,7 @@ func TestGravitySimulator(t *testing.T) {
 	gravity.Initialize()
 
 	gravity.newParticle(2)
-	t.Log("life:", gravity.life[:2])
+	t.Log("Life:", gravity.Life[:2])
 	t.Log("velocity:", gravity.velocity[:2])
-	t.Log("pose:", gravity.pose[:2])
+	t.Log("Position:", gravity.Position[:2])
 }
