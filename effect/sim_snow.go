@@ -15,6 +15,7 @@ type SnowSimulator struct {
 	VisualController
 
 	velocity Channel_v2
+	deltaRot Channel_f32
 
 	// Configuration.
 	Config struct{
@@ -24,6 +25,7 @@ type SnowSimulator struct {
 		Color f32.Vec4
 		Position [2]Var
 		Velocity [2]Var
+		Rotation Var
 	}
 }
 
@@ -33,17 +35,19 @@ func NewSnowSimulator(cap int, w, h float32) *SnowSimulator {
 	sim.AddChan(Position, Velocity)
 	sim.AddChan(Color)
 	sim.AddChan(Rotation)
+	sim.AddChan(RotationDelta)
 
 	// config
 	sim.Config.Duration = math.MaxFloat32
-	sim.Config.Rate = 60
+	sim.Config.Rate = float32(cap)/10
 	sim.Config.Life = Var{10, 4}
-	sim.Config.Color = f32.Vec4{1, 0, 0, 1}
+	sim.Config.Color = f32.Vec4{1, 1, 1, 1}
 	sim.Config.Size = Var{6, 6}
 	sim.Config.Position[0] = Var{0, w}
 	sim.Config.Position[1] = Var{h/2, 0}
 	sim.Config.Velocity[0] = Var{-10,  20}
 	sim.Config.Velocity[1] = Var{-50, 20}
+	sim.Config.Rotation    = Var{0, 3.14/180}
 
 	return &sim
 }
@@ -57,6 +61,7 @@ func (sim *SnowSimulator) Initialize() {
 	sim.velocity = sim.Field(Velocity).(Channel_v2)
 	sim.Color = sim.Field(Color).(Channel_v4)
 	sim.Rotation = sim.Field(Rotation).(Channel_f32)
+	sim.deltaRot = sim.Field(RotationDelta).(Channel_f32)
 
 	sim.RateController.Initialize(sim.Config.Duration, sim.Config.Rate)
 }
@@ -73,6 +78,9 @@ func (sim *SnowSimulator) Simulate(dt float32) {
 
 	// position integrate: p' = p + v * t
 	sim.Position.Integrate(n, sim.velocity, dt)
+
+	// rotation
+	sim.Rotation.Integrate(n, sim.Rotation, dt)
 
 	// GC
 	sim.GC(&sim.Pool)
@@ -97,6 +105,7 @@ func (sim *SnowSimulator) NewParticle(new int) {
 
 		f := sim.ParticleSize[i]/(sim.Config.Size.Base+sim.Config.Size.Var)
 		sim.Color[i][3] = f
+		sim.Rotation[i] = sim.Config.Rotation.Random()
 
 		px := sim.Config.Position[0].Random()
 		py := sim.Config.Position[1].Random()
