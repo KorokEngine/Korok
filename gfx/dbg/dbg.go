@@ -142,7 +142,7 @@ type DebugRender struct {
 func NewDebugRender(vsh, fsh string) *DebugRender {
 	dr := new(DebugRender)
 	// blend func
-	dr.stateFlags |= bk.ST_BLEND.ALPHA_NON_PREMULTIPLIED
+	dr.stateFlags |= bk.ST_BLEND.ALPHA_PREMULTIPLIED
 
 	// setup shader
 	if id, sh := bk.R.AllocShader(vsh, fsh); id != bk.InvalidId {
