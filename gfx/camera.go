@@ -85,6 +85,10 @@ func (c *Camera) Flow(entity engi.Entity) {
 	c.follow = entity
 }
 
+func (c *Camera) Position() (x,y float32) {
+	return c.mat.x, c.mat.y
+}
+
 func (c *Camera) MoveTo(x, y float32) {
 	c.mat.x, c.mat.y = x, y
 	c.clamp()
@@ -193,11 +197,15 @@ func (c *Camera) clamp() {
 }
 
 func (c *Camera) InView(xf *Transform, size, gravity f32.Vec2) bool {
+	var (
+		w = c.view.w * c.mat.sx
+		h = c.view.h * c.mat.sy
+	)
 	if xf.world.Rotation == 0 { // happy path
 		p := xf.world.Position
 		size[0], size[1] = size[0]*xf.world.Scale[0], size[1]*xf.world.Scale[1]
 		a := AABB{p[0]-size[0]*gravity[0], p[1]-size[1]*gravity[1], size[0], size[1]}
-		b := AABB{c.mat.x-c.view.w/2, c.mat.y-c.view.h/2, c.view.w, c.view.h}
+		b := AABB{c.mat.x-w/2, c.mat.y-h/2, w, h}
 		return OverlapAB(&a, &b)
 	} else {
 		srt := xf.world
@@ -217,7 +225,7 @@ func (c *Camera) InView(xf *Transform, size, gravity f32.Vec2) bool {
 		}
 		ex, ey = m.TransformNormal(ex, ey)
 		a := AABB{cx-ex, cy-ey, ex*2, ey*2}
-		b := AABB{c.mat.x-c.view.w/2, c.mat.y-c.view.h/2, c.view.w, c.view.h}
+		b := AABB{c.mat.x-w/2, c.mat.y-h/2, w, h}
 		return OverlapAB(&a, &b)
 	}
 }
