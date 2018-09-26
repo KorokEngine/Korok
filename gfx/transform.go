@@ -236,12 +236,10 @@ func (xf *Transform) Sibling() (prev, next *Transform) {
 }
 
 func (xf *Transform) reset() {
-	xf.Entity = 0
 	if p := xf.parent; p != none {
 		xf.t.comps[p].RemoveChild(xf)
 	}
-	xf.parent, xf.firstChild = 0, 0
-	xf.preSibling, xf.nxtSibling = 0, 0
+	*xf = Transform{}
 }
 
 type TransformTable struct {

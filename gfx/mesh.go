@@ -169,12 +169,12 @@ func (mt *MeshTable) Delete(entity engi.Entity) {
 		if tail := mt.index -1; v != tail && tail > 0 {
 			mt.comps[v] = mt.comps[tail]
 			// remap index
-			tComp := &mt.comps[tail]
+			tComp := mt.comps[tail]
 			ei := tComp.Entity.Index()
 			mt._map[ei] = v
-			tComp.Entity = 0
+			mt.comps[tail] = MeshComp{}
 		} else {
-			mt.comps[tail].Entity = 0
+			mt.comps[tail] = MeshComp{}
 		}
 
 		mt.index -= 1

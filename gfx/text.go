@@ -189,12 +189,12 @@ func (tt *TextTable) Delete(entity engi.Entity) (tc *TextComp) {
 		if tail := tt.index -1; v != tail && tail > 0 {
 			tt.comps[v] = tt.comps[tail]
 			// remap index
-			tComp := &tt.comps[tail]
+			tComp := tt.comps[tail]
 			ei := tComp.Entity.Index()
 			tt._map[ei] = v
-			tComp.Entity = 0
+			tt.comps[tail] = TextComp{}
 		} else {
-			tt.comps[tail].Entity = 0
+			tt.comps[tail] = TextComp{}
 		}
 
 		tt.index -= 1

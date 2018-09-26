@@ -114,7 +114,6 @@ func (st *SpriteTable) NewComp(entity engi.Entity) (sc *SpriteComp) {
 	sc.gravity.x, sc.gravity.y = .5, .5
 	sc.color = 0xFFFFFFFF
 	sc.visible = true
-	sc.height, sc.width = 0, 0
 	st._map[ei] = st.index
 	st.index ++
 	return
@@ -149,12 +148,12 @@ func (st *SpriteTable) Delete(entity engi.Entity) {
 		if tail := st.index -1; v != tail && tail > 0 {
 			st.comps[v] = st.comps[tail]
 			// remap index
-			tComp := &st.comps[tail]
+			tComp := st.comps[tail]
 			ei := tComp.Entity.Index()
 			st._map[ei] = v
-			tComp.Entity = 0
+			st.comps[tail] = SpriteComp{}
 		} else {
-			st.comps[tail].Entity = 0
+			st.comps[tail] = SpriteComp{}
 		}
 
 		st.index -= 1
