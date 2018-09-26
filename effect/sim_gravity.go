@@ -92,7 +92,7 @@ func (g *GravitySimulator) Initialize() {
 	g.colorDelta = g.Field(ColorDelta).(channel_v4)
 	g.size = g.Field(Size).(channel_f32)
 	g.sizeDelta = g.Field(SizeDelta).(channel_f32)
-	g.rot = g.Field(Rotation).(channel_f32)
+	g.rots = g.Field(Rotation).(channel_f32)
 	g.rotDelta = g.Field(RotationDelta).(channel_f32)
 
 	g.velocity = g.Field(Velocity).(channel_v2)
@@ -131,7 +131,7 @@ func (g *GravitySimulator) Simulate(dt float32) {
 	g.size.Integrate(n, g.sizeDelta, dt)
 
 	// angle
-	g.rot.Integrate(n, g.rotDelta, dt)
+	g.rots.Integrate(n, g.rotDelta, dt)
 
 	// recycle dead
 	g.GC(&g.Pool)
@@ -171,7 +171,7 @@ func (g *GravitySimulator) newParticle(new int) {
 
 		g.size[i], g.sizeDelta[i] = cfg.Size.RangeInit(invLife)
 		// rot
-		g.rot[i], g.rotDelta[i] = cfg.Rot.RangeInit(invLife)
+		g.rots[i], g.rotDelta[i] = cfg.Rot.RangeInit(invLife)
 
 		// start position
 		g.poseStart[i] = g.pose[i]

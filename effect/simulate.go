@@ -3,6 +3,7 @@ package effect
 import (
 	"korok.io/korok/gfx"
 	"korok.io/korok/math"
+	"korok.io/korok/math/f32"
 )
 
 // Var define a variable value between [Base-Var/2, Base+Var/2].
@@ -171,54 +172,52 @@ type VisualController struct {
 	pose channel_v2
 	color channel_v4
 	size channel_f32
+	rots channel_f32
 }
 
 // Visualize write the live particles to vertex-buffer.
 func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D, live int) {
 	size := ctr.size
 	pose := ctr.pose
+	rots := ctr.rots
 
 	// compute vbo
 	for i := 0; i < live; i ++ {
 		vi := i << 2
-		h_size := size[i] / 2
+		size := size[i]
+		half := size/2
 
 		var (
 			r = math.Clamp(ctr.color[i][0], 0, 1)
-			g_ = math.Clamp(ctr.color[i][1], 0, 1)
+			g = math.Clamp(ctr.color[i][1], 0, 1)
 			b = math.Clamp(ctr.color[i][2], 0, 1)
 			a = math.Clamp(ctr.color[i][3], 0, 1)
 		)
 
-		c := uint32(a*255) << 24 + uint32(b*255) << 16 + uint32(g_*255) << 8 + uint32(r*255)
+		c := uint32(a*255) << 24 + uint32(b*255) << 16 + uint32(g*255) << 8 + uint32(r*255)
 		rg := tex.Region()
 
+		// Transform matrix
+		m := f32.Mat3{}; m.InitializeScale1(pose[i][0], pose[i][1], rots[0], half, half)
+
 		// bottom-left
-		buf[vi+0].X = pose[i][0] - h_size
-		buf[vi+0].Y = pose[i][1] - h_size
-		buf[vi+0].U = rg.X1
-		buf[vi+0].V = rg.Y1
+		buf[vi+0].X, buf[vi+0].Y = m.Transform(0, 0)
+		buf[vi+0].U, buf[vi+0].V = rg.X1, rg.Y1
 		buf[vi+0].RGBA = c
 
 		// bottom-right
-		buf[vi+1].X = pose[i][0] + h_size
-		buf[vi+1].Y = pose[i][1] - h_size
-		buf[vi+1].U = rg.X2
-		buf[vi+1].V = rg.Y1
+		buf[vi+1].X, buf[vi+1].Y = m.Transform(size, 0)
+		buf[vi+1].U, buf[vi+1].V = rg.X2, rg.Y1
 		buf[vi+1].RGBA = c
 
 		// top-right
-		buf[vi+2].X = pose[i][0] + h_size
-		buf[vi+2].Y = pose[i][1] + h_size
-		buf[vi+2].U = rg.X2
-		buf[vi+2].V = rg.Y2
+		buf[vi+2].X, buf[vi+2].Y = m.Transform(size, size)
+		buf[vi+2].U, buf[vi+2].V = rg.X2, rg.Y2
 		buf[vi+2].RGBA = c
 
 		// top-left
-		buf[vi+3].X = pose[i][0] - h_size
-		buf[vi+3].Y = pose[i][1] + h_size
-		buf[vi+3].U = rg.X1
-		buf[vi+3].V = rg.Y2
+		buf[vi+3].X, buf[vi+3].Y = m.Transform(0, size)
+		buf[vi+3].U, buf[vi+3].V  = rg.X1, rg.Y2
 		buf[vi+3].RGBA = c
 	}
 }

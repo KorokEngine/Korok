@@ -61,7 +61,7 @@ func (r *RadiusSimulator) Initialize() {
 	r.colorDelta = r.Field(ColorDelta).(channel_v4)
 	r.size = r.Field(Size).(channel_f32)
 	r.sizeDelta = r.Field(SizeDelta).(channel_f32)
-	r.rot = r.Field(Rotation).(channel_f32)
+	r.rots = r.Field(Rotation).(channel_f32)
 	r.rotDelta = r.Field(RotationDelta).(channel_f32)
 	r.angle = r.Field(Angle).(channel_f32)
 	r.angleDelta = r.Field(AngleDelta).(channel_f32)
@@ -90,7 +90,7 @@ func (r *RadiusSimulator) Simulate(dt float32) {
 	}
 	r.color.Integrate(n, r.colorDelta, dt)
 	r.size.Integrate(n, r.sizeDelta, dt)
-	r.rot.Integrate(n, r.rotDelta, dt)
+	r.rots.Integrate(n, r.rotDelta, dt)
 	// recycle dead particle
 	r.GC(&r.Pool)
 }
@@ -134,9 +134,9 @@ func (r *RadiusSimulator) newParticle(new int) {
 			r.sizeDelta[i] = (cfg.Size.End.Random() - r.size[i]) * invLife
 		}
 		// rot
-		r.rot[i] = cfg.Rot.Start.Random()
+		r.rots[i] = cfg.Rot.Start.Random()
 		if cfg.Rot.Start != cfg.Rot.End {
-			r.rotDelta[i] = (cfg.Rot.End.Random() - r.rot[i]) * invLife
+			r.rotDelta[i] = (cfg.Rot.End.Random() - r.rots[i]) * invLife
 		}
 		// start position
 		r.poseStart[i] = r.pose[i]
@@ -144,7 +144,7 @@ func (r *RadiusSimulator) newParticle(new int) {
 		// radius
 		r.radius[i] = cfg.Radius.Start.Random()
 		if cfg.Radius.Start != cfg.Radius.End {
-			r.radiusDelta[i] = (cfg.Radius.End.Random() - r.rot[i]) * invLife
+			r.radiusDelta[i] = (cfg.Radius.End.Random() - r.rots[i]) * invLife
 		}
 		// angle
 		r.angle[i] = cfg.Angle.Random()

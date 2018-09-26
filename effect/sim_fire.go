@@ -32,6 +32,7 @@ func NewFireSimulator(cap int) *FireSimulator {
 	sim.AddChan(Life, Size)
 	sim.AddChan(Position, Velocity)
 	sim.AddChan(Color)
+	sim.AddChan(Rotation)
 
 	// config
 	sim.Config.Duration = math.MaxFloat32
@@ -55,6 +56,7 @@ func (f *FireSimulator) Initialize() {
 	f.pose = f.Field(Position).(channel_v2)
 	f.velocity = f.Field(Velocity).(channel_v2)
 	f.color = f.Field(Color).(channel_v4)
+	f.rots = f.Field(Rotation).(channel_f32)
 
 	f.RateController.Initialize(f.Config.Duration, f.Config.Rate)
 }

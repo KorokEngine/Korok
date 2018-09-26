@@ -32,6 +32,7 @@ func NewSnowSimulator(cap int, w, h float32) *SnowSimulator {
 	sim.AddChan(Life, Size)
 	sim.AddChan(Position, Velocity)
 	sim.AddChan(Color)
+	sim.AddChan(Rotation)
 
 	// config
 	sim.Config.Duration = math.MaxFloat32
@@ -55,6 +56,7 @@ func (sim *SnowSimulator) Initialize() {
 	sim.pose = sim.Field(Position).(channel_v2)
 	sim.velocity = sim.Field(Velocity).(channel_v2)
 	sim.color = sim.Field(Color).(channel_v4)
+	sim.rots = sim.Field(Rotation).(channel_f32)
 
 	sim.RateController.Initialize(sim.Config.Duration, sim.Config.Rate)
 }
