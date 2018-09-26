@@ -57,6 +57,20 @@ func (m *Mat3) Initialize(x, y, angle, sx, sy, ox, oy, kx, ky float32) {
 	m[8] = 1.0
 }
 
+func (m *Mat3) InitializeScale1(x, y, angle, ox, oy float32) {
+	c, s := cos(angle), sin(angle)
+
+	m[0] = c // = a
+	m[1] = s // = b
+	m[3] = - s // = c
+	m[4] = + c // = d
+	m[6] = x - ox * m[0] - oy * m[3]
+	m[7] = y - ox * m[1] - oy * m[4]
+
+	m[2], m[5] = 0, 0
+	m[8] = 1.0
+}
+
 func sin(r float32) float32 {
 	return float32(math.Sin(float64(r)))
 }
