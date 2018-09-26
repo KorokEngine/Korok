@@ -176,7 +176,7 @@ type VisualController struct {
 }
 
 // Visualize write the Live particles to vertex-buffer.
-func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D, live int) {
+func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D, live int, additive bool) {
 	size := ctr.ParticleSize
 	pose := ctr.Position
 	rots := ctr.Rotation
@@ -194,7 +194,12 @@ func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2
 			a = math.Clamp(ctr.Color[i][3], 0, 1)
 		)
 
-		c := uint32(a*255) << 24 + uint32(b*255) << 16 + uint32(g*255) << 8 + uint32(r*255)
+		var c uint32
+		if additive {
+			c = uint32(a*b*255) << 16 + uint32(a*g*255) << 8 + uint32(a*r*255)
+		} else {
+			c = uint32(a*255) << 24 + uint32(a*b*255) << 16 + uint32(a*g*255) << 8 + uint32(a*r*255)
+		}
 		rg := tex.Region()
 
 		// Transform matrix

@@ -18,6 +18,7 @@ type Config struct {
 	Rot   Range
 
 	R, G, B, A Range
+	Additive bool
 }
 
 // GravityConfig used to configure the GravitySimulator.
@@ -187,7 +188,7 @@ func (g *GravitySimulator) newParticle(new int) {
 }
 
 func (g *GravitySimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D) {
-	g.VisualController.Visualize(buf, tex, g.Live)
+	g.VisualController.Visualize(buf, tex, g.Live, g.Additive)
 }
 
 func (r *GravitySimulator) Size() (live, cap int) {

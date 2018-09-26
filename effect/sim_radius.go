@@ -153,7 +153,7 @@ func (r *RadiusSimulator) newParticle(new int) {
 }
 
 func (r *RadiusSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D) {
-	r.VisualController.Visualize(buf, tex, int(r.Live))
+	r.VisualController.Visualize(buf, tex, int(r.Live), r.Additive)
 }
 
 func (r *RadiusSimulator) Size() (live, cap int) {

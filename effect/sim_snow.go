@@ -109,5 +109,5 @@ func (sim *SnowSimulator) NewParticle(new int) {
 }
 
 func (sim *SnowSimulator) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2D) {
-	sim.VisualController.Visualize(buf, tex, int(sim.Live))
+	sim.VisualController.Visualize(buf, tex, int(sim.Live), false)
 }
