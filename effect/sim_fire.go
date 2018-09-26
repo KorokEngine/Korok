@@ -23,7 +23,8 @@ type FireSimulator struct {
 		Size Var
 		Color f32.Vec4
 		Position [2]Var
-		Velocity [2]Var
+		Angle Var
+		Speed Var
 	}
 }
 
@@ -42,8 +43,8 @@ func NewFireSimulator(cap int) *FireSimulator {
 	sim.Config.Size = Var{34, 10}
 	sim.Config.Position[0] = Var{0, 40}
 	sim.Config.Position[1] = Var{0, 20}
-	sim.Config.Velocity[0] = Var{10, 70}
-	sim.Config.Velocity[1] = Var{10, 40}
+	sim.Config.Angle = Var{3.14/2, 0.314}
+	sim.Config.Speed = Var{60, 20}
 
 	return &sim
 }
@@ -103,10 +104,9 @@ func (f *FireSimulator) newParticle(new int) {
 		py := f.Config.Position[1].Random()
 		f.Position[i] = f32.Vec2{px, py}
 
-		dx := f.Config.Velocity[0].Random()
-		dy := f.Config.Velocity[1].Random()
-		v := f32.Vec2{dx-40, float32(30+dy)}
-		f.velocity[i] = v
+		a := f.Config.Angle.Random()
+		s := f.Config.Speed.Random()
+		f.velocity[i] = f32.Vec2{math.Cos(a)*s, math.Sin(a)*s}
 	}
 }
 
