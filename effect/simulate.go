@@ -6,6 +6,27 @@ import (
 	"korok.io/korok/math/f32"
 )
 
+type TwoColor struct {
+	One, Other f32.Vec4
+	EnableGradient bool
+}
+
+func (tc TwoColor) Random() (c f32.Vec4) {
+	if f := math.Random(0, 1); tc.EnableGradient {
+		c[0] = tc.One[0] + (tc.Other[0]-tc.One[0])*f
+		c[1] = tc.One[1] + (tc.Other[1]-tc.One[1])*f
+		c[2] = tc.One[2] + (tc.Other[2]-tc.One[2])*f
+		c[3] = tc.One[3] + (tc.Other[3]-tc.One[3])*f
+	} else {
+		if f >= .5 {
+			c = tc.Other
+		} else {
+			c = tc.One
+		}
+	}
+	return
+}
+
 // Var define a variable value between [Base-Var/2, Base+Var/2].
 type Var struct {
 	Base, Var float32
@@ -203,7 +224,7 @@ func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2
 		rg := tex.Region()
 
 		// Transform matrix
-		m := f32.Mat3{}; m.InitializeScale1(pose[i][0], pose[i][1], rots[0], half, half)
+		m := f32.Mat3{}; m.InitializeScale1(pose[i][0], pose[i][1], rots[i], half, half)
 
 		// bottom-left
 		buf[vi+0].X, buf[vi+0].Y = m.Transform(0, 0)
