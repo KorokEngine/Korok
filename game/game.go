@@ -99,10 +99,6 @@ func (g *Game) Camera() *gfx.Camera {
 	return &g.RenderSystem.MainCamera
 }
 
-func (g *Game) AppState() appState {
-	return g.appState
-}
-
 /// window callback
 func (g *Game) OnCreate(w, h float32, ratio float32) {
 	g.Create(w, h, ratio)
@@ -117,11 +113,11 @@ func (g *Game) OnDestroy() {
 }
 
 func (g *Game) OnPause() {
-	g.Pause()
+	g.notifyPause()
 }
 
 func (g *Game) OnResume() {
-	g.Resume()
+	g.notifyResume()
 }
 
 func (g *Game) OnFocusChanged(focused bool) {
@@ -242,7 +238,7 @@ func (g *Game) Destroy() {
 	audio.Destroy()
 }
 
-func (g *Game) Pause() {
+func (g *Game) notifyPause() {
 	g.setPaused(true)
 	if fn := g.PauseCallback; fn != nil {
 		fn(true)
@@ -250,7 +246,7 @@ func (g *Game) Pause() {
 	log.Println("game paused..")
 }
 
-func (g *Game) Resume() {
+func (g *Game) notifyResume() {
 	g.setPaused(false)
 	if fn := g.PauseCallback; fn != nil {
 		fn(false)
