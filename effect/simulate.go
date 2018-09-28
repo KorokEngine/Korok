@@ -217,9 +217,9 @@ func (ctr *VisualController) Visualize(buf []gfx.PosTexColorVertex, tex gfx.Tex2
 
 		var c uint32
 		if additive {
-			c = uint32(a*b*255) << 16 + uint32(a*g*255) << 8 + uint32(a*r*255)
+			c = uint32(b*255) << 16 + uint32(g*255) << 8 + uint32(r*255)
 		} else {
-			c = uint32(a*255) << 24 + uint32(a*b*255) << 16 + uint32(a*g*255) << 8 + uint32(a*r*255)
+			c = uint32(a*255) << 24 + uint32(b*255) << 16 + uint32(g*255) << 8 + uint32(r*255)
 		}
 		rg := tex.Region()
 

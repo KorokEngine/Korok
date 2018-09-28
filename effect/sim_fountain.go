@@ -122,6 +122,7 @@ func (f *FountainSimulator) newParticle(new int) {
 				-startColor[0] * invLife,
 				-startColor[1] * invLife,
 				-startColor[2] * invLife,
+				-startColor[2] * invLife,
 			}
 		}
 

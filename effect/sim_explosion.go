@@ -1,10 +1,9 @@
 package effect
 
 import (
-"korok.io/korok/math/f32"
-"korok.io/korok/gfx"
-"korok.io/korok/math"
-	"log"
+	"korok.io/korok/math/f32"
+	"korok.io/korok/gfx"
+	"korok.io/korok/math"
 )
 
 // FireSimulator can simulate the fire effect.
@@ -108,6 +107,7 @@ func (f *ExplosionSimulator) newParticle(new int) {
 			-startColor[0] * invLife,
 			-startColor[1] * invLife,
 			-startColor[2] * invLife,
+			-startColor[3] * invLife,
 		}
 
 		px := f.Config.Position[0].Random()
@@ -118,8 +118,6 @@ func (f *ExplosionSimulator) newParticle(new int) {
 		s := f.Config.Speed.Random()
 		f.velocity[i] = f32.Vec2{math.Cos(a)*s, math.Sin(a)*s}
 		f.Rotation[i] = a
-
-		log.Println("new particle rotation:", a)
 	}
 }
 
