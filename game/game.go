@@ -147,8 +147,9 @@ func (g *Game) OnResize(w, h int32) {
 
 func (g *Game) setGameSize(w, h float32) {
 	// setup camera
-	camera := &g.MainCamera
-	camera.SetViewPort(w, h)
+	if rs := g.RenderSystem; rs != nil {
+		rs.MainCamera.SetViewPort(w, h)
+	}
 
 	// gui real screen size
 	gui.SetScreenSize(w, h)

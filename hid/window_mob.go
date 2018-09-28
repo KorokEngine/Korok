@@ -3,23 +3,24 @@
 package hid
 
 import (
+	"korok.io/korok/hid/gl"
 	"golang.org/x/mobile/app"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 	"golang.org/x/mobile/event/touch"
-
-	"korok.io/korok/hid/gl"
-	"sync"
-	"log"
 	"golang.org/x/mobile/event/key"
+
+	"sync"
+	"os"
 )
 
 var options *WindowOptions
 
 var (
 	once sync.Once
-	w, h float32
+	widthPx int
+	heightPx int
 )
 
 var (
@@ -63,9 +64,6 @@ func CreateWindow(opt *WindowOptions) {
 					glctx = nil
 				}
 			case size.Event:
-				if glctx == nil {
-					continue
-				}
 				sz = e
 				onResize(e)
 			case paint.Event:
@@ -90,9 +88,8 @@ func CreateWindow(opt *WindowOptions) {
 }
 
 func onCreate() {
-	log.Println("==========application create")
-	w = float32(app.Window.WidthPx)
-	h = float32(app.Window.HeightPx)
+	widthPx = app.DisplayMetrics.WidthPx
+	heightPx = app.DisplayMetrics.HeightPx
 }
 
 func onStart(e lifecycle.Event) {
@@ -107,7 +104,7 @@ func onStart(e lifecycle.Event) {
 		gl.ClearColor(bg[0], bg[1], bg[2], bg[3])
 	}
 	once.Do(func() {
-		windowCallback.OnCreate(w, h,1)
+		windowCallback.OnCreate(float32(widthPx), float32(heightPx),1)
 	})
 	windowCallback.OnResume()
 }
@@ -119,18 +116,12 @@ func onStop() {
 
 func onDestroy() {
 	windowCallback.OnDestroy()
-	log.Println("==========application destroy")
-	KillProcess() // An easy way to release resources
-}
-
-func KillProcess() {
-	panic("kill process")
+	os.Exit(0)
 }
 
 func onResize(e size.Event) {
+	widthPx, heightPx = e.WidthPx, e.HeightPx
 	iw, ih := int32(e.WidthPx), int32(e.HeightPx)
-	w, h = float32(w), float32(h)
-	gl.Viewport(0, 0, iw, ih)
 	windowCallback.OnResize(iw, ih)
 }
 
@@ -153,5 +144,5 @@ func onTouch(e touch.Event) {
 }
 
 func onKey(e key.Event) {
-	inputCallback.OnKeyEvent(e.Origin, e.Direction == key.DirPress)
+	inputCallback.OnKeyEvent(int(e.Code), e.Direction == key.DirPress)
 }

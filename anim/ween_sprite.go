@@ -14,7 +14,7 @@ func Tint(e engi.Entity, from, to gfx.Color) *proxyAnimator {
 	proxy.Animator.OnUpdate(func(reverse bool, f float32) {
 		if spr := animationSystem.st.Comp(e); spr != nil {
 			c := ween.ColorLerp(from, to, f)
-			spr.SetColor(c.U32())
+			spr.SetColor(c)
 		}
 		if fn := proxy.update; fn != nil {
 			fn(reverse, f)

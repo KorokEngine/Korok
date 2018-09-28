@@ -66,12 +66,12 @@ func (sc *SpriteComp) Visible() bool {
 	return sc.visible
 }
 
-func (sc *SpriteComp) Color() uint32 {
-	return sc.color
+func (sc *SpriteComp) Color() Color {
+	return U32Color(sc.color)
 }
 
-func (sc *SpriteComp) SetColor(color uint32) {
-	sc.color = color
+func (sc *SpriteComp) SetColor(c Color) {
+	sc.color = c.U32()
 }
 
 func (sc *SpriteComp) Flip(flipX, flipY bool) {

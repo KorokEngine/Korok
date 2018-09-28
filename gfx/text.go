@@ -43,8 +43,16 @@ type TextComp struct {
 	runeCount int32
 }
 
-func (tc *TextComp) SetColor(color uint32) {
-	tc.color = color
+func (tc *TextComp)  Color() Color {
+	return U32Color(tc.color)
+}
+
+func (tc *TextComp) SetColor(color Color) {
+	tc.color = color.U32()
+}
+
+func (tc *TextComp) Text() string {
+	return tc.text
 }
 
 func (tc *TextComp) SetText(text string) {
@@ -56,13 +64,25 @@ func (tc *TextComp) SetText(text string) {
 	tc.fillData()
 }
 
+func (tc *TextComp) Gravity() (x, y float32) {
+	return tc.gravity.x, tc.gravity.y
+}
+
 func (tc *TextComp) SetGravity(x, y float32) {
 	tc.gravity.x = x
 	tc.gravity.y = y
 }
 
+func (tc *TextComp) Visible() bool {
+	return tc.visible
+}
+
 func (tc *TextComp) SetVisible(v bool) {
 	tc.visible = v
+}
+
+func (tc *TextComp) FontSize() float32 {
+	return tc.size
 }
 
 func (tc *TextComp) SetFontSize(sz float32) {
@@ -126,6 +146,10 @@ func (tc *TextComp) fillData() {
 	size.w = xOffset + chars[len(chars)-1].w
 	tc.width = size.w
 	tc.height = gh
+}
+
+func (tc *TextComp) Font() font.Font {
+	return tc.font
 }
 
 // should have default font!!
