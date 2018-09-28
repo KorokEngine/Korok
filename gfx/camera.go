@@ -27,8 +27,7 @@ type Camera struct {
 	view struct{
 		w, h float32
 		ratio float32  // ratio=w/h
-		scale float32  // scale=view_width/screen_width
-		invScale float32
+		scale, invScale f32.Vec2  // scale=view_width/screen_width
 	}
 	follow engi.Entity
 
@@ -69,15 +68,15 @@ func (c *Camera) Bounding() (left, top, right, bottom float32){
 
 // Screen2Scene converts (x,y) in screen coordinate to (x1,y1) in game's world coordinate.
 func (c *Camera) Screen2Scene(x, y float32) (x1, y1 float32) {
-	x1 = c.mat.x - c.view.w/2 + x*c.view.scale
-	y1 = c.mat.y + c.view.h/2 - y*c.view.scale
+	x1 = c.mat.x - c.view.w/2 + x*c.view.scale[0]
+	y1 = c.mat.y + c.view.h/2 - y*c.view.scale[1]
 	return
 }
 
 // Scene2Screen converts (x,y) in game's world coordinate to screen coordinate.
 func (c *Camera) Scene2Screen(x, y float32) (x1, y1 float32) {
-	x1 =  (x + c.view.w/2 - c.mat.x)*c.view.invScale
-	y1 = -(y - c.view.h/2 - c.mat.y)*c.view.invScale
+	x1 =  (x + c.view.w/2 - c.mat.x)*c.view.invScale[0]
+	y1 = -(y - c.view.h/2 - c.mat.y)*c.view.invScale[1]
 	return
 }
 
@@ -142,19 +141,14 @@ func (c *Camera) SetViewPort(w, h float32) {
 	c.screen.w = w
 	c.screen.h = h
 
-	if c.desire.w == 0 && c.desire.h == 0 {
+	if c.desire.w != 0 || c.desire.h != 0 {
+		c.SetDesiredViewport(c.desire.w, c.desire.h)
+	} else {
 		c.view.w = w
 		c.view.h = h
 		c.view.ratio = 1
-		c.view.scale = 1
-		c.view.invScale = 1
-	} else { // 计算得到一个正确比例的期望值..
-		ratio := w/h
-		c.view.w = ratio * c.desire.h
-		c.view.h = c.desire.h
-		c.view.ratio = ratio
-		c.view.scale = c.desire.h/h
-		c.view.invScale = h/c.desire.h
+		c.view.scale = f32.Vec2{1, 1}
+		c.view.invScale = f32.Vec2{1, 1}
 	}
 	c.clamp()
 }
@@ -163,12 +157,35 @@ func (c *Camera) SetDesiredViewport(w, h float32) {
 	c.desire.w = w
 	c.desire.h = h
 
-	ratio := c.screen.w/c.screen.h
-	c.view.w = ratio * c.desire.h
-	c.view.h = c.desire.h
-	c.view.ratio = ratio
-	c.view.scale = c.desire.h/c.screen.h
-	c.view.invScale = c.screen.h/c.desire.h
+	if w != 0 && h != 0 {
+		c.view.w, c.view.h = w, h
+		c.view.ratio = w/h
+		c.view.scale = f32.Vec2{
+			w/c.screen.w,
+			h/c.screen.h,
+		}
+		c.view.invScale =  f32.Vec2 {
+			c.screen.w/w,
+			c.screen.h/h,
+		}
+	} else if w == 0 {
+		ratio := c.screen.w/c.screen.h
+		c.view.w = ratio * h
+		c.view.h = h
+		c.view.ratio = ratio
+		scale, invScale := h/c.screen.h, c.screen.h/h
+		c.view.scale = f32.Vec2{ scale, scale}
+		c.view.invScale = f32.Vec2{invScale, invScale}
+	} else if h == 0 {
+		ratio := c.screen.w/c.screen.h
+		c.view.w = w
+		c.view.h = w/ratio
+		c.view.ratio = ratio
+		scale, invScale := w/c.screen.w, c.screen.w/w
+		c.view.scale = f32.Vec2{ scale, scale}
+		c.view.invScale = f32.Vec2{invScale, invScale}
+	}
+
 	c.clamp()
 }
 
