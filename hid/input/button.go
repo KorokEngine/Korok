@@ -33,7 +33,7 @@ func (btn button) Down() bool {
 
 func (btn *button) Update(down bool){
 	d := (btn.state & 0x01) == 1
-	btn.state = 0
+	btn.state &= 0x04|0x02
 	if down {
 		btn.state |= 0x01
 	}
