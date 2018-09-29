@@ -65,7 +65,7 @@ func OnLoop() {
 	dbg.DrawStr("fps:60000!!")
 
 	// advance frame
-	dbg.NextFrame()
+	dbg.AdvanceFrame()
 }
 ```
 -- 2017/10/17

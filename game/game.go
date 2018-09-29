@@ -295,7 +295,7 @@ func (g *Game) Update() {
 	}
 
 	// update input-system
-	g.InputSystem.Frame()
+	g.InputSystem.AdvanceFrame()
 
 	// update scene
 	g.SceneManager.Update(dt)
@@ -337,7 +337,7 @@ func (g *Game) Update() {
 
 func (g *Game) DrawProfile() {
 	// Advance frame
-	dbg.NextFrame()
+	dbg.AdvanceFrame()
 }
 
 func (g *Game) Draw(dt float32) {

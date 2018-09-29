@@ -86,7 +86,7 @@ func (in *InputSystem) RegisterButton(name string, keys ...Key) {
 
 // 更新 Button 状态....
 // TODO 此处的输入状态，更新有bug！！
-func (in *InputSystem) Frame() {
+func (in *InputSystem) AdvanceFrame() {
 	if n, dirty := len(in.binds), in.dirty.used; n > 0 && dirty > 0 {
 		var st, ok bool
 		var pr *button
@@ -155,8 +155,8 @@ type KeyBind struct {
 }
 
 // short API
-func Button(name string) *button {
-	return Input.Button(name)
+func Button(name string) button {
+	return *Input.Button(name)
 }
 
 func AnyKeyChanged() bool {

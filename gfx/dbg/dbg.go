@@ -109,7 +109,7 @@ func DrawStrScaled(x, y float32, scale float32, str string, args ...interface{})
 	}
 }
 
-func NextFrame() {
+func AdvanceFrame() {
 	// draw hud
 	hud.draw()
 	hud.reset()
