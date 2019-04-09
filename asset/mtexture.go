@@ -1,20 +1,20 @@
 package asset
 
 import (
-	"golang.org/x/mobile/asset"
-	"korok.io/korok/gfx/bk"
+	"korok.io/korok/asset/res"
 	"korok.io/korok/gfx"
+	"korok.io/korok/gfx/bk"
 
-	"log"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"image"
-	"errors"
 	"io/ioutil"
-	"encoding/json"
+	"log"
 )
 
 type TextureManager struct {
-	repo map[string]idCount
+	repo  map[string]idCount
 	names map[string]uint32
 }
 
@@ -22,7 +22,7 @@ func NewTextureManager() *TextureManager {
 	return &TextureManager{
 		make(map[string]idCount),
 		make(map[string]uint32),
-		}
+	}
 }
 
 // Load loads a single Texture file.
@@ -39,14 +39,14 @@ func (tm *TextureManager) Load(file string) {
 		}
 		rid = id
 	}
-	tm.repo[file] = idCount{rid, cnt+1}
+	tm.repo[file] = idCount{rid, cnt + 1}
 }
 
 // Unload delete raw Texture and any related SubTextures.
 func (tm *TextureManager) Unload(file string) {
 	if v, ok := tm.repo[file]; ok {
 		if v.cnt > 1 {
-			tm.repo[file] = idCount{v.rid, v.cnt -1}
+			tm.repo[file] = idCount{v.rid, v.cnt - 1}
 		} else {
 			delete(tm.repo, file)
 			bk.R.Free(v.rid)
@@ -82,9 +82,8 @@ func (tm *TextureManager) LoadAtlas(file, desc string) {
 		}
 		rid = id
 	}
-	tm.repo[file] = idCount{rid, cnt+1}
+	tm.repo[file] = idCount{rid, cnt + 1}
 }
-
 
 // LoadAtlasIndexed loads the atlas with specified with/height/num.
 func (tm *TextureManager) LoadAtlasIndexed(file string, width, height float32, row, col int) {
@@ -103,13 +102,13 @@ func (tm *TextureManager) LoadAtlasIndexed(file string, width, height float32, r
 		at := gfx.R.NewAtlas(id, size, file)
 
 		// fill
-		for i := 0; i < row; i ++ {
-			for j := 0; j < col; j ++ {
+		for i := 0; i < row; i++ {
+			for j := 0; j < col; j++ {
 				at.AddItem(float32(j)*width, float32(i)*height, width, height, "", false)
 			}
 		}
 	}
-	tm.repo[file] = idCount{rid, cnt+1}
+	tm.repo[file] = idCount{rid, cnt + 1}
 }
 
 // Get returns the low-level Texture.
@@ -119,7 +118,7 @@ func (tm *TextureManager) Get(file string) gfx.Tex2D {
 }
 
 // Get returns the low-level Texture.
-func (tm *TextureManager) GetRaw(file string) (uint16, *bk.Texture2D)  {
+func (tm *TextureManager) GetRaw(file string) (uint16, *bk.Texture2D) {
 	if v, ok := tm.repo[file]; ok {
 		if ok, tex := bk.R.Texture(v.rid); ok {
 			return v.rid, tex
@@ -137,11 +136,10 @@ func (tm *TextureManager) Atlas(file string) (at *gfx.Atlas, ok bool) {
 	return
 }
 
-
-func (tm *TextureManager) loadTexture(file string)(uint16, error)  {
+func (tm *TextureManager) loadTexture(file string) (uint16, error) {
 	log.Println("load file:" + file)
 	// 1. load file
-	imgFile, err := asset.Open(file)
+	imgFile, err := res.Open(file)
 	if err != nil {
 		return bk.InvalidId, fmt.Errorf("texture %q not found: %v", file, err)
 	}
@@ -158,13 +156,13 @@ func (tm *TextureManager) loadTexture(file string)(uint16, error)  {
 }
 
 // 加载纹理图集
-func (tm *TextureManager) loadAtlas(img, desc string)(id uint16, at *atlas, e error) {
+func (tm *TextureManager) loadAtlas(img, desc string) (id uint16, at *atlas, e error) {
 	id, err := tm.loadTexture(img)
 	if err != nil {
 		e = err
 		return
 	}
-	file, err := asset.Open(desc)
+	file, err := res.Open(desc)
 	defer file.Close()
 
 	if err != nil {
@@ -186,21 +184,21 @@ func (tm *TextureManager) loadAtlas(img, desc string)(id uint16, at *atlas, e er
 // TexturePacker: https://www.codeandweb.com/texturepacker
 type atlas struct {
 	Meta struct {
-		App string `json:"app"`
+		App     string `json:"app"`
 		Version string `json:"version"`
-		Image string   `json:"image"`
-		Format string  `json:"format"`
-		Size struct{
+		Image   string `json:"image"`
+		Format  string `json:"format"`
+		Size    struct {
 			W, H int
 		} `json:"size"`
 		Scale float32 `json:"scale,string"`
 	} `json:"meta"`
 
-	Frames []struct{
-		Filename string `json:"filename"`
-		Frame struct{ X, Y, W, H int} `json:"frame"`
-		Rotated bool `json:"rotated"`
-		Trimmed bool `json:trimmed`
-		Pivot struct{X, Y float32} `json:"pivot"`
+	Frames []struct {
+		Filename string                   `json:"filename"`
+		Frame    struct{ X, Y, W, H int } `json:"frame"`
+		Rotated  bool                     `json:"rotated"`
+		Trimmed  bool                     `json:trimmed`
+		Pivot    struct{ X, Y float32 }   `json:"pivot"`
 	} `json:"frames"`
 }

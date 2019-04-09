@@ -2,10 +2,11 @@ package asset
 
 import (
 	"korok.io/korok/gfx/font"
-	"golang.org/x/mobile/asset"
 
 	"fmt"
 	"log"
+
+	"korok.io/korok/asset/res"
 )
 
 type FontManager struct {
@@ -24,12 +25,12 @@ func (fm *FontManager) LoadBitmap(name string, img, fc string) {
 		cnt = v.cnt
 		fnt = v.ref
 	} else {
-		ir, err := asset.Open(img)
+		ir, err := res.Open(img)
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
-		fcr, err := asset.Open(fc)
+		fcr, err := res.Open(fc)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -55,7 +56,7 @@ func (fm *FontManager) LoadTrueType(name string, file string, lc font.TTFConfig)
 		cnt = v.cnt
 		fnt = v.ref
 	} else {
-		fcr, err := asset.Open(file)
+		fcr, err := res.Open(file)
 		if err != nil {
 			fmt.Println(err)
 			return
@@ -76,7 +77,7 @@ func (fm *FontManager) LoadTrueType(name string, file string, lc font.TTFConfig)
 func (fm *FontManager) Unload(name string) {
 	if v, ok := fm.repo[name]; ok {
 		if v.cnt > 1 {
-			fm.repo[name] = refCount{v.ref, v.cnt-1}
+			fm.repo[name] = refCount{v.ref, v.cnt - 1}
 		} else {
 			ref := fm.repo[name].ref
 			delete(fm.repo, name)
@@ -88,11 +89,9 @@ func (fm *FontManager) Unload(name string) {
 	}
 }
 
-func (fm *FontManager) Get(name string) (fnt font.Font, ok  bool) {
+func (fm *FontManager) Get(name string) (fnt font.Font, ok bool) {
 	if v, ok := fm.repo[name]; ok {
 		fnt, ok = v.ref.(font.Font)
 	}
 	return
 }
-
-
