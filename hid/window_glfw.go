@@ -1,4 +1,4 @@
-//+build !android,!ios
+//+build !android,!ios,!js
 
 package hid
 
@@ -7,15 +7,15 @@ import (
 	"korok.io/korok/hid/gl"
 
 	"fmt"
-	"runtime"
 	"log"
+	"runtime"
 )
 
 var windowCallback WindowCallback
 var inputCallback InputCallback
-var Keys  [1024]int
+var Keys [1024]int
 
-func init()  {
+func init() {
 	runtime.LockOSThread()
 }
 
@@ -27,7 +27,7 @@ func RegisterInputCallback(callback InputCallback) {
 	inputCallback = callback
 }
 
-func CreateWindow(option *WindowOptions)  {
+func CreateWindow(option *WindowOptions) {
 	fmt.Println(glfw.GetVersionString())
 
 	// 初始化 glfw
@@ -89,7 +89,6 @@ func CreateWindow(option *WindowOptions)  {
 	if !option.FullScreen && mode.Width != 1 {
 		window.SetPos((mode.Width-option.Width)/2, (mode.Height-option.Height)/2)
 	}
-
 
 	// make the window's context current
 	window.MakeContextCurrent()
@@ -206,4 +205,3 @@ func CreateWindow(option *WindowOptions)  {
 	}
 	windowCallback.OnDestroy()
 }
-

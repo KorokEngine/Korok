@@ -1,5 +1,5 @@
-// +build windows
-// +build !android,!ios
+// +build windows,!js
+// +build !android,!ios,!js
 
 package gl
 

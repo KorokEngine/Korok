@@ -1,11 +1,13 @@
 package sine
 
 import (
-	"golang.org/x/mobile/asset"
 	"log"
+
+	"korok.io/korok/asset/res"
 )
 
 type FileType uint8
+
 const (
 	None FileType = iota
 	WAV
@@ -16,15 +18,15 @@ const (
 	FLAC
 )
 
-
 type SourceType uint8
+
 const (
 	Static SourceType = iota
 	Stream
 )
 
-
 type FormatEnum uint8
+
 const (
 	FormatNone FormatEnum = iota
 	Mono8
@@ -35,9 +37,9 @@ const (
 
 // sound represent a audio segment
 type Sound struct {
-	Type SourceType
+	Type     SourceType
 	Priority uint16
-	Data interface{}
+	Data     interface{}
 }
 
 const MaxSoundPoolSize = 128 // 128=96+32
@@ -64,9 +66,9 @@ func NewAudioManager() *AudioManger {
 
 /// 加载数据，得到 Sound 实例
 /// 此时应该得出, 采样率，是否Stream等，
-func (am *AudioManger) LoadSound(name string, ft FileType, sType SourceType) (id uint16, sound *Sound){
+func (am *AudioManger) LoadSound(name string, ft FileType, sType SourceType) (id uint16, sound *Sound) {
 	id, sound = am.indexPool, &am.soundPool[am.indexPool]
-	am.indexPool ++
+	am.indexPool++
 	sound.Type = sType
 
 	var d interface{}
@@ -81,7 +83,7 @@ func (am *AudioManger) LoadSound(name string, ft FileType, sType SourceType) (id
 
 func (am *AudioManger) LoadStatic(name string, ft FileType) (id uint16, sd *StaticData) {
 	d, err := factory.NewDecoder(name, ft)
-	file, err := asset.Open(name)
+	file, err := res.Open(name)
 	if err != nil {
 		log.Println(err)
 		return
@@ -109,14 +111,14 @@ func (am *AudioManger) LoadStream(name string, ft FileType) (id uint16, data *St
 
 func (am *AudioManger) allocStaticData(fmt uint32, bits []byte, freq int32) (id uint16, data *StaticData) {
 	id, data = am.indexStatic, &am.staticData[am.indexStatic]
-	am.indexStatic ++
+	am.indexStatic++
 	data.Create(fmt, bits, freq)
 	return
 }
 
 func (am *AudioManger) allocStreamData(name string, ft FileType) (id uint16, data *StreamData) {
 	id, data = am.indexStream, &am.streamData[am.indexStream]
-	am.indexStream ++
+	am.indexStream++
 	data.Create(name, ft)
 	return
 }
@@ -124,7 +126,7 @@ func (am *AudioManger) allocStreamData(name string, ft FileType) (id uint16, dat
 // TODO!
 func (am *AudioManger) freeStatic(id uint16) {
 	rear := am.indexStatic - 1
-	if id < rear  {
+	if id < rear {
 
 	}
 }

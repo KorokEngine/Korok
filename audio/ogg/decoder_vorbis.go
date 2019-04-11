@@ -1,26 +1,26 @@
 package ogg
 
 import (
-	"golang.org/x/mobile/asset"
 	"github.com/jfreymuth/oggvorbis"
+	"korok.io/korok/asset/res"
 
-	"unsafe"
 	"io"
 	"log"
+	"unsafe"
 )
 
 type Decoder struct {
-	numChannels   int32
-	sampleRate    int32
-	bitDepth      int32
+	numChannels int32
+	sampleRate  int32
+	bitDepth    int32
 
 	i16buffer []int16
 	f32buffer []float32
-	size int
+	size      int
 
-	name string
-	file asset.File
-	reader *oggvorbis.Reader
+	name     string
+	file     res.File
+	reader   *oggvorbis.Reader
 	reachEnd bool
 }
 
@@ -37,14 +37,14 @@ func (d *Decoder) SampleRate() int32 {
 }
 
 func (d *Decoder) Buffer() []byte {
-	return ((*[1<<30]byte)(unsafe.Pointer(&d.i16buffer[0])))[:d.size*2]
+	return ((*[1 << 30]byte)(unsafe.Pointer(&d.i16buffer[0])))[:d.size*2]
 }
 
 func (d *Decoder) ReachEnd() bool {
 	return d.reachEnd
 }
 
-func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, freq int32, err error) {
+func (*Decoder) FullDecode(file res.File) (data []byte, numChan, bitDepth, freq int32, err error) {
 	floats, format, err := oggvorbis.ReadAll(file)
 	if err != nil {
 		return
@@ -58,7 +58,7 @@ func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, fre
 	i16s := make([]int16, len(floats))
 	f216(floats, i16s)
 	ptr := unsafe.Pointer(&i16s[0])
-	data = ((*[1<<30]byte)(ptr))[:len(floats)*2]
+	data = ((*[1 << 30]byte)(ptr))[:len(floats)*2]
 	return
 }
 
@@ -80,7 +80,7 @@ func (d *Decoder) head() error {
 	if f := d.file; f != nil {
 		f.Close()
 	}
-	f, err := asset.Open(d.name)
+	f, err := res.Open(d.name)
 	if err != nil {
 		return err
 	}
@@ -92,7 +92,7 @@ func (d *Decoder) head() error {
 	d.file = f
 	d.reader = r
 	d.numChannels = int32(r.Channels())
-	d.sampleRate  = int32(r.SampleRate())
+	d.sampleRate = int32(r.SampleRate())
 	d.bitDepth = 16
 	d.reachEnd = false
 	return nil
@@ -102,7 +102,7 @@ func (d *Decoder) Rewind() {
 	d.head()
 }
 
-func NewVorbisDecoder(name string) (d *Decoder, err error){
+func NewVorbisDecoder(name string) (d *Decoder, err error) {
 	d = new(Decoder)
 	d.name = name
 	d.f32buffer = make([]float32, 16384)
@@ -113,6 +113,6 @@ func NewVorbisDecoder(name string) (d *Decoder, err error){
 
 func f216(f32 []float32, i16 []int16) {
 	for i, f := range f32 {
-		i16[i] = int16(f*32767)
+		i16[i] = int16(f * 32767)
 	}
 }
