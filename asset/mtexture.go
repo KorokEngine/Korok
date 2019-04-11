@@ -129,7 +129,7 @@ func (tm *TextureManager) GetRaw(file string) (uint16, *bk.Texture2D) {
 
 // Atlas returns the Atlas.
 func (tm *TextureManager) Atlas(file string) (at *gfx.Atlas, ok bool) {
-	if _, ok := tm.repo[file]; ok {
+	if _, ok1 := tm.repo[file]; ok1 {
 		at = gfx.R.Atlas(file)
 		ok = at != nil
 	}

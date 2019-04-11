@@ -4,13 +4,13 @@ import (
 	"github.com/golang/freetype/truetype"
 	"golang.org/x/image/math/fixed"
 
+	"image"
+	"image/draw"
+	"image/png"
 	"io"
 	"io/ioutil"
-	"image"
 	"log"
 	"os"
-	"image/png"
-	"image/draw"
 )
 
 // http://www.freetype.org/freetype2/docs/tutorial/step2.html
@@ -36,17 +36,17 @@ func LoadTrueType(r io.Reader, lc TTFConfig) (*fontAtlas, error) {
 	iw, ih := 512, 512
 	_, fg := image.Black, image.White
 	rect := image.Rect(0, 0, iw, ih)
-	img  := image.NewRGBA(rect)
+	img := image.NewRGBA(rect)
 	padding := fixed.I(2)
 
 	// Use a FreeType context to do the drawing.
 	face := truetype.NewFace(ttf, &truetype.Options{
-		Size:    float64(lc.FontSize()),
-		DPI:     72,
+		Size: float64(lc.FontSize()),
+		DPI:  72,
 	})
 
 	// new font-atlas
-	f := &fontAtlas{glyphs:make(map[rune]Glyph)}
+	f := &fontAtlas{glyphs: make(map[rune]Glyph)}
 
 	// Iterate over all relevant glyphs in the truetype fontAtlas and
 	// draw them all to the image buffer.
@@ -54,13 +54,13 @@ func LoadTrueType(r io.Reader, lc TTFConfig) (*fontAtlas, error) {
 		gb = ttf.Bounds(fixed.I(lc.FontSize()))
 		gw = gb.Max.X - gb.Min.X
 		gh = gb.Max.Y - gb.Min.Y
-		hh = face.Metrics().Ascent+face.Metrics().Descent
+		hh = face.Metrics().Ascent + face.Metrics().Descent
 		ah = face.Metrics().Ascent
 	)
 
 	width := fixed.I(iw)
-	dot := fixed.Point26_6{X: padding,Y: padding}
-	adjust := padding/2
+	dot := fixed.Point26_6{X: padding, Y: padding}
+	adjust := padding / 2
 
 	//for ch := low; ch <= high; ch++ {
 	for _, ch := range lc.Runes() {
@@ -81,19 +81,22 @@ func LoadTrueType(r io.Reader, lc TTFConfig) (*fontAtlas, error) {
 		d.Y -= bb.Min.Y
 		d.X -= bb.Min.X
 		dr, mask, mp, _, ok := face.Glyph(d, ch)
+		if !ok {
+			continue
+		}
 		draw.DrawMask(img, dr, fg, image.Point{}, mask, mp, draw.Over)
 
 		// record glyph region
-		g := Glyph {
-			Rune: ch,
+		g := Glyph{
+			Rune:    ch,
 			Advance: int(advance.Floor()),
-			X: fixed2f32(dot.X-adjust),
-			Y: fixed2f32(dot.Y-adjust),
-			Width: fixed2f32(gw+padding),
-			Height: fixed2f32(gh+padding),
+			X:       fixed2f32(dot.X - adjust),
+			Y:       fixed2f32(dot.Y - adjust),
+			Width:   fixed2f32(gw + padding),
+			Height:  fixed2f32(gh + padding),
 
 			XOffset: fixed2f32(bb.Min.X),
-			YOffset: fixed2f32(ah+bb.Min.Y-padding),
+			YOffset: fixed2f32(ah + bb.Min.Y - padding),
 		}
 
 		// add padding
@@ -108,8 +111,10 @@ func LoadTrueType(r io.Reader, lc TTFConfig) (*fontAtlas, error) {
 	f.gHeight = fixed2f32(gh)
 
 	// load image
-	f.loadTex(img)
-
+	err = f.loadTex(img)
+	if err != nil {
+		return nil, err
+	}
 	// save baked fontAtlas-image
 	//savePng(img)
 	return f, nil

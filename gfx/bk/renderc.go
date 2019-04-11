@@ -1,8 +1,9 @@
 package bk
 
 import (
-	"korok.io/korok/hid/gl"
 	"log"
+
+	"korok.io/korok/hid/gl"
 )
 
 type RenderContext struct {
@@ -27,9 +28,9 @@ type RenderContext struct {
 
 func NewRenderContext(r *ResManager, ub *UniformBuffer) *RenderContext {
 	return &RenderContext{
-		R:  r,
-		ub: ub,
-		clips:make([]Rect, 1),
+		R:     r,
+		ub:    ub,
+		clips: make([]Rect, 1),
 	}
 }
 
@@ -57,10 +58,10 @@ func (ctx *RenderContext) AddClipRect(x, y, w, h uint16) uint16 {
 	index := uint16(len(ctx.clips))
 	ratio := ctx.pixelRatio
 	ctx.clips = append(ctx.clips, Rect{
-		uint16(float32(x)*ratio),
-		uint16(float32(y)*ratio),
-		uint16(float32(w)*ratio),
-		uint16(float32(h)*ratio)})
+		uint16(float32(x) * ratio),
+		uint16(float32(y) * ratio),
+		uint16(float32(w) * ratio),
+		uint16(float32(h) * ratio)})
 	return index
 }
 
@@ -77,7 +78,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		key          = SortKey{}
 		primIndex    = uint8(uint64(0) >> ST.PT_SHIFT)
 		prim         = g_PrimInfo[primIndex]
-		stateBits    = ST.DEPTH_WRITE| ST.DEPTH_TEST_MASK| ST.RGB_WRITE| ST.ALPHA_WRITE| ST.BLEND_MASK| ST.PT_MASK
+		stateBits    = ST.DEPTH_WRITE | ST.DEPTH_TEST_MASK | ST.RGB_WRITE | ST.ALPHA_WRITE | ST.BLEND_MASK | ST.PT_MASK
 	)
 
 	// Let's Render!!
@@ -126,7 +127,7 @@ func (ctx *RenderContext) Draw(sortKeys []uint64, sortValues []uint16, drawList 
 		}
 
 		// 4. state binding
-		if (stateBits&changedFlags) != 0 {
+		if (stateBits & changedFlags) != 0 {
 			ctx.bindState(changedFlags, newFlags)
 			pt := newFlags & ST.PT_MASK
 			primIndex = uint8(pt >> ST.PT_SHIFT)
@@ -235,7 +236,7 @@ func (ctx *RenderContext) bindState(changedFlags, newFlags uint64) {
 		rgb := (newFlags & ST.RGB_WRITE) != 0
 		gl.ColorMask(rgb, rgb, rgb, alpha)
 
-		log.Printf("color mask state: (%d, %d)", rgb, alpha)
+		log.Printf("color mask state: (%t, %t)", rgb, alpha)
 	}
 
 	if changedFlags&ST.DEPTH_TEST_MASK != 0 {
