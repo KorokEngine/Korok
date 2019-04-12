@@ -90,7 +90,7 @@ func (fm *FontManager) Unload(name string) {
 }
 
 func (fm *FontManager) Get(name string) (fnt font.Font, ok bool) {
-	if v, ok := fm.repo[name]; ok {
+	if v, ok1 := fm.repo[name]; ok1 {
 		fnt, ok = v.ref.(font.Font)
 	}
 	return

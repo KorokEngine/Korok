@@ -83,6 +83,10 @@ func (am *AudioManger) LoadSound(name string, ft FileType, sType SourceType) (id
 
 func (am *AudioManger) LoadStatic(name string, ft FileType) (id uint16, sd *StaticData) {
 	d, err := factory.NewDecoder(name, ft)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	file, err := res.Open(name)
 	if err != nil {
 		log.Println(err)

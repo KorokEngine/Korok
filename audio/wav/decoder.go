@@ -219,6 +219,6 @@ func (d *Decoder) Close() {
 func NewDecoder(name string) (d *Decoder, err error) {
 	d = new(Decoder)
 	d.name = name
-	d.head()
+	err = d.head()
 	return
 }
