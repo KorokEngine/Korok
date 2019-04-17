@@ -1,4 +1,4 @@
-// +build ios,!js
+// +build ios
 
 package input
 

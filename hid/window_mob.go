@@ -1,4 +1,4 @@
-// +build android ios !js
+// +build android ios
 
 package hid
 

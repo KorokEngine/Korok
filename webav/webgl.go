@@ -1,8 +1,8 @@
+// +build js
+
 // Copyright 2014 Joseph Hager. All rights reserved.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
-
-// vanishs 基于https://github.com/gopherjs/webgl 修改的syscall/js版本
 
 package webav
 

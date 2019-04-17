@@ -1,4 +1,4 @@
-// +build darwin,!ios,!js
+// +build darwin,!ios
 
 package hid
 
