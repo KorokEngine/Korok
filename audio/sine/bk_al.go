@@ -1,4 +1,4 @@
-//+build !android,!js
+//+build !android,!js,!windows
 
 package sine
 

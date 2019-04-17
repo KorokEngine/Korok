@@ -9,3 +9,7 @@ type File interface {
 	io.ReadCloser
 	// io.Closer
 }
+
+type WFile interface {
+	io.Writer
+}

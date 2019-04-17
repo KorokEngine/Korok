@@ -1,4 +1,4 @@
-// +build darwin linux windows !js
+// +build android ios
 
 package res
 

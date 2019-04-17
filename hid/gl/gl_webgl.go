@@ -1,3 +1,5 @@
+// +build js
+
 package gl
 
 import (
@@ -300,7 +302,7 @@ func Uniform1fv(loc, num int32, v *float32) {
 }
 
 func Uniform4fv(loc, num int32, v *float32) {
-	sl := &Slice{Addr: uintptr(unsafe.Pointer(v)), Len: int(num), Cap: int(num * 4)}
+	sl := &Slice{Addr: uintptr(unsafe.Pointer(v)), Len: int(num * 4), Cap: int(num * 4)}
 	b := *(*[]float32)(unsafe.Pointer(sl))
 
 	ta := js.TypedArrayOf(b)
