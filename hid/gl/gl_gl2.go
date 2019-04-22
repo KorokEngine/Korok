@@ -1,5 +1,4 @@
-// +build !windows
-// +build !android,!ios,!js
+// +build !android,!ios,!js,!windows,!darwin
 
 package gl
 
