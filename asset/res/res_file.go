@@ -3,10 +3,10 @@
 package res
 
 import (
-	"os"
+	"golang.org/x/mobile/asset"
 )
 
 // Open opens a named asset.
 func Open(name string) (File, error) {
-	return os.Open(name)
+	return asset.Open(name)
 }
