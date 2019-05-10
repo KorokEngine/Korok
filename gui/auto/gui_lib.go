@@ -29,13 +29,17 @@ func (lm *LayoutMan) Text(id g.ID, text string, style *g.TextStyle, opt *Options
 	var (
 		elem, ready = lm.BeginElement(id, opt)
 		size f32.Vec2
+		font = style.Font
 	)
+	if font == nil {
+		font = lm.Context.Theme.Font
+	}
 
 	// draw text 最好返回最新的大小..
 	if ready {
 		size = lm.Context.DrawText(&elem.Rect, text, style)
 	} else {
-		size = lm.Context.CalcTextSize(text, 0, style.Font, style.Size)
+		size = lm.Context.CalcTextSize(text, 0, font, style.Size)
 	}
 
 	elem.Rect.W = size[0]
@@ -72,24 +76,17 @@ func (lm *LayoutMan) Image(id g.ID, tex gfx.Tex2D, style *g.ImageStyle, opt *Opt
 func (lm *LayoutMan) Button(id g.ID, text string, style *g.ButtonStyle, opt *Options) (event g.EventType) {
 	var (
 		elem, ready = lm.BeginElement(id, opt)
-		round = lm.Theme.Button.Rounding
 	)
 
 	if ready {
-		bb := &elem.Rect
-		// Check Event
-		event = lm.ClickEvent(id, bb)
-
-		// Render Frame
-		lm.ColorBackground(event, bb, round)
-
-		// Render Text
-		bb.X += style.Padding.Left
-		bb.Y += style.Padding.Top
-		lm.DrawText(&elem.Rect, text, &style.TextStyle)
+		lm.Context.Button(id, &elem.Rect, text, style)
 	} else {
-		textStyle := lm.Theme.Text
-		textSize := lm.CalcTextSize(text, 0, textStyle.Font, textStyle.Size)
+		font := style.Font
+		if font == nil {
+			font = lm.Context.Theme.Font
+		}
+		size := style.TextStyle.Size
+		textSize := lm.CalcTextSize(text, 0, font, size)
 		extW := style.Padding.Left+style.Padding.Right
 		extH := style.Padding.Top+style.Padding.Bottom
 		elem.W, elem.H = textSize[0]+extW, textSize[1]+extH
