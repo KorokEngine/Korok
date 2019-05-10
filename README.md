@@ -12,9 +12,28 @@ About the state and progress of the project, see [Devlogs](https://github.com/Ko
 
 `go get korok.io/korok`
 
-## Documentation and Demos
+## Games
 
-Document is in progress... But we have a [DemoProject](https://github.com/KorokEngine/beta-demo)
+**FlappyBird**
+<br>
+![flappy bird](https://github.com/ntop001/flappybird/blob/master/images/flappybird.final.gif)
+<br>
+[GitHub](https://github.com/ntop001/flappybird)
+
+**Shoot Stack**
+<br>
+<img src="https://github.com/KorokEngine/KorokEngine.github.io/blob/master/static/img/shoot_stack.jpeg" width="320">
+<br>
+<a href="https://itunes.apple.com/cn/app/shoot-stack/id1435699416?mt=8"><small><strong>AppStore</strong></small></a>
+<a href="https://play.google.com/store/apps/details?id=io.korok.shootingblock"><small><strong>GooglePlay</strong></small></a>
+
+**Unstable Tower**
+<br>
+<img src="https://github.com/KorokEngine/KorokEngine.github.io/blob/master/static/img/unstable_tower.jpeg" width="320">
+<br>
+<a href="https://play.google.com/store/apps/details?id=io.korok.unstabletower"><small><strong>GooglePlay</strong></small></a>
+
+## [Demos Project](https://github.com/KorokEngine/beta-demo)
 
 **Some ScreenShot**
 

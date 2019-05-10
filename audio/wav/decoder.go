@@ -1,10 +1,11 @@
 package wav
 
 import (
-	"golang.org/x/mobile/asset"
 	"encoding/binary"
-	"io/ioutil"
 	"io"
+	"io/ioutil"
+
+	"korok.io/korok/asset/res"
 )
 
 const (
@@ -120,23 +121,23 @@ type Decoder interface {
 	Static() []byte
 	ReachEnd() bool
 }
- */
+*/
 type Decoder struct {
-	numChannels   int32
-	sampleRate    int32
-	bitDepth      int32
+	numChannels int32
+	sampleRate  int32
+	bitDepth    int32
 
-	buffer []byte
-	size int32
-	offset int32
+	buffer   []byte
+	size     int32
+	offset   int32
 	reachEnd bool
 
-	file asset.File
+	file res.File
 	name string
 }
 
 // DON'T change decoder state! pure-virtual function
-func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, freq int32, err error) {
+func (*Decoder) FullDecode(file res.File) (data []byte, numChan, bitDepth, freq int32, err error) {
 	h, err := decode(file)
 	defer file.Close()
 
@@ -150,9 +151,9 @@ func (*Decoder) FullDecode(file asset.File) (data []byte, numChan, bitDepth, fre
 	}
 
 	numChan = int32(h.NumChannels)
-	freq    = int32(h.SampleRate)
-	bitDepth= int32(h.BitsPerSample)
-	data    = buf
+	freq = int32(h.SampleRate)
+	bitDepth = int32(h.BitsPerSample)
+	data = buf
 	return
 }
 
@@ -170,7 +171,7 @@ func (d *Decoder) head() error {
 		d.file.Close()
 	}
 
-	file, err := asset.Open(d.name)
+	file, err := res.Open(d.name)
 	if err != nil {
 		return err
 	}
@@ -180,10 +181,10 @@ func (d *Decoder) head() error {
 		return err
 	}
 	d.numChannels = int32(h.NumChannels)
-	d.sampleRate  = int32(h.SampleRate)
-	d.bitDepth    = int32(h.BitsPerSample)
-	d.buffer      = make([]byte, 16384)
-	d.reachEnd    = false
+	d.sampleRate = int32(h.SampleRate)
+	d.bitDepth = int32(h.BitsPerSample)
+	d.buffer = make([]byte, 16384)
+	d.reachEnd = false
 	return nil
 }
 
@@ -218,6 +219,6 @@ func (d *Decoder) Close() {
 func NewDecoder(name string) (d *Decoder, err error) {
 	d = new(Decoder)
 	d.name = name
-	d.head()
+	err = d.head()
 	return
 }

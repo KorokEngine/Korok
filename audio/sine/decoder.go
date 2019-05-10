@@ -1,11 +1,11 @@
 package sine
 
-import "golang.org/x/mobile/asset"
+import "korok.io/korok/asset/res"
 
 // audio file decoder
 type Decoder interface {
 	// helper method for in-memory decode
-	FullDecode(file asset.File) (d []byte, numChan, bitDepth, freq int32, err error)
+	FullDecode(file res.File) (d []byte, numChan, bitDepth, freq int32, err error)
 
 	// stream decode
 	Decode() int
@@ -22,4 +22,3 @@ type Decoder interface {
 type DecoderFactory interface {
 	NewDecoder(name string, fileType FileType) (Decoder, error)
 }
-

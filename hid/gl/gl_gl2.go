@@ -1,11 +1,11 @@
-// +build windows
-// +build !android,!ios
+// +build !android,!ios,!js,!windows,!darwin
 
 package gl
 
 import (
-	"github.com/go-gl/gl/v2.1/gl"
 	"unsafe"
+
+	"github.com/go-gl/gl/v2.1/gl"
 )
 
 func Init() error {
@@ -74,10 +74,9 @@ func DeleteVertexArrays(n int32, array *uint32) {
 	gl.DeleteVertexArrays(n, array)
 }
 
-
 // program & shader
 
-func CreateProgram() uint32{
+func CreateProgram() uint32 {
 	return gl.CreateProgram()
 }
 
@@ -110,7 +109,7 @@ func GetProgramInfoLog(program uint32) string {
 	return string(buf)
 }
 
-func CreateShader(xtype uint32) uint32{
+func CreateShader(xtype uint32) uint32 {
 	return gl.CreateShader(xtype)
 }
 
@@ -150,7 +149,7 @@ func BufferData(target uint32, size int, data unsafe.Pointer, usage uint32) {
 	gl.BufferData(target, size, data, usage)
 }
 
-func BufferSubData(target uint32, offset, size int, data unsafe.Pointer)  {
+func BufferSubData(target uint32, offset, size int, data unsafe.Pointer) {
 	gl.BufferSubData(target, offset, size, data)
 }
 
@@ -172,7 +171,7 @@ func DrawArrays(mode uint32, first, count int32) {
 
 // uniform
 
-func GetUniformLocation(program uint32, name string) int32{
+func GetUniformLocation(program uint32, name string) int32 {
 	return gl.GetUniformLocation(program, gl.Str(name))
 }
 
@@ -204,7 +203,7 @@ func Uniform1fv(loc, num int32, v *float32) {
 	gl.Uniform1fv(loc, num, v)
 }
 
-func Uniform4fv(loc, num int32, v *float32){
+func Uniform4fv(loc, num int32, v *float32) {
 	gl.Uniform4fv(loc, num, v)
 }
 

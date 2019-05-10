@@ -3,30 +3,30 @@
 package hid
 
 import (
-	"korok.io/korok/hid/gl"
 	"golang.org/x/mobile/app"
+	"golang.org/x/mobile/event/key"
 	"golang.org/x/mobile/event/lifecycle"
 	"golang.org/x/mobile/event/paint"
 	"golang.org/x/mobile/event/size"
 	"golang.org/x/mobile/event/touch"
-	"golang.org/x/mobile/event/key"
+	"korok.io/korok/hid/gl"
 
-	"sync"
 	"os"
+	"sync"
 )
 
 var options *WindowOptions
 
 var (
-	once sync.Once
-	widthPx int
+	once     sync.Once
+	widthPx  int
 	heightPx int
 )
 
 var (
 	windowCallback WindowCallback
-	inputCallback InputCallback
-	Keys  [1024]int
+	inputCallback  InputCallback
+	Keys           [1024]int
 )
 
 func RegisterWindowCallback(callback WindowCallback) {
@@ -43,7 +43,7 @@ func CreateWindow(opt *WindowOptions) {
 	app.Main(func(a app.App) {
 		var (
 			glctx interface{}
-			sz size.Event
+			sz    size.Event
 		)
 		for e := range a.Events() {
 			switch e := a.Filter(e).(type) {
@@ -104,7 +104,7 @@ func onStart(e lifecycle.Event) {
 		gl.ClearColor(bg[0], bg[1], bg[2], bg[3])
 	}
 	once.Do(func() {
-		windowCallback.OnCreate(float32(widthPx), float32(heightPx),1)
+		windowCallback.OnCreate(float32(widthPx), float32(heightPx), 1)
 	})
 	windowCallback.OnResume()
 }

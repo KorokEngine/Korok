@@ -1,10 +1,13 @@
+// +build !js
 // +build android ios
 
 package gl
 
 import (
-	"golang.org/x/mobile/gl"
 	"unsafe"
+
+	"golang.org/x/mobile/gl"
+
 	//"log"
 	"runtime"
 )
@@ -20,7 +23,8 @@ func InitContext(drawContext interface{}) {
 }
 
 func Release() {
-	glc = nil; runtime.GC()
+	glc = nil
+	runtime.GC()
 }
 
 func GetError() uint32 {
@@ -82,10 +86,9 @@ func DeleteVertexArrays(n int32, array *uint32) {
 	glc.DeleteVertexArray(gl.VertexArray{*array})
 }
 
-
 // program & shader
 
-func CreateProgram() uint32{
+func CreateProgram() uint32 {
 	return glc.CreateProgram().Value
 }
 
@@ -110,7 +113,7 @@ func GetProgramInfoLog(program uint32) string {
 	return glc.GetProgramInfoLog(gl.Program{true, program})
 }
 
-func CreateShader(xtype uint32) uint32{
+func CreateShader(xtype uint32) uint32 {
 	return glc.CreateShader(gl.Enum(xtype)).Value
 }
 
@@ -146,14 +149,14 @@ func BufferData(target uint32, size int, data unsafe.Pointer, usage uint32) {
 	if data == nil {
 		glc.BufferInit(gl.Enum(target), size, gl.Enum(usage))
 	} else {
-		d := ((*[1<<24]byte)(data))[:size]
+		d := ((*[1 << 24]byte)(data))[:size]
 		glc.BufferData(gl.Enum(target), d, gl.Enum(usage))
 		//log.Println("update buffer:", target, " data:", (*[20]float32)(data))
 	}
 }
 
-func BufferSubData(target uint32, offset, size int, data unsafe.Pointer)  {
-	glc.BufferSubData(gl.Enum(target), offset, ((*[1<<24]byte)(data))[:size])
+func BufferSubData(target uint32, offset, size int, data unsafe.Pointer) {
+	glc.BufferSubData(gl.Enum(target), offset, ((*[1 << 24]byte)(data))[:size])
 }
 
 func BindBuffer(target uint32, buffer uint32) {
@@ -184,7 +187,7 @@ func Uniform1i(loc, v int32) {
 }
 
 func Uniform1iv(loc, num int32, v *int32) {
-	glc.Uniform1iv(gl.Uniform{loc}, ((*[1<<24]int32)(unsafe.Pointer(v)))[:num])
+	glc.Uniform1iv(gl.Uniform{loc}, ((*[1 << 24]int32)(unsafe.Pointer(v)))[:num])
 }
 
 func Uniform1f(location int32, v0 float32) {
@@ -204,19 +207,19 @@ func Uniform4f(location int32, v0, v1, v2, v3 float32) {
 }
 
 func Uniform1fv(loc, num int32, v *float32) {
-	glc.Uniform1fv(gl.Uniform{loc}, ((*[1<<24]float32)(unsafe.Pointer(v)))[:num])
+	glc.Uniform1fv(gl.Uniform{loc}, ((*[1 << 24]float32)(unsafe.Pointer(v)))[:num])
 }
 
-func Uniform4fv(loc, num int32, v *float32){
-	glc.Uniform4fv(gl.Uniform{loc}, ((*[1<<24]float32)(unsafe.Pointer(v)))[:num*4])
+func Uniform4fv(loc, num int32, v *float32) {
+	glc.Uniform4fv(gl.Uniform{loc}, ((*[1 << 24]float32)(unsafe.Pointer(v)))[:num*4])
 }
 
 func UniformMatrix3fv(loc, num int32, t bool, v *float32) {
-	glc.UniformMatrix3fv(gl.Uniform{loc}, ((*[1<<24]float32)(unsafe.Pointer(v)))[:num*9])
+	glc.UniformMatrix3fv(gl.Uniform{loc}, ((*[1 << 24]float32)(unsafe.Pointer(v)))[:num*9])
 }
 
 func UniformMatrix4fv(loc, num int32, t bool, v *float32) {
-	glc.UniformMatrix4fv(gl.Uniform{loc}, ((*[1<<24]float32)(unsafe.Pointer(v)))[:num*16])
+	glc.UniformMatrix4fv(gl.Uniform{loc}, ((*[1 << 24]float32)(unsafe.Pointer(v)))[:num*16])
 }
 
 // attribute
@@ -248,11 +251,11 @@ func BindTexture(target uint32, texture uint32) {
 }
 
 func TexSubImage2D(target uint32, level int32, xOffset, yOffset, width, height int32, format, xtype uint32, pixels unsafe.Pointer) {
-	glc.TexSubImage2D(gl.Enum(target), int(level), int(xOffset), int(xOffset), int(width), int(height), gl.Enum(format), gl.Enum(xtype), ((*[1<<24]byte)(pixels))[:])
+	glc.TexSubImage2D(gl.Enum(target), int(level), int(xOffset), int(xOffset), int(width), int(height), gl.Enum(format), gl.Enum(xtype), ((*[1 << 24]byte)(pixels))[:])
 }
 
 func TexImage2D(target uint32, level int32, internalFormat int32, width, height, border int32, format, xtype uint32, pixels unsafe.Pointer) {
-	glc.TexImage2D(gl.Enum(target), int(level), int(width), int(height), gl.Enum(format), gl.Enum(xtype), ((*[1<<24]byte)(pixels))[:])
+	glc.TexImage2D(gl.Enum(target), int(level), int(width), int(height), gl.Enum(format), gl.Enum(xtype), ((*[1 << 24]byte)(pixels))[:])
 }
 
 func DeleteTextures(n int32, textures *uint32) {

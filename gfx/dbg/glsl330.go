@@ -1,4 +1,4 @@
-// +build !android,!ios,!windows
+// +build !android,!ios,!windows,!js
 
 package dbg
 
