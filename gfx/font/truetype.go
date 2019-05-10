@@ -33,7 +33,7 @@ func LoadTrueType(r io.Reader, lc TTFConfig) (*fontAtlas, error) {
 	}
 
 	// Create an image(512*512) to store all requested glyphs.
-	iw, ih := 512, 512
+	iw, ih := 1024, 1024
 	_, fg := image.Black, image.White
 	rect := image.Rect(0, 0, iw, ih)
 	img  := image.NewRGBA(rect)
