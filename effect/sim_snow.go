@@ -80,7 +80,7 @@ func (sim *SnowSimulator) Simulate(dt float32) {
 	sim.Position.Integrate(n, sim.velocity, dt)
 
 	// rotation
-	sim.Rotation.Integrate(n, sim.Rotation, dt)
+	sim.Rotation.Integrate(n, sim.deltaRot, dt)
 
 	// GC
 	sim.GC(&sim.Pool)
