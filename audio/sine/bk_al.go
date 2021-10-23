@@ -16,6 +16,13 @@ package sine
 #include <OpenAL/alc.h>
 #endif
 
+#ifdef GOOS_linux
+#include <stdlib.h>
+#include <stdio.h>
+#include <AL/al.h>
+#include <AL/alc.h>
+#endif
+
 typedef struct SineEngine {
 	ALCdevice *device;
 	ALCcontext *context;
@@ -275,10 +282,10 @@ func (p *BufferPlayer) State() uint32 {
 
 // StreamPlayer can play audio loaded as StreamData.
 type StreamPlayer struct {
-	player C.SineStreamPlayer
-	format uint32
+	player     C.SineStreamPlayer
+	format     uint32
 	sampleRate int32
-	decoder      Decoder
+	decoder    Decoder
 }
 
 func (p *StreamPlayer) initialize(engine *Engine) {
@@ -354,7 +361,7 @@ func (p *StreamPlayer) fill() {
 	}
 
 	// feed the free buffer one by one.
-	for ;free > 0 ; free-- {
+	for ; free > 0; free-- {
 		if n := d.Decode(); n == 0 {
 			break
 		}

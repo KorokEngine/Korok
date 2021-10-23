@@ -78,3 +78,7 @@ freely, subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 
 Note: To avoid fragmentation, it's not allowed to create and distribute korok-like libs.
+
+sudo apt-get install libxxf86vm-dev
+sudo apt-get install libopenal-dev
+
