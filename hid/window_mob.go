@@ -88,8 +88,8 @@ func CreateWindow(opt *WindowOptions) {
 }
 
 func onCreate() {
-	widthPx = app.DisplayMetrics.WidthPx
-	heightPx = app.DisplayMetrics.HeightPx
+	// widthPx = app.DisplayMetrics.WidthPx
+	// heightPx = app.DisplayMetrics.HeightPx
 }
 
 func onStart(e lifecycle.Event) {
