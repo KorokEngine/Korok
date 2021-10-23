@@ -255,7 +255,7 @@ func TexSubImage2D(target uint32, level int32, xOffset, yOffset, width, height i
 }
 
 func TexImage2D(target uint32, level int32, internalFormat int32, width, height, border int32, format, xtype uint32, pixels unsafe.Pointer) {
-	glc.TexImage2D(gl.Enum(target), int(level), int(width), int(height), gl.Enum(format), gl.Enum(xtype), ((*[1 << 24]byte)(pixels))[:])
+	glc.TexImage2D(gl.Enum(target), int(level), int(internalFormat), int(width), int(height), gl.Enum(format), gl.Enum(xtype), ((*[1 << 24]byte)(pixels))[:])
 }
 
 func DeleteTextures(n int32, textures *uint32) {
